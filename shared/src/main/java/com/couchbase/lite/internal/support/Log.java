@@ -395,7 +395,7 @@ public final class Log {
             Database.getLog().getFile().log(level, domain, msg);
             fileSucceeded = true;
             Database.getLog().getConsole().log(level, domain, msg);
-            consoleSucceeded = false;
+            consoleSucceeded = true;
             Logger custom = Database.getLog().getCustom();
             if(custom != null) {
                 custom.log(level, domain, msg);

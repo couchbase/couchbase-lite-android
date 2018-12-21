@@ -23,25 +23,55 @@ import com.couchbase.litecore.C4Log;
 
 import java.util.ArrayList;
 
+/**
+ * A class for sending log messages to Android's system log (aka logcat).  This is useful
+ * for debugging during development, but is recommended to be disabled in production (the
+ * file logger is both more durable and more efficient)
+ */
 public final class ConsoleLogger implements Logger {
     private LogLevel _level = LogLevel.WARNING;
     private ArrayList<LogDomain> _domains = new ArrayList<>();
 
+    //---------------------------------------------
+    // Constructor should not be exposed (singleton)
+    //---------------------------------------------
     ConsoleLogger() {
         _domains.add(LogDomain.ALL);
     }
 
+    /**
+     * Gets the domains that will be considered for writing to
+     * the Android system log
+     *
+     * @return The currently active domains
+     */
     public ArrayList<LogDomain> getDomains() {
         return _domains;
     }
 
+    /**
+     * Sets the domains that will be considered for writing to
+     * the Android system log
+     *
+     * @param domains The domains to make active
+     */
     public void setDomains(ArrayList<LogDomain> domains) {
+        if(domains == null) {
+            throw new IllegalArgumentException("domains cannot be null.");
+        }
+
         _domains = domains;
     }
 
+    /**
+     * Sets the overall logging level that will be written to
+     * the Android system log
+     *
+     * @param level The maximum level to include in the logs
+     */
     public void setLevel(LogLevel level) {
         if(level == null) {
-            level = LogLevel.WARNING;
+            level = LogLevel.NONE;
         }
 
         if(_level == level) {

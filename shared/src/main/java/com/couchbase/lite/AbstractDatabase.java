@@ -719,9 +719,15 @@ abstract class AbstractDatabase {
     /**
      * Set log level for the given log domain.
      *
+     * @deprecated As of 2.5 because it is being replaced with the
+     * {@link com.couchbase.lite.Log#getConsole() getConsole} method
+     * from the {@link #getLog() getLog} method.  This method has
+     * been replaced with a no-op to preserve API compatibility.
+     *
      * @param domain The log domain
      * @param level  The log level
      */
+    @Deprecated
     public static void setLogLevel(LogDomain domain, LogLevel level) {
         Log.setLogLevel(domain, level);
     }

@@ -17,8 +17,26 @@
 //
 package com.couchbase.lite;
 
+/**
+ * The logging interface for Couchbase Lite.  If an application wants
+ * to receive log messages to an arbitrary endpoint, then it can by
+ * implementing this interface.
+ */
 public interface Logger {
+
+    /**
+     * Gets the level that will be logged via this logger.
+     *
+     * @return The maximum level to log
+     */
     LogLevel getLevel();
 
+    /**
+     * Performs the actual logging logic
+     *
+     * @param level     The level of the message to log
+     * @param domain    The domain of the message to log
+     * @param message   The content of the message to log
+     */
     void log(LogLevel level, LogDomain domain, String message);
 }

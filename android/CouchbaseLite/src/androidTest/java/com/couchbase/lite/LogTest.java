@@ -125,15 +125,15 @@ public class LogTest {
                 lineCount++;
             }
 
-            // Two meta lines per log, so the actual logging lines is X - 2
+            // One meta line per log, so the actual logging lines is X - 1
             if(log.getAbsolutePath().contains("verbose")) {
-                assertEquals(3, lineCount);
+                assertEquals(2, lineCount);
             } else if(log.getAbsolutePath().contains("info")) {
-                assertEquals(4, lineCount);
+                assertEquals(3, lineCount);
             } else if(log.getAbsolutePath().contains("warning")) {
-                assertEquals(5, lineCount);
+                assertEquals(4, lineCount);
             } else if(log.getAbsolutePath().contains("error")) {
-                assertEquals(6, lineCount);
+                assertEquals(5, lineCount);
             }
         }
     }

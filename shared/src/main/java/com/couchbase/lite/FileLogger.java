@@ -24,25 +24,50 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A logger for writing to a file in the application's storage so
+ * that log messages can persist durably after the application has
+ * stopped or encountered a problem.  Each log level is written to
+ * a separate file.
+ */
 public final class FileLogger implements Logger {
     private LogLevel _level = LogLevel.INFO;
     private String _directory;
     private boolean _customDirectory;
     private boolean _hasConfigChanges;
     private int _maxRotateCount = 1;
-    private long _maxSize = 1024;
+    private long _maxSize = 500 * 1024;
     private boolean _usePlaintext;
     private final HashMap<LogDomain, String> _domainObjects = new HashMap<>();
     private static String DefaultDirectory;
 
+    //---------------------------------------------
+    // Constructor should not be exposed (singleton)
+    //---------------------------------------------
     FileLogger() {
         setupDomainObjects();
     }
 
+    /**
+     * Gets the maximum number of rotated logs to keep on
+     * the disk
+     *
+     * @return The number of *rotated* logs to keep (The total
+     * number of disk entries will be this number plus 1 for
+     * current log)
+     */
     public int getMaxRotateCount() {
         return _maxRotateCount;
     }
 
+    /**
+     * Sets the maximum number of rotated logs to keep on
+     * the disk
+     *
+     * @param maxRotateCount The number of *rotated* logs to keep
+     *                       (The total number of disk entries will
+     *                       be this number plus 1 for current log)
+     */
     public void setMaxRotateCount(int maxRotateCount) {
         if(_maxRotateCount == maxRotateCount) {
             return;
@@ -52,10 +77,22 @@ public final class FileLogger implements Logger {
         _hasConfigChanges = true;
     }
 
+    /**
+     * Gets the maximum size that a log file can grow to before
+     * performing a rollover.
+     *
+     * @return The maximum size of a given log file
+     */
     public long getMaxSize() {
         return _maxSize;
     }
 
+    /**
+     * Sets the maximum size that a log file can grow to before
+     * performing a rollover.
+     *
+     * @param maxSize The maximum size of a given log file
+     */
     public void setMaxSize(long maxSize) {
         if(_maxSize == maxSize) {
             return;
@@ -65,10 +102,24 @@ public final class FileLogger implements Logger {
         _hasConfigChanges = true;
     }
 
+    /**
+     * Gets whether or not the logger will write to the file
+     * in plaintext (default is a proprietary binary encoding)
+     *
+     * @return Whether or not the logger uses plaintext
+     */
     public boolean getUsePlaintext() {
         return _usePlaintext;
     }
 
+    /**
+     * Sets whether or not the logger will write to the file
+     * in plaintext (default is a proprietary binary encoding).
+     * Plaintext logging is not recommended because of performance
+     * hits.
+     *
+     * @param usePlaintext Whether or not the logger uses plaintext
+     */
     public void setUsePlaintext(boolean usePlaintext) {
         if(_usePlaintext == usePlaintext) {
             return;
@@ -78,11 +129,25 @@ public final class FileLogger implements Logger {
         _hasConfigChanges = true;
     }
 
-
+    /**
+     * Gets the directory that the logger will write to when
+     * writing its logs.
+     *
+     * @return The directory that the logger is writing to
+     */
     public String getDirectory() {
         return _directory;
     }
 
+    /**
+     * Sets the directory that the logger will write to when
+     * writing its logs.  It is recommended to do this as
+     * early as possible because the library has no information
+     * about "default" locations until the first database
+     * configuration object is created
+     *
+     * @param directory The directory that the logger will write to
+     */
     public void setDirectory(String directory) {
         if(directory == null) {
             directory = DefaultDirectory;
@@ -96,6 +161,12 @@ public final class FileLogger implements Logger {
         updateConfig();
     }
 
+    /**
+     * Sets the overall logging level that will be written to
+     * the logging files.
+     *
+     * @param level The maximum level to include in the logs
+     */
     public void setLevel(LogLevel level) {
         if(level == null) {
             level = LogLevel.NONE;

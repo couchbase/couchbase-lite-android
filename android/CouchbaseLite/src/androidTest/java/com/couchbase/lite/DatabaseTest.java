@@ -321,7 +321,6 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testGetExistingDocWithIDInBatch() throws CouchbaseLiteException {
         final int NUM_DOCS = 10;
-        Database.getLog().getConsole().setLevel(LogLevel.VERBOSE);
 
         // Save 10 docs:
         createDocs(NUM_DOCS);
