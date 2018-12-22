@@ -25,7 +25,7 @@ public interface DocumentReplicationListener {
     /**
      * The callback function from Replicator
      *
-     * @param update the Document replicated information
+     * @param replication the Document replicated information
      */
-    void replicated(DocumentReplication update);
+    void replication(DocumentReplication replication);
 }

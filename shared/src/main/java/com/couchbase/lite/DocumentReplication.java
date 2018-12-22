@@ -20,35 +20,26 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.C4Error;
 
+import java.util.List;
+
 /**
  * Document replicated update of a replicator.
  */
 public final class DocumentReplication {
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private final Replicator replicator;
-    private boolean isDeleted = false;
-    private boolean isAccessRemoved = false;
     private boolean pushing = false;
-    private String docId = "";
-    private String revId = "";
-    private int flags;
-    private C4Error error;
-    private boolean trans;
+    private List<ReplicatedDocument> documents;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, boolean isDeleted, boolean pushing, String docId, String revId, int flags, C4Error error, boolean trans) {
+    DocumentReplication(Replicator replicator, boolean isPush, List<ReplicatedDocument> documents) {
         this.replicator = replicator;
-        this.pushing = pushing;
-        this.docId = docId;
-        this.isDeleted = isDeleted;
-        this.revId = revId;
-        this.flags = flags;
-        this.error = error;
+        this.pushing = isPush;
+        this.documents = documents;
     }
 
     //---------------------------------------------
@@ -69,47 +60,8 @@ public final class DocumentReplication {
         return pushing;
     }
 
-    /**
-     * The current document id.
-     */
-    public String getDocumentID() {
-        return docId;
-    }
-
-    /**
-     * The current deleted status of the document.
-     */
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    /**
-     * The current access removed status of the document.
-     */
-    public boolean isAccessRemoved()  {
-        return isAccessRemoved;
-    } //TODO: will find a way to get this value and write unit test for it in the related PR for the ticket.
-
-    /**
-     * The current document replication error.
-     */
-    public CouchbaseLiteException getError() {
-        return error.getCode() != 0 ? CBLStatus.convertError(error) : null;
-    }
-
-    @Override
-    public String toString() {
-        return "DocumentReplication {" +
-                "replicator=" + replicator +
-                ", is pushing =" + pushing +
-                ", document id =" + docId +
-                ", error code =" + error.getCode()+
-                ", error domain=" + error.getDomain() +
-                ", doc is deleted =" + isDeleted +
-                '}';
-    }
-
-    DocumentReplication copy() {
-        return new DocumentReplication(replicator, isDeleted, pushing, docId, revId, flags, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
-    }
+    public List<ReplicatedDocument> getDocuments() { return documents; }
 }
+
+
+

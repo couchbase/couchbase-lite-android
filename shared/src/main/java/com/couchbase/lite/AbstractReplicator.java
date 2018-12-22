@@ -21,6 +21,7 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Database;
+import com.couchbase.litecore.C4DocumentEnded;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4ReplicationFilter;
 import com.couchbase.litecore.C4Replicator;
@@ -33,7 +34,9 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -560,17 +563,26 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
 
-        if (config.getPushFilter() != null || config.getPullFilter() != null) {
-            C4ReplicationFilter filter = new C4ReplicationFilter() {
+        if (config.getPushFilter() != null) {
+            c4ReplPushFilter = new C4ReplicationFilter() {
                 @Override
-                public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
+                public boolean validationFunction(final String docID, final int flags, final long dict,
+                                                  final boolean isPush, final Object context) {
                     final AbstractReplicator replicator = (AbstractReplicator) context;
                     return replicator.validationFunction(docID, flags, dict, isPush);
                 }
             };
+        }
 
-            if (config.getPushFilter() != null) c4ReplPushFilter = filter;
-            if (config.getPullFilter() != null) c4ReplPullFilter = filter;
+        if (config.getPullFilter() != null) {
+            c4ReplPullFilter = new C4ReplicationFilter() {
+                @Override
+                public boolean validationFunction(final String docID, final int flags, final long dict,
+                                                  final boolean isPush, final Object context) {
+                    final AbstractReplicator replicator = (AbstractReplicator) context;
+                    return replicator.validationFunction(docID, flags, dict, isPush);
+                }
+            };
         }
 
         c4ReplListener = new C4ReplicatorListener() {
@@ -589,15 +601,15 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             @Override
-            public void documentEnded(C4Replicator repl, final boolean pushing, final String docID, final String revID,
-                                      final int flags, final C4Error error, final boolean trans,
+            public void documentEnded(C4Replicator repl, final boolean pushing,
+                                      final C4DocumentEnded[] documents,
                                       Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
                         @Override
                         public void run() {
-                            replicator.documentEnded(pushing, docID, revID, flags, error, trans);
+                            replicator.documentEnded(pushing, documents);
                         }
                     });
                 }
@@ -629,19 +641,29 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
-    private void documentEnded(boolean pushing, String docID, String revID, int flags, C4Error error, boolean trans) {
-        DocumentReplication update = new DocumentReplication((Replicator) this,
-                flags == C4Constants.C4RevisionFlags.kRevDeleted,
-                 pushing, docID, revID, flags, error, trans);
-        if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
-            // Conflict pulling a document -- the revision was added but app needs to resolve it:
-            Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
-            try {
-                this.config.getDatabase().resolveConflictInDocument(docID);
-            } catch (CouchbaseLiteException ex) {
-                Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
+    private void documentEnded(boolean pushing, C4DocumentEnded[] docEnds) {
+        List<ReplicatedDocument> docs = new ArrayList<ReplicatedDocument>();
+        for (C4DocumentEnded docEnd : docEnds) {
+            String docID = docEnd.getDocID();
+            boolean isDeleted = (docEnd.getFlags() & C4Constants.C4RevisionFlags.kRevDeleted) != 0;
+            boolean isAccessRemoved = (docEnd.getFlags() & C4Constants.C4RevisionFlags.kRevPurged) != 0;
+            C4Error error = docEnd.getC4Error();
+
+            if (!pushing && docEnd.getErrorDomain() == LiteCoreDomain && docEnd.getErrorCode() == kC4ErrorConflict) {
+                // Conflict pulling a document -- the revision was added but app needs to resolve it:
+                Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
+                try {
+                    this.config.getDatabase().resolveConflictInDocument(docID);
+                    error = new C4Error();
+                } catch (CouchbaseLiteException ex) {
+                    Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
+                }
             }
+            ReplicatedDocument doc = new ReplicatedDocument(docID, isDeleted, isAccessRemoved, error,
+                                                                docEnd.errorIsTransient());
+            docs.add(doc);
         }
+        DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         notifyDocumentEnded(update);
     }
 
