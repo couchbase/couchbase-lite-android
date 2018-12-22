@@ -563,18 +563,21 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
 
-        if (config.getPushFilter() != null || config.getPullFilter() != null) {
-            C4ReplicationFilter filter = new C4ReplicationFilter() {
-                @Override
-                public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
-                    final AbstractReplicator replicator = (AbstractReplicator) context;
-                    return replicator.validationFunction(docID, flags, dict, isPush);
-                }
-            };
+        if (config.getPushFilter() != null) c4ReplPushFilter = new C4ReplicationFilter() {
+            @Override
+            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
+                final AbstractReplicator replicator = (AbstractReplicator) context;
+                return replicator.validationFunction(docID, flags, dict, isPush);
+            }
+        };
 
-            if (config.getPushFilter() != null) c4ReplPushFilter = filter;
-            if (config.getPullFilter() != null) c4ReplPullFilter = filter;
-        }
+        if (config.getPullFilter() != null) c4ReplPullFilter = new C4ReplicationFilter() {
+            @Override
+            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
+                final AbstractReplicator replicator = (AbstractReplicator) context;
+                return replicator.validationFunction(docID, flags, dict, isPush);
+            }
+        };
 
         c4ReplListener = new C4ReplicatorListener() {
             @Override
@@ -654,7 +657,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, c4document.getDocID());
                 } finally {
                     //conflict resolved, clear error
-                    error = new C4Error(0,0,0);
+                    error = new C4Error();
                 }
             }
 
