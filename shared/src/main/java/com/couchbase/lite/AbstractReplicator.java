@@ -563,21 +563,27 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
 
-        if (config.getPushFilter() != null) c4ReplPushFilter = new C4ReplicationFilter() {
-            @Override
-            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
-                final AbstractReplicator replicator = (AbstractReplicator) context;
-                return replicator.validationFunction(docID, flags, dict, isPush);
-            }
-        };
+        if (config.getPushFilter() != null) {
+            c4ReplPushFilter = new C4ReplicationFilter() {
+                @Override
+                public boolean validationFunction(final String docID, final int flags, final long dict,
+                                                  final boolean isPush, final Object context) {
+                    final AbstractReplicator replicator = (AbstractReplicator) context;
+                    return replicator.validationFunction(docID, flags, dict, isPush);
+                }
+            };
+        }
 
-        if (config.getPullFilter() != null) c4ReplPullFilter = new C4ReplicationFilter() {
-            @Override
-            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
-                final AbstractReplicator replicator = (AbstractReplicator) context;
-                return replicator.validationFunction(docID, flags, dict, isPush);
-            }
-        };
+        if (config.getPullFilter() != null) {
+            c4ReplPullFilter = new C4ReplicationFilter() {
+                @Override
+                public boolean validationFunction(final String docID, final int flags, final long dict,
+                                                  final boolean isPush, final Object context) {
+                    final AbstractReplicator replicator = (AbstractReplicator) context;
+                    return replicator.validationFunction(docID, flags, dict, isPush);
+                }
+            };
+        }
 
         c4ReplListener = new C4ReplicatorListener() {
             @Override
@@ -635,37 +641,28 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
-    private void documentEnded(boolean pushing, C4DocumentEnded[] documents) {
+    private void documentEnded(boolean pushing, C4DocumentEnded[] docEnds) {
         List<ReplicatedDocument> docs = new ArrayList<ReplicatedDocument>();
-        for (C4DocumentEnded c4document: documents) {
-            boolean isAccessRemoved = false;
-            boolean isDeleted = false;
-            C4Error error = c4document.getC4Error();;
-            try {
-                isAccessRemoved = config.getDatabase().c4db.get(c4document.getDocID(), false).accessRemoved();
-                isDeleted = config.getDatabase().c4db.get(c4document.getDocID(), false).deleted();
-            } catch (LiteCoreException e) {
-                Log.e(TAG, "C4Document does not exist: docID ->%s", c4document.getDocID());
-            }
+        for (C4DocumentEnded docEnd : docEnds) {
+            String docID = docEnd.getDocID();
+            boolean isDeleted = (docEnd.getFlags() & C4Constants.C4RevisionFlags.kRevDeleted) != 0;
+            boolean isAccessRemoved = (docEnd.getFlags() & C4Constants.C4RevisionFlags.kRevPurged) != 0;
+            C4Error error = docEnd.getC4Error();
 
-            if (!pushing && c4document.getErrorDomain() == LiteCoreDomain && c4document.getErrorCode() == kC4ErrorConflict) {
+            if (!pushing && docEnd.getErrorDomain() == LiteCoreDomain && docEnd.getErrorCode() == kC4ErrorConflict) {
                 // Conflict pulling a document -- the revision was added but app needs to resolve it:
-                Log.i(TAG, "%s: pulled conflicting version of '%s'", this, c4document.getDocID());
+                Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
                 try {
-                    this.config.getDatabase().resolveConflictInDocument(c4document.getDocID());
-                } catch (CouchbaseLiteException ex) {
-                    Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, c4document.getDocID());
-                } finally {
-                    //conflict resolved, clear error
+                    this.config.getDatabase().resolveConflictInDocument(docID);
                     error = new C4Error();
+                } catch (CouchbaseLiteException ex) {
+                    Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
                 }
             }
-
-            ReplicatedDocument document = new ReplicatedDocument(isDeleted, isAccessRemoved, c4document.getDocID(),
-                    c4document.getRevID(), error, c4document.errorIsTransient());
-            docs.add(document);
+            ReplicatedDocument doc = new ReplicatedDocument(docID, isDeleted, isAccessRemoved, error,
+                                                                docEnd.errorIsTransient());
+            docs.add(doc);
         }
-
         DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         notifyDocumentEnded(update);
     }

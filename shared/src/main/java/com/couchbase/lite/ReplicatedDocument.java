@@ -28,18 +28,20 @@ public final class ReplicatedDocument {
     private boolean isDeleted = false;
     private boolean isAccessRemoved = false;
     private String id = "";
-    private String revId = "";
     private C4Error error;
     private boolean trans;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    ReplicatedDocument(boolean isDeleted, boolean isAccessRemoved, String id, String revId, C4Error error, boolean trans) {
+
+    /**
+     * Document replicated update of a replicator.
+     */
+    ReplicatedDocument(String id, boolean isDeleted, boolean isAccessRemoved, C4Error error, boolean trans) {
         this.id = id;
         this.isDeleted = isDeleted;
         this.isAccessRemoved = isAccessRemoved;
-        this.revId = revId;
         this.error = error;
         this.trans = trans;
     }
