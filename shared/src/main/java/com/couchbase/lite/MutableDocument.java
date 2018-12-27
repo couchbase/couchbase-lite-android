@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.litecore.C4Constants;
+import com.couchbase.litecore.C4Document;
 
 import java.util.Date;
 import java.util.Locale;
@@ -51,7 +52,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param id the document ID.
      */
     public MutableDocument(String id) {
-        super(null, id != null ? id : createUUID(), null);
+        super(null, id != null ? id : createUUID(), (C4Document)null);
     }
 
     /**
