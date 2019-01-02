@@ -678,8 +678,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
     private boolean validationFunction(String docID, int flags, long dict, boolean isPush) {
         Document document = new Document(config.getDatabase(), docID, new FLDict(dict));
-        boolean isDeleted = flags == C4Constants.C4RevisionFlags.kRevDeleted;
-
+        boolean isDeleted = (flags & C4Constants.C4RevisionFlags.kRevDeleted) != 0;
         if(isPush)
             return config.getPushFilter().filtered(document, isDeleted);
         else
