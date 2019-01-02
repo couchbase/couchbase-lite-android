@@ -100,8 +100,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
              String id,
              FLDict body) {
         this(database, id, (C4Document) null);
-        this._database = database;
-        this._id = id;
         this._data = body;
         updateDictionary();
     }
