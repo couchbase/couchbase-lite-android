@@ -677,8 +677,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     private boolean validationFunction(String docID, int flags, long dict, boolean isPush) {
-        Map<String, Object> dictionary = new FLDict(dict).asDict();
-        MutableDocument document = new MutableDocument(docID, dictionary);
+        Document document = new Document(config.getDatabase(), docID, new FLDict(dict));
         boolean isDeleted = flags == C4Constants.C4RevisionFlags.kRevDeleted;
 
         if(isPush)

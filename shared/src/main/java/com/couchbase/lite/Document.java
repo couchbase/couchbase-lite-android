@@ -76,7 +76,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     Document(Database database,
              String id,
              boolean includeDeleted) throws CouchbaseLiteException {
-        this(database, id, null);
+        this(database, id, (C4Document) null);
         C4Document doc;
         try {
             if (_database == null || _database.getC4Database() == null)
@@ -94,6 +94,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
         // NOTE: _c4doc should not be null.
         setC4Document(doc);
+    }
+
+    Document(Database database,
+             String id,
+             FLDict body) {
+        this(database, id, (C4Document) null);
+        this._data = body;
+        updateDictionary();
     }
 
     //---------------------------------------------
