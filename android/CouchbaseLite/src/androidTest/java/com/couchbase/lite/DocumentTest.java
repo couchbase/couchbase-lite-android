@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -1806,6 +1807,31 @@ public class DocumentTest extends BaseTest {
         assertEquals("a", members.getValue(0));
         assertEquals("b", members.getValue(1));
         assertEquals("c", members.getValue(2));
+    }
+
+    @Test
+    public void testDocumentChangeOnDocumentPurged()
+            throws Exception {
+        Date dto1 = new Date(System.currentTimeMillis() + 1000L);
+        MutableDocument doc1 = createMutableDocument("doc1");
+        doc1.setValue("theanswer", 18);
+        db.save(doc1);
+
+        // purge doc
+        final CountDownLatch latch = new CountDownLatch(1);
+        DocumentChangeListener changeListener = new DocumentChangeListener() {
+            @Override
+            public void changed(DocumentChange change) {
+                assertNotNull(change);
+                assertEquals("doc1", change.getDocumentID());
+                assertEquals(1, latch.getCount());
+                latch.countDown();
+            }
+        };
+        ListenerToken token = db.addDocumentChangeListener("doc1", changeListener);
+        db.setDocumentExpiration("doc1", dto1);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        db.removeChangeListener(token);
     }
 
     @Test
