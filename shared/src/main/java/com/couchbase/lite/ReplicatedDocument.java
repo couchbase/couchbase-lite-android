@@ -25,8 +25,7 @@ public final class ReplicatedDocument {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private boolean isDeleted = false;
-    private boolean isAccessRemoved = false;
+    private DocumentFlags documentFlagsflags;
     private String id = "";
     private C4Error error;
     private boolean trans;
@@ -38,10 +37,9 @@ public final class ReplicatedDocument {
     /**
      * Document replicated update of a replicator.
      */
-    ReplicatedDocument(String id, boolean isDeleted, boolean isAccessRemoved, C4Error error, boolean trans) {
+    ReplicatedDocument(String id, DocumentFlags flags, C4Error error, boolean trans) {
         this.id = id;
-        this.isDeleted = isDeleted;
-        this.isAccessRemoved = isAccessRemoved;
+        this.documentFlagsflags = flags;
         this.error = error;
         this.trans = trans;
     }
@@ -58,18 +56,9 @@ public final class ReplicatedDocument {
     }
 
     /**
-     * The current deleted status of the document.
+     * The current status flag of the document. eg. deleted, access removed
      */
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    /**
-     * The current access removed status of the document.
-     */
-    public boolean isAccessRemoved()  {
-        return isAccessRemoved;
-    }
+    public DocumentFlags flags() { return documentFlagsflags; }
 
     /**
      * The current document replication error.
@@ -84,8 +73,6 @@ public final class ReplicatedDocument {
                 ", document id =" + id +
                 ", error code =" + error.getCode()+
                 ", error domain=" + error.getDomain() +
-                ", doc is deleted =" + isDeleted +
-                ", doc is isAccessRemoved =" + isAccessRemoved +
                 '}';
     }
 }

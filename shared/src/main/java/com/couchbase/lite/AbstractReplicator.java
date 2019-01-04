@@ -645,10 +645,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         List<ReplicatedDocument> docs = new ArrayList<ReplicatedDocument>();
         for (C4DocumentEnded docEnd : docEnds) {
             String docID = docEnd.getDocID();
-            boolean isDeleted = (docEnd.getFlags() & C4Constants.C4RevisionFlags.kRevDeleted) != 0;
-            boolean isAccessRemoved = (docEnd.getFlags() & C4Constants.C4RevisionFlags.kRevPurged) != 0;
             C4Error error = docEnd.getC4Error();
-
             if (!pushing && docEnd.getErrorDomain() == LiteCoreDomain && docEnd.getErrorCode() == kC4ErrorConflict) {
                 // Conflict pulling a document -- the revision was added but app needs to resolve it:
                 Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
@@ -659,7 +656,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
                 }
             }
-            ReplicatedDocument doc = new ReplicatedDocument(docID, isDeleted, isAccessRemoved, error,
+            ReplicatedDocument doc = new ReplicatedDocument(docID, new DocumentFlags(docEnd.getFlags()), error,
                                                                 docEnd.errorIsTransient());
             docs.add(doc);
         }
@@ -678,11 +675,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
     private boolean validationFunction(String docID, int flags, long dict, boolean isPush) {
         Document document = new Document(config.getDatabase(), docID, new FLDict(dict));
-        boolean isDeleted = (flags & C4Constants.C4RevisionFlags.kRevDeleted) != 0;
         if(isPush)
-            return config.getPushFilter().filtered(document, isDeleted);
+            return config.getPushFilter().filtered(document, new DocumentFlags(flags));
         else
-            return config.getPullFilter().filtered(document, isDeleted);
+            return config.getPullFilter().filtered(document, new DocumentFlags(flags));
     }
 
     private void retry() {

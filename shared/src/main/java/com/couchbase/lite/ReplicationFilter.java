@@ -23,5 +23,5 @@ package com.couchbase.lite;
  * push and pull will not be allowed.
  **/
 public interface ReplicationFilter {
-    boolean filtered(Document document, boolean isDeleted);
+    boolean filtered(Document document, DocumentFlags flags);
 }
