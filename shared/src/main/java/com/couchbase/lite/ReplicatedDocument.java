@@ -21,7 +21,6 @@ package com.couchbase.lite;
 import com.couchbase.litecore.C4Error;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevDeleted;
 import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevPurged;
@@ -31,7 +30,7 @@ public final class ReplicatedDocument {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Set<DocumentFlag> documentFlags;
+    private EnumSet<DocumentFlag> documentFlags;
     private String id = "";
     private C4Error error;
     private boolean trans;
@@ -70,7 +69,7 @@ public final class ReplicatedDocument {
     /**
      * The current status flag of the document. eg. deleted, access removed
      */
-    public Set<DocumentFlag> flags() {
+    public EnumSet<DocumentFlag> flags() {
         return documentFlags;
     }
 
