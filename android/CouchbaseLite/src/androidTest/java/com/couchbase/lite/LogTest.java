@@ -73,7 +73,6 @@ public class LogTest {
 
         assertEquals(1, logFiles.length);
         BufferedReader fin = new BufferedReader(new FileReader(logFiles[0]));
-        assertEquals("CBLLOG", fin.readLine());
         fin.readLine(); // skip
         assertTrue(fin.readLine().contains("TEST MESSAGE"));
     }
@@ -96,7 +95,6 @@ public class LogTest {
 
         assertEquals(1, logFiles.length);
         BufferedReader fin = new BufferedReader(new FileReader(logFiles[0]));
-        assertEquals("CBLLOG", fin.readLine());
         fin.readLine(); // skip
         assertTrue(fin.readLine().contains("TEST MESSAGE"));
     }
