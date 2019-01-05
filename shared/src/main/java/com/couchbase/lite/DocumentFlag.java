@@ -1,5 +1,5 @@
 //
-// ReplicationFilter.java
+// DocumentFlag.java
 //
 // Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
@@ -17,13 +17,26 @@
 //
 package com.couchbase.lite;
 
-import java.util.EnumSet;
+/** The flags enum describing the replicated document. */
+public enum DocumentFlag {
 
-/**
- * Interface delegate that takes Document input parameter and bool output parameter
- * Document push and pull will be allowed if output is true, othewise, Document 
- * push and pull will not be allowed.
- **/
-public interface ReplicationFilter {
-    boolean filtered(Document document, EnumSet<DocumentFlag> flags);
+    /**
+     * The current deleted status of the document.
+     */
+    DocumentFlagsDeleted(1 << 0),
+
+    /**
+     * The current access removed status of the document.
+    * */
+    DocumentFlagsAccessRemoved(1 << 1);
+
+    private final int rawValue;
+
+    private DocumentFlag(int rawValue) {
+        this.rawValue = rawValue;
+    }
+
+    public int rawValue() {
+        return rawValue;
+    }
 }
