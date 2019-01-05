@@ -35,6 +35,7 @@ import com.couchbase.litecore.fleece.FLValue;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -50,6 +51,8 @@ import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionProg
 import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorResetCheckpoint;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
+import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevDeleted;
+import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevPurged;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Continuous;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Disabled;
@@ -569,7 +572,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 public boolean validationFunction(final String docID, final int flags, final long dict,
                                                   final boolean isPush, final Object context) {
                     final AbstractReplicator replicator = (AbstractReplicator) context;
-                    return replicator.validationFunction(docID, flags, dict, isPush);
+                    return replicator.validationFunction(docID, documentFlags(flags), dict, isPush);
                 }
             };
         }
@@ -580,7 +583,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 public boolean validationFunction(final String docID, final int flags, final long dict,
                                                   final boolean isPush, final Object context) {
                     final AbstractReplicator replicator = (AbstractReplicator) context;
-                    return replicator.validationFunction(docID, flags, dict, isPush);
+                    return replicator.validationFunction(docID, documentFlags(flags), dict, isPush);
                 }
             };
         }
@@ -656,7 +659,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
                 }
             }
-            ReplicatedDocument doc = new ReplicatedDocument(docID, new DocumentFlags(docEnd.getFlags()), error,
+            ReplicatedDocument doc = new ReplicatedDocument(docID, docEnd.getFlags(), error,
                                                                 docEnd.errorIsTransient());
             docs.add(doc);
         }
@@ -673,12 +676,21 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         Log.i(TAG, "C4ReplicatorListener.documentEnded() " + update.toString());
     }
 
-    private boolean validationFunction(String docID, int flags, long dict, boolean isPush) {
+    private EnumSet<DocumentFlag> documentFlags(int flags){
+        EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
+        if ((flags & kRevDeleted) == kRevDeleted)
+            documentFlags.add(DocumentFlag.DocumentFlagsDeleted);
+        if ((flags & kRevPurged) == kRevPurged)
+            documentFlags.add(DocumentFlag.DocumentFlagsAccessRemoved);
+        return documentFlags;
+    }
+
+    private boolean validationFunction(String docID, EnumSet<DocumentFlag> flags, long dict, boolean isPush) {
         Document document = new Document(config.getDatabase(), docID, new FLDict(dict));
         if(isPush)
-            return config.getPushFilter().filtered(document, new DocumentFlags(flags));
+            return config.getPushFilter().filtered(document, flags);
         else
-            return config.getPullFilter().filtered(document, new DocumentFlags(flags));
+            return config.getPullFilter().filtered(document, flags);
     }
 
     private void retry() {

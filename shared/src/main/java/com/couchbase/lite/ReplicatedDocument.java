@@ -20,12 +20,18 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.C4Error;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevDeleted;
+import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevPurged;
+
 public final class ReplicatedDocument {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private DocumentFlags documentFlagsflags;
+    private Set<DocumentFlag> documentFlags;
     private String id = "";
     private C4Error error;
     private boolean trans;
@@ -37,11 +43,17 @@ public final class ReplicatedDocument {
     /**
      * Document replicated update of a replicator.
      */
-    ReplicatedDocument(String id, DocumentFlags flags, C4Error error, boolean trans) {
+    ReplicatedDocument(String id, int flags, C4Error error, boolean trans) {
         this.id = id;
-        this.documentFlagsflags = flags;
         this.error = error;
         this.trans = trans;
+
+        documentFlags = EnumSet.noneOf(DocumentFlag.class);
+        if ((flags & kRevDeleted) == kRevDeleted)
+            documentFlags.add(DocumentFlag.DocumentFlagsDeleted);
+
+        if ((flags & kRevPurged) == kRevPurged)
+            documentFlags.add(DocumentFlag.DocumentFlagsAccessRemoved);
     }
 
     //---------------------------------------------
@@ -58,7 +70,9 @@ public final class ReplicatedDocument {
     /**
      * The current status flag of the document. eg. deleted, access removed
      */
-    public DocumentFlags flags() { return documentFlagsflags; }
+    public Set<DocumentFlag> flags() {
+        return documentFlags;
+    }
 
     /**
      * The current document replication error.
