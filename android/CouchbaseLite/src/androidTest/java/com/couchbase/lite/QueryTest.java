@@ -1654,7 +1654,7 @@ public class QueryTest extends BaseTest {
 
     //https://github.com/couchbase/couchbase-lite-android/issues/1785
     @Test
-    public void testesultToMapReturnBoolVlaues() throws Exception {
+    public void testResultToMap() throws Exception {
 
         MutableDocument exam1 = new MutableDocument("exam1");
         exam1.setString("exam type", "final");
