@@ -200,7 +200,7 @@ public class QueryTest extends BaseTest {
                     .and(Meta.id.equalTo(Expression.string("doc1"))));
         assertEquals(query.execute().allResults().size(), 1);
     }
-    
+
     @Test
     public void testNoWhereQuery() throws Exception {
         loadJSONResource("names_100.json");
@@ -1650,6 +1650,63 @@ public class QueryTest extends BaseTest {
         ResultSet rs = q.execute();
         for (Result r : rs)
             Log.e(TAG, "RESULT: " + r.toMap());
+    }
+
+    //https://github.com/couchbase/couchbase-lite-android/issues/1785
+    @Test
+    public void testesultToMapReturnBoolVlaues() throws Exception {
+
+        MutableDocument exam1 = new MutableDocument("exam1");
+        exam1.setString("exam type", "final");
+        exam1.setString("question", "There are 45 states in the US.");
+        exam1.setBoolean("answer", false);
+        MutableDocument exam2 = new MutableDocument("exam2");
+        exam2.setString("exam type", "final");
+        exam2.setString("question", "The US president can serve more than 2 terms.");
+        exam2.setBoolean("answer", false);
+        MutableDocument exam3 = new MutableDocument("exam3");
+        exam3.setString("exam type", "final");
+        exam3.setString("question", "There are 100 senators in the US.");
+        exam3.setBoolean("answer", true);
+        MutableDocument exam4 = new MutableDocument("exam4");
+        exam4.setString("exam type", "final");
+        exam4.setString("question", "Hawaii is a state of the US");
+        exam4.setBoolean("answer", true);
+        MutableDocument exam5 = new MutableDocument("exam5");
+        exam5.setString("exam type", "final");
+        exam5.setString("question", "The legislature consists of two chambers: " +
+                "the House of Representatives and the Senate.");
+        exam5.setBoolean("answer", true);
+
+        db.save(exam1);
+        db.save(exam2);
+        db.save(exam3);
+        db.save(exam4);
+        db.save(exam5);
+
+        Query queryTrue = QueryBuilder.select(SelectResult.all())
+                .from(DataSource.database(db))
+                .where(Expression.property("exam type").equalTo(Expression.string("final"))
+                        .and(Expression.property("answer").equalTo(Expression.booleanValue(true))));
+
+        ResultSet trueResultSet = queryTrue.execute();
+
+        for (Result result : trueResultSet) {
+            Map<String, Object> maps = result.toMap();
+            Map<String, Object> map = (Map<String, Object>) maps.get("testdb");
+            if(map.get("question").equals("There are 45 states in the US.")) {
+                assertFalse((Boolean) map.get("answer"));
+            } if(map.get("question").equals("The US president can serve more than 2 terms.")) {
+                assertFalse((Boolean) map.get("answer"));
+            } if(map.get("question").equals("There are 100 senators in the US.")) {
+                assertTrue((Boolean) map.get("answer"));
+            } if(map.get("question").equals("Hawaii is a state of the US")) {
+                assertTrue((Boolean) map.get("answer"));
+            } if(map.get("question").equals("The legislature consists of two chambers: " +
+                    "the House of Representatives and the Senate.")) {
+                assertTrue((Boolean) map.get("answer"));
+            }
+        }
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1385
