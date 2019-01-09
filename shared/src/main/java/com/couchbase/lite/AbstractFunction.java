@@ -1,7 +1,7 @@
 //
-// Function.java
+// AbstractFunction.java
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,18 +15,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 package com.couchbase.lite;
 
 import java.util.Arrays;
 
 /**
- * Function provides query functions
+ * Based class for Query Functions.
  */
-public final class Function {
-    private Function() {
-
-    }
-
+abstract class AbstractFunction {
     //---------------------------------------------
     // Aggregation
     //---------------------------------------------
@@ -39,7 +36,7 @@ public final class Function {
      * @return The AVG(expr) function.
      */
     public static Expression avg(Expression expression) {
-        return new Expression.FunctionExpresson("AVG()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("AVG()", Arrays.asList(expression));
     }
 
     /**
@@ -50,7 +47,7 @@ public final class Function {
      * @return The COUNT(expr) function.
      */
     public static Expression count(Expression expression) {
-        return new Expression.FunctionExpresson("COUNT()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("COUNT()", Arrays.asList(expression));
     } // null expression -> count *
 
     /**
@@ -61,7 +58,7 @@ public final class Function {
      * @return The MIN(expr) function.
      */
     public static Expression min(Expression expression) {
-        return new Expression.FunctionExpresson("MIN()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("MIN()", Arrays.asList(expression));
     }
 
     /**
@@ -72,7 +69,7 @@ public final class Function {
      * @return The MAX(expr) function.
      */
     public static Expression max(Expression expression) {
-        return new Expression.FunctionExpresson("MAX()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("MAX()", Arrays.asList(expression));
     }
 
     /**
@@ -83,7 +80,7 @@ public final class Function {
      * @return The SUM(expr) function.
      */
     public static Expression sum(Expression expression) {
-        return new Expression.FunctionExpresson("SUM()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("SUM()", Arrays.asList(expression));
     }
 
     //---------------------------------------------
@@ -98,7 +95,7 @@ public final class Function {
      * @return The ABS(expr) function.
      */
     public static Expression abs(Expression expression) {
-        return new Expression.FunctionExpresson("ABS()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("ABS()", Arrays.asList(expression));
     }
 
     /**
@@ -109,7 +106,7 @@ public final class Function {
      * @return The ACOS(expr) function.
      */
     public static Expression acos(Expression expression) {
-        return new Expression.FunctionExpresson("ACOS()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("ACOS()", Arrays.asList(expression));
     }
 
     /**
@@ -120,7 +117,7 @@ public final class Function {
      * @return The ASIN(expr) function.
      */
     public static Expression asin(Expression expression) {
-        return new Expression.FunctionExpresson("ASIN()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("ASIN()", Arrays.asList(expression));
     }
 
     /**
@@ -131,7 +128,7 @@ public final class Function {
      * @return The ATAN(expr) function.
      */
     public static Expression atan(Expression expression) {
-        return new Expression.FunctionExpresson("ATAN()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("ATAN()", Arrays.asList(expression));
     }
 
     /**
@@ -144,7 +141,7 @@ public final class Function {
      * to the point (x, y) in Cartesian coordinates.
      */
     public static Expression atan2(Expression x, Expression y) {
-        return new Expression.FunctionExpresson("ATAN2()", Arrays.asList(x, y));
+        return new Expression.FunctionExpression("ATAN2()", Arrays.asList(x, y));
     }
 
     /**
@@ -155,7 +152,7 @@ public final class Function {
      * @return The CEIL(expr) function.
      */
     public static Expression ceil(Expression expression) {
-        return new Expression.FunctionExpresson("CEIL()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("CEIL()", Arrays.asList(expression));
     }
 
     /**
@@ -165,7 +162,7 @@ public final class Function {
      * @return The COS(expr) function.
      */
     public static Expression cos(Expression expression) {
-        return new Expression.FunctionExpresson("COS()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("COS()", Arrays.asList(expression));
     }
 
     /**
@@ -176,7 +173,7 @@ public final class Function {
      * @return The DEGREES(expr) function.
      */
     public static Expression degrees(Expression expression) {
-        return new Expression.FunctionExpresson("DEGREES()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("DEGREES()", Arrays.asList(expression));
     }
 
     /**
@@ -185,7 +182,7 @@ public final class Function {
      * @return The E() constant function.
      */
     public static Expression e() {
-        return new Expression.FunctionExpresson("E()", Arrays.asList((Expression) null));
+        return new Expression.FunctionExpression("E()", Arrays.asList((Expression) null));
     }
 
     /**
@@ -196,7 +193,7 @@ public final class Function {
      * @return The EXP(expr) function.
      */
     public static Expression exp(Expression expression) {
-        return new Expression.FunctionExpresson("EXP()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("EXP()", Arrays.asList(expression));
     }
 
     /**
@@ -207,7 +204,7 @@ public final class Function {
      * @return The FLOOR(expr) function.
      */
     public static Expression floor(Expression expression) {
-        return new Expression.FunctionExpresson("FLOOR()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("FLOOR()", Arrays.asList(expression));
     }
 
     /**
@@ -217,7 +214,7 @@ public final class Function {
      * @return The LN(expr) function.
      */
     public static Expression ln(Expression expression) {
-        return new Expression.FunctionExpresson("LN()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("LN()", Arrays.asList(expression));
     }
 
     /**
@@ -227,7 +224,7 @@ public final class Function {
      * @return The LOG(expr) function.
      */
     public static Expression log(Expression expression) {
-        return new Expression.FunctionExpresson("LOG()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("LOG()", Arrays.asList(expression));
     }
 
     /**
@@ -236,7 +233,7 @@ public final class Function {
      * @return The PI() constant function.
      */
     public static Expression pi() {
-        return new Expression.FunctionExpresson("PI()", Arrays.asList((Expression) null));
+        return new Expression.FunctionExpression("PI()", Arrays.asList((Expression) null));
     }
 
     /**
@@ -248,7 +245,7 @@ public final class Function {
      * @return The POWER(base, exponent) function.
      */
     public static Expression power(Expression base, Expression exponent) {
-        return new Expression.FunctionExpresson("POWER()", Arrays.asList(base, exponent));
+        return new Expression.FunctionExpression("POWER()", Arrays.asList(base, exponent));
     }
 
     /**
@@ -259,7 +256,7 @@ public final class Function {
      * @return The RADIANS(expr) function.
      */
     public static Expression radians(Expression expression) {
-        return new Expression.FunctionExpresson("RADIANS()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("RADIANS()", Arrays.asList(expression));
     }
 
     /**
@@ -270,7 +267,7 @@ public final class Function {
      * @return The ROUND(expr) function.
      */
     public static Expression round(Expression expression) {
-        return new Expression.FunctionExpresson("ROUND()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("ROUND()", Arrays.asList(expression));
     }
 
     /**
@@ -282,7 +279,7 @@ public final class Function {
      * @return The ROUND(expr, digits) function.
      */
     public static Expression round(Expression expression, Expression digits) {
-        return new Expression.FunctionExpresson("ROUND()", Arrays.asList(expression, digits));
+        return new Expression.FunctionExpression("ROUND()", Arrays.asList(expression, digits));
     }
 
     /**
@@ -293,7 +290,7 @@ public final class Function {
      * @return The SIGN(expr) function.
      */
     public static Expression sign(Expression expression) {
-        return new Expression.FunctionExpresson("SIGN()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("SIGN()", Arrays.asList(expression));
     }
 
     /**
@@ -303,7 +300,7 @@ public final class Function {
      * @return The SIN(expr) function.
      */
     public static Expression sin(Expression expression) {
-        return new Expression.FunctionExpresson("SIN()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("SIN()", Arrays.asList(expression));
     }
 
     /**
@@ -313,7 +310,7 @@ public final class Function {
      * @return The SQRT(expr) function.
      */
     public static Expression sqrt(Expression expression) {
-        return new Expression.FunctionExpresson("SQRT()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("SQRT()", Arrays.asList(expression));
     }
 
     /**
@@ -323,7 +320,7 @@ public final class Function {
      * @return The TAN(expr) function.
      */
     public static Expression tan(Expression expression) {
-        return new Expression.FunctionExpresson("TAN()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("TAN()", Arrays.asList(expression));
     }
 
     /**
@@ -334,7 +331,7 @@ public final class Function {
      * @return The trunc function.
      */
     public static Expression trunc(Expression expression) {
-        return new Expression.FunctionExpresson("TRUNC()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("TRUNC()", Arrays.asList(expression));
     }
 
     /**
@@ -346,7 +343,7 @@ public final class Function {
      * @return The TRUNC(expr, digits) function.
      */
     public static Expression trunc(Expression expression, Expression digits) {
-        return new Expression.FunctionExpresson("TRUNC()", Arrays.asList(expression, digits));
+        return new Expression.FunctionExpression("TRUNC()", Arrays.asList(expression, digits));
     }
 
     //---------------------------------------------
@@ -362,7 +359,7 @@ public final class Function {
      * @return The CONTAINS(expr, substr) function.
      */
     public static Expression contains(Expression expression, Expression substring) {
-        return new Expression.FunctionExpresson("CONTAINS()", Arrays.asList(expression, substring));
+        return new Expression.FunctionExpression("CONTAINS()", Arrays.asList(expression, substring));
     }
 
     /**
@@ -372,7 +369,7 @@ public final class Function {
      * @return The LENGTH(expr) function.
      */
     public static Expression length(Expression expression) {
-        return new Expression.FunctionExpresson("LENGTH()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("LENGTH()", Arrays.asList(expression));
     }
 
     /**
@@ -383,7 +380,7 @@ public final class Function {
      * @return The LOWER(expr) function.
      */
     public static Expression lower(Expression expression) {
-        return new Expression.FunctionExpresson("LOWER()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("LOWER()", Arrays.asList(expression));
     }
 
     /**
@@ -394,7 +391,7 @@ public final class Function {
      * @return The LTRIM(expr) function.
      */
     public static Expression ltrim(Expression expression) {
-        return new Expression.FunctionExpresson("LTRIM()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("LTRIM()", Arrays.asList(expression));
     }
 
     /**
@@ -405,7 +402,7 @@ public final class Function {
      * @return The RTRIM(expr) function.
      */
     public static Expression rtrim(Expression expression) {
-        return new Expression.FunctionExpresson("RTRIM()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("RTRIM()", Arrays.asList(expression));
     }
 
     /**
@@ -416,7 +413,7 @@ public final class Function {
      * @return The TRIM(expr) function.
      */
     public static Expression trim(Expression expression) {
-        return new Expression.FunctionExpresson("TRIM()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("TRIM()", Arrays.asList(expression));
     }
 
     /**
@@ -426,6 +423,6 @@ public final class Function {
      * @return The UPPER(expr) function.
      */
     public static Expression upper(Expression expression) {
-        return new Expression.FunctionExpresson("UPPER()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("UPPER()", Arrays.asList(expression));
     }
 }

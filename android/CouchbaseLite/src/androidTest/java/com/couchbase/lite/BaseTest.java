@@ -293,4 +293,51 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
         });
         return numbers;
     }
+
+    protected interface QueryResult {
+        void check(int n, Result result) throws Exception;
+    }
+
+    protected static int verifyQuery(Query query, QueryResult queryResult) throws Exception {
+        int n = 0;
+        Result result;
+        ResultSet rs = query.execute();
+        while ((result = rs.next()) != null) {
+            n += 1;
+            queryResult.check(n, result);
+        }
+        return n;
+    }
+
+    protected static int verifyQueryWithIterable(Query query, QueryResult queryResult) throws Exception {
+        int n = 0;
+        for (Result result : query.execute()) {
+            n += 1;
+            queryResult.check(n, result);
+        }
+        return n;
+    }
+
+    protected static int verifyQuery(Query query, QueryResult result, boolean runBoth) throws Exception {
+        int counter1 = verifyQuery(query, result);
+        if (runBoth) {
+            int counter2 = verifyQueryWithIterable(query, result);
+            assertEquals(counter1, counter2);
+        }
+        return counter1;
+    }
+
+    protected interface Execution {
+        void run() throws CouchbaseLiteException;
+    }
+
+    protected static void expectError(String domain, int code, Execution execution) {
+        try {
+            execution.run();
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(domain, e.getDomain());
+            assertEquals(code, e.getCode());
+        }
+    }
 }

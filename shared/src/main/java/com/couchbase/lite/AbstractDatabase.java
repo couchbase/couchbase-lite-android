@@ -96,6 +96,7 @@ abstract class AbstractDatabase {
 
     protected String name;
     protected final DatabaseConfiguration config;
+    protected final boolean shellMode;
     protected C4Database c4db;
     protected ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
     protected ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
@@ -131,6 +132,7 @@ abstract class AbstractDatabase {
 
         this.name = name;
         this.config = config.readonlyCopy();
+        this.shellMode = false;
 
         String tempdir = this.config.getTempDir();
         if (tempdir != null)
@@ -141,6 +143,18 @@ abstract class AbstractDatabase {
         this.queryExecutor = Executors.newSingleThreadScheduledExecutor();
         this.activeReplications = Collections.synchronizedSet(new HashSet<Replicator>());
         this.activeLiveQueries = Collections.synchronizedSet(new HashSet<LiveQuery>());
+    }
+
+    /**
+     *  Initialize Database with a give C4Database object in the shell mode. The life of the
+     *  C4Database object will be managed by the caller. This is currently used for creating a
+     *  Dictionary as an input of the predict() method of the PredictiveModel.
+     */
+    AbstractDatabase(C4Database c4db) {
+        this.c4db = c4db;
+        this.config = null;
+        this.shellMode = true;
+        this.sharedKeys = null;
     }
 
     //---------------------------------------------
@@ -969,7 +983,7 @@ abstract class AbstractDatabase {
     }
 
     private void freeC4DB() {
-        if (c4db != null) {
+        if (c4db != null && !shellMode) {
             getC4Database().free();
             c4db = null;
         }
@@ -1048,9 +1062,11 @@ abstract class AbstractDatabase {
     private void freeC4Observers() {
         freeC4DBObserver();
 
-        for (DocumentChangeNotifier notifier : docChangeNotifiers.values())
-            notifier.stop();
-        docChangeNotifiers.clear();
+        if (docChangeNotifiers != null) {
+            for (DocumentChangeNotifier notifier : docChangeNotifiers.values())
+                notifier.stop();
+            docChangeNotifiers.clear();
+        }
     }
 
     private void postDatabaseChanged() {

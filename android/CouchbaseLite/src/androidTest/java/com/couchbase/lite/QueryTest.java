@@ -58,39 +58,6 @@ public class QueryTest extends BaseTest {
     private static SelectResult SR_ALL = SelectResult.all();
     private static SelectResult SR_NUMBER1 = SelectResult.property("number1");
 
-    public interface QueryResult {
-        void check(int n, Result result) throws Exception;
-    }
-
-    public static int verifyQuery(Query query, QueryResult queryResult) throws Exception {
-        int n = 0;
-        Result result;
-        ResultSet rs = query.execute();
-        while ((result = rs.next()) != null) {
-            n += 1;
-            queryResult.check(n, result);
-        }
-        return n;
-    }
-
-    public static int verifyQueryWithIterable(Query query, QueryResult queryResult) throws Exception {
-        int n = 0;
-        for (Result result : query.execute()) {
-            n += 1;
-            queryResult.check(n, result);
-        }
-        return n;
-    }
-
-    public static int verifyQuery(Query query, QueryResult result, boolean runBoth) throws Exception {
-        int counter1 = verifyQuery(query, result);
-        if (runBoth) {
-            int counter2 = verifyQueryWithIterable(query, result);
-            assertEquals(counter1, counter2);
-        }
-        return counter1;
-    }
-
     private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases)
             throws Exception {
         for (Object[] c : cases) {

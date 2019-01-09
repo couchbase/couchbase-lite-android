@@ -30,7 +30,7 @@ class DocContext extends MContext {
     private C4Document _doc;
 
     DocContext(Database db, C4Document doc) {
-        super(new AllocSlice("{}".getBytes()), db.getSharedKeys().getFLSharedKeys());
+        super(new AllocSlice("{}".getBytes()));
         _db = db;
         _doc = doc;
         if (_doc != null)
