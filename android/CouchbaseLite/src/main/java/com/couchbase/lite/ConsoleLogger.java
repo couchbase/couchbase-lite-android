@@ -21,7 +21,6 @@ import android.util.Log;
 
 import com.couchbase.litecore.C4Log;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 
 /**
@@ -31,14 +30,12 @@ import java.util.EnumSet;
  */
 public final class ConsoleLogger implements Logger {
     private LogLevel _level = LogLevel.WARNING;
-    private EnumSet<LogDomain> _domains = EnumSet.noneOf(LogDomain.class);
+    private EnumSet<LogDomain> _domains = EnumSet.allOf(LogDomain.class);
 
     //---------------------------------------------
     // Constructor should not be exposed (singleton)
     //---------------------------------------------
-    ConsoleLogger() {
-        _domains.addAll(EnumSet.allOf(LogDomain.class));
-    }
+    ConsoleLogger() { }
 
     /**
      * Gets the domains that will be considered for writing to
@@ -102,8 +99,9 @@ public final class ConsoleLogger implements Logger {
 
     @Override
     public void log(LogLevel level, LogDomain domain, String message) {
-        if(level.compareTo(_level) < 0 || (!_domains.contains(domain)
-                && !_domains.containsAll(EnumSet.allOf(LogDomain.class)))) {
+        if(level.compareTo(_level) < 0
+                || (!_domains.contains(domain)
+                && !_domains.contains(LogDomain.ALL))) {
             return;
         }
 
