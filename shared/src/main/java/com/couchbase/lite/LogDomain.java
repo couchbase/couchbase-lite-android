@@ -23,45 +23,5 @@ import java.util.EnumSet;
  * Log domain
  */
 public enum LogDomain {
-
-    /**
-    * Gets all the logging interfaces so logic can be applied to
-    * all of them
-    **/
-    ALL(1 << 1|1 << 2|1 << 3|1 << 4),
-
-    /**
-     * Gets the logging domain for database logging, which is responsible
-     * for logging activity between the library and the disk, including creation
-     * of Documents / Revisions, disk I/O, etc
-     */
-    DATABASE(1 << 1),
-
-    /**
-     * Gets the logging domain for query logging, which is responsible for
-     * logging information about in progress queries on data.
-     */
-    QUERY(1 << 2),
-
-    /**
-     * Gets the logging domain for sync logging, which is responsible for
-     * logging activity between the library and remote (network) endpoints.
-     */
-    REPLICATOR(1 << 3),
-
-    /**
-     * Gest the logging domain for network related logging (web socket connections,
-     * BLIP protocol, etc)
-     */
-    NETWORK(1 << 4);
-
-    private final int rawValue;
-
-    private LogDomain(int rawValue) {
-        this.rawValue = rawValue;
-    }
-
-    public int rawValue() {
-        return rawValue;
-    }
+    ALL, DATABASE, QUERY, REPLICATOR, NETWORK
 }
