@@ -21,7 +21,7 @@ import android.util.Log;
 
 import com.couchbase.litecore.C4Log;
 
-import java.util.ArrayList;
+import java.util.EnumSet;
 
 /**
  * A class for sending log messages to Android's system log (aka logcat).  This is useful
@@ -30,14 +30,12 @@ import java.util.ArrayList;
  */
 public final class ConsoleLogger implements Logger {
     private LogLevel _level = LogLevel.WARNING;
-    private ArrayList<LogDomain> _domains = new ArrayList<>();
+    private EnumSet<LogDomain> _domains = EnumSet.of(LogDomain.ALL);
 
     //---------------------------------------------
     // Constructor should not be exposed (singleton)
     //---------------------------------------------
-    ConsoleLogger() {
-        _domains.add(LogDomain.ALL);
-    }
+    ConsoleLogger() { }
 
     /**
      * Gets the domains that will be considered for writing to
@@ -45,7 +43,7 @@ public final class ConsoleLogger implements Logger {
      *
      * @return The currently active domains
      */
-    public ArrayList<LogDomain> getDomains() {
+    public EnumSet<LogDomain> getDomains() {
         return _domains;
     }
 
@@ -55,7 +53,7 @@ public final class ConsoleLogger implements Logger {
      *
      * @param domains The domains to make active
      */
-    public void setDomains(ArrayList<LogDomain> domains) {
+    public void setDomains(EnumSet<LogDomain> domains) {
         if(domains == null) {
             throw new IllegalArgumentException("domains cannot be null.");
         }
@@ -101,7 +99,9 @@ public final class ConsoleLogger implements Logger {
 
     @Override
     public void log(LogLevel level, LogDomain domain, String message) {
-        if(level.compareTo(_level) < 0 || (!_domains.contains(domain) && !_domains.contains(LogDomain.ALL))) {
+        if(level.compareTo(_level) < 0
+                || (!_domains.contains(domain)
+                && !_domains.contains(LogDomain.ALL))) {
             return;
         }
 

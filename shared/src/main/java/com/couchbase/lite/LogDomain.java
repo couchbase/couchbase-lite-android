@@ -17,8 +17,10 @@
 //
 package com.couchbase.lite;
 
+import java.util.EnumSet;
+
 /**
- * Log domain. The log domains here are tentative and subject to change.
+ * Log domain
  */
 public enum LogDomain {
     ALL, DATABASE, QUERY, REPLICATOR, NETWORK
