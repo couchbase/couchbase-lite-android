@@ -1992,7 +1992,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testLongExpiration() throws CouchbaseLiteException, LiteCoreException {
+    public void testLongExpiration() throws Exception {
         Date now = new Date(System.currentTimeMillis());
         Calendar c = Calendar.getInstance();
         c.setTime(now);
@@ -2010,7 +2010,7 @@ public class DocumentTest extends BaseTest {
         Date exp = db.getDocumentExpiration("doc");
         assertNotNull(exp);
         long diff = exp.getTime() - now.getTime();
-        assertTrue(Math.abs(TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) - 60.0) < 1.0);
+        assertTrue(Math.abs(TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) - 60.0) <= 1.0);
     }
 
     @Test
