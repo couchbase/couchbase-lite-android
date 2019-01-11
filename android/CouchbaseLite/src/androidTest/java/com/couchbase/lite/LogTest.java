@@ -136,6 +136,20 @@ public class LogTest {
         }
     }
 
+    @Test
+    public void testDefaultLogLocation() throws IOException {
+        File logPath = new File(context.getCacheDir().getAbsolutePath(), "Logs");
+        Database.getLog().getFile().setDirectory(logPath.getAbsolutePath());
+        Log.i(LogDomain.DATABASE.toString(), "TEST INFO");
+        int fileCount = 0;
+        for (File log : logPath.listFiles()) {
+            if (log.getPath().endsWith(".cbllog")) {
+                fileCount++;
+            }
+        }
+        assertTrue("because there should be at least 5 log entries in the folder", fileCount >= 5);
+    }
+
 }
 
 class LogTestLogger implements Logger {
