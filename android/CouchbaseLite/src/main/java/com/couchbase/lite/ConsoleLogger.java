@@ -30,7 +30,7 @@ import java.util.EnumSet;
  */
 public final class ConsoleLogger implements Logger {
     private LogLevel _level = LogLevel.WARNING;
-    private EnumSet<LogDomain> _domains = EnumSet.of(LogDomain.ALL);
+    private EnumSet<LogDomain> _domains = EnumSet.of(LogDomain.NONE);
 
     //---------------------------------------------
     // Constructor should not be exposed (singleton)

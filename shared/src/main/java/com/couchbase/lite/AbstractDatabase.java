@@ -71,7 +71,7 @@ abstract class AbstractDatabase {
     static {
         NativeLibraryLoader.load();
         LOG = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
-        Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
+        Log.setLogLevel(LogDomain.NONE, LogLevel.WARNING);
     }
 
     //---------------------------------------------
