@@ -136,6 +136,31 @@ public class LogTest {
         }
     }
 
+    @Test
+    public void testEnableAndDisableCustomLogging() {
+        File logPath = new File(context.getCacheDir().getAbsolutePath(), "Logs");
+        logPath.deleteOnExit();
+        Database.getLog().getFile().setDirectory(context.getCacheDir().getAbsolutePath());
+
+        LogTestLogger customLogger = new LogTestLogger();
+        Log.i("IGNORE", "IGNORE");
+        Database.getLog().setCustom(customLogger);
+
+        customLogger.setLevel(LogLevel.NONE);
+        Log.v(LogDomain.DATABASE.toString(), "TEST VERBOSE");
+        Log.i(LogDomain.DATABASE.toString(), "TEST INFO");
+        Log.w(LogDomain.DATABASE.toString(), "TEST WARNING");
+        Log.e(LogDomain.DATABASE.toString(), "TEST ERROR");
+        assertEquals(0, customLogger.getLines().size());
+
+        customLogger.setLevel(LogLevel.VERBOSE);
+        Log.v(LogDomain.DATABASE.toString(), "TEST VERBOSE");
+        Log.i(LogDomain.DATABASE.toString(), "TEST INFO");
+        Log.w(LogDomain.DATABASE.toString(), "TEST WARNING");
+        Log.e(LogDomain.DATABASE.toString(), "TEST ERROR");
+        assertEquals(4, customLogger.getLines().size());
+    }
+
 }
 
 class LogTestLogger implements Logger {
