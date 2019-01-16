@@ -44,6 +44,7 @@ public class ResultSet implements Iterable<Result> {
     private C4QueryEnumerator c4enum;
     private Map<String, Integer> columnNames;
     private ResultContext context;
+    private boolean isAllEnumerated;
 
     //---------------------------------------------
     // constructors
@@ -76,9 +77,16 @@ public class ResultSet implements Iterable<Result> {
 
         synchronized (getDatabase().getLock()) {
             try {
-                if (c4enum == null || !c4enum.next())
+                if (c4enum == null)
                     return null;
-                else
+                else if (isAllEnumerated) {
+                    Log.w(TAG, "All query results have already been enumerated.");
+                    return  null;
+                }  else if (!c4enum.next()) {
+                    Log.i(TAG, "End of query enumeration");
+                    isAllEnumerated = true;
+                    return null;
+                } else
                     return currentObject();
             } catch (LiteCoreException e) {
                 Log.w(TAG, "Query enumeration error: %s", e.toString());

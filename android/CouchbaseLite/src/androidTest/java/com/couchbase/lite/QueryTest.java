@@ -2894,4 +2894,23 @@ public class QueryTest extends BaseTest {
         }, true);
         assertEquals(101, numRows);
     }
+
+    @Test
+    public void testResultSetAllResults() throws Exception {
+        MutableDocument doc1a = new MutableDocument("doc1");
+        doc1a.setInt("answer", 42);
+        doc1a.setString("a", "string");
+        db.save(doc1a);
+
+        Query query = QueryBuilder.select(SR_DOCID, SR_DELETED)
+                .from(DataSource.database(db))
+                .where(Meta.id.equalTo(Expression.string("doc1")));
+
+        ResultSet rs = query.execute();
+        List<Result> results = rs.allResults();
+        assertEquals(1, results.size());
+
+        results = rs.allResults();
+        assertEquals(0, results.size());
+    }
 }
