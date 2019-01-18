@@ -48,11 +48,6 @@ public final class DatabaseConfiguration {
         this.context = context;
         this.directory = context.getFilesDir().getAbsolutePath();
         this.customDir = false;
-
-        // HACK: Since we don't want to keep relying on the user to provide context,
-        // send this one around
-        File logPath = new File(context.getFilesDir().getAbsolutePath(), "Logs");
-        Database.getLog().getFile().initializeDefaultDirectory(logPath.getAbsolutePath());
     }
 
     public DatabaseConfiguration(DatabaseConfiguration config) {

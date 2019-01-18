@@ -3,20 +3,19 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
-import org.junit.After;
+import com.couchbase.lite.internal.support.Log;
+
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.FileUtils;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class LogTest {
     private Context context;
@@ -26,19 +25,8 @@ public class LogTest {
         context = InstrumentationRegistry.getTargetContext();
     }
 
-    @After
-    public void tearDown() {
-        Database.getLog().getFile().setUsePlaintext(false);
-        Database.getLog().getFile().setDirectory(new File(context.getFilesDir().getAbsolutePath(), "Logs").getAbsolutePath());
-    }
-
     @Test
     public void testCustomLoggingLevels() {
-        // NOTE: The implicit vs explicit file logger modes are tested elsewhere
-        File logPath = new File(context.getCacheDir().getAbsolutePath(), "Logs");
-        logPath.deleteOnExit();
-        Database.getLog().getFile().setDirectory(context.getCacheDir().getAbsolutePath());
-
         LogTestLogger customLogger = new LogTestLogger();
         Log.i("IGNORE", "IGNORE");
         Database.getLog().setCustom(customLogger);
@@ -55,93 +43,55 @@ public class LogTest {
     }
 
     @Test
-    public void testImplicitFileLogging() throws IOException {
-        Database.getLog().getFile().setUsePlaintext(true);
-        File logPath = new File(context.getFilesDir().getAbsolutePath(), "Logs");
-        FileUtils.deleteRecursive(logPath);
-
-        // Simulate creating a new database
-        DatabaseConfiguration config = new DatabaseConfiguration(context);
-
-        Log.i("DATABASE", "TEST MESSAGE");
-        File[] logFiles = logPath.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File file, String s) {
-                return s.contains("info");
-            }
-        });
-
-        assertEquals(1, logFiles.length);
-        BufferedReader fin = new BufferedReader(new FileReader(logFiles[0]));
-        fin.readLine(); // skip
-        assertTrue(fin.readLine().contains("TEST MESSAGE"));
-    }
-
-    @Test
-    public void testExplicitFileLogging() throws IOException {
-        Database.getLog().getFile().setUsePlaintext(true);
-        File logPath = new File(context.getCacheDir().getAbsolutePath(), "Logs");
-        FileUtils.deleteRecursive(logPath);
-
-        Database.getLog().getFile().setDirectory(logPath.getAbsolutePath());
-
-        Log.i("DATABASE", "TEST MESSAGE");
-        File[] logFiles = logPath.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File file, String s) {
-                return s.contains("info");
-            }
-        });
-
-        assertEquals(1, logFiles.length);
-        BufferedReader fin = new BufferedReader(new FileReader(logFiles[0]));
-        fin.readLine(); // skip
-        assertTrue(fin.readLine().contains("TEST MESSAGE"));
-    }
-
-    @Test
     public void testPlaintextLoggingLevels() throws IOException {
-        Database.getLog().getFile().setUsePlaintext(true);
-        File logPath = new File(context.getCacheDir().getAbsolutePath(), "Logs");
-        FileUtils.deleteRecursive(logPath);
+        final File path = new File(context.getCacheDir().getAbsolutePath(), "testPlaintextLoggingLevels");
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        LogFileConfiguration config = new LogFileConfiguration(logDirectory)
+                .setUsePlaintext(true)
+                .setMaxRotateCount(0);
 
-        Database.getLog().getFile().setDirectory(logPath.getAbsolutePath());
+        testWithConfiguration(LogLevel.INFO, config, new Runnable() {
+            @Override
+            public void run() {
+                LogLevel levels[] = { LogLevel.NONE, LogLevel.ERROR, LogLevel.WARNING, LogLevel.INFO, LogLevel.VERBOSE };
+                for (LogLevel level : levels) {
+                    Database.getLog().getFile().setLevel(level);
+                    Log.v("DATABASE", "TEST VERBOSE");
+                    Log.i("DATABASE", "TEST INFO");
+                    Log.w("DATABASE", "TEST WARNING");
+                    Log.e("DATABASE", "TEST ERROR");
+                }
 
-        LogLevel levels[] = { LogLevel.NONE, LogLevel.ERROR, LogLevel.WARNING, LogLevel.INFO, LogLevel.VERBOSE };
-        for (LogLevel level : levels) {
-            Database.getLog().getFile().setLevel(level);
-            Log.v("DATABASE", "TEST VERBOSE");
-            Log.i("DATABASE", "TEST INFO");
-            Log.w("DATABASE", "TEST WARNING");
-            Log.e("DATABASE", "TEST ERROR");
-        }
+                try {
+                    for (File log : path.listFiles()) {
+                        BufferedReader fin = new BufferedReader(new FileReader(log));
+                        int lineCount = 0;
+                        while (fin.readLine() != null) {
+                            lineCount++;
+                        }
 
-        for(File log : logPath.listFiles()) {
-            BufferedReader fin = new BufferedReader(new FileReader(log));
-            int lineCount = 0;
-            while(fin.readLine() != null) {
-                lineCount++;
+                        // One meta line per log, so the actual logging lines is X - 1
+                        if (log.getAbsolutePath().contains("verbose")) {
+                            assertEquals(2, lineCount);
+                        } else if (log.getAbsolutePath().contains("info")) {
+                            assertEquals(3, lineCount);
+                        } else if (log.getAbsolutePath().contains("warning")) {
+                            assertEquals(4, lineCount);
+                        } else if (log.getAbsolutePath().contains("error")) {
+                            assertEquals(5, lineCount);
+                        }
+                    }
+                } catch(Exception e) {
+                    fail("Exception during test callback " + e.toString());
+                }
             }
+        });
 
-            // One meta line per log, so the actual logging lines is X - 1
-            if(log.getAbsolutePath().contains("verbose")) {
-                assertEquals(2, lineCount);
-            } else if(log.getAbsolutePath().contains("info")) {
-                assertEquals(3, lineCount);
-            } else if(log.getAbsolutePath().contains("warning")) {
-                assertEquals(4, lineCount);
-            } else if(log.getAbsolutePath().contains("error")) {
-                assertEquals(5, lineCount);
-            }
-        }
+
     }
 
     @Test
     public void testEnableAndDisableCustomLogging() {
-        File logPath = new File(context.getCacheDir().getAbsolutePath(), "Logs");
-        logPath.deleteOnExit();
-        Database.getLog().getFile().setDirectory(context.getCacheDir().getAbsolutePath());
-
         LogTestLogger customLogger = new LogTestLogger();
         Log.i("IGNORE", "IGNORE");
         Database.getLog().setCustom(customLogger);
@@ -161,6 +111,28 @@ public class LogTest {
         assertEquals(4, customLogger.getLines().size());
     }
 
+    private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
+        LogFileConfiguration old = Database.getLog().getFile().getConfig();
+        Database.getLog().getFile().setConfig(config);
+        Database.getLog().getFile().setLevel(level);
+        try {
+            r.run();
+        } finally {
+            Database.getLog().getFile().setLevel(LogLevel.INFO);
+            Database.getLog().getFile().setConfig(old);
+        }
+    }
+
+    private static String emptyDirectory(String path){
+        File f = new File(path);
+        if(f.exists()) {
+            for (File log : f.listFiles()) {
+                log.delete();
+            }
+        }
+
+        return path;
+    }
 }
 
 class LogTestLogger implements Logger {

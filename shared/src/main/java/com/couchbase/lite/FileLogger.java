@@ -32,14 +32,8 @@ import java.util.Map;
  */
 public final class FileLogger implements Logger {
     private LogLevel _level = LogLevel.INFO;
-    private String _directory;
-    private boolean _customDirectory;
-    private boolean _hasConfigChanges;
-    private int _maxRotateCount = 1;
-    private long _maxSize = 500 * 1024;
-    private boolean _usePlaintext;
+    private LogFileConfiguration _config;
     private final HashMap<LogDomain, String> _domainObjects = new HashMap<>();
-    private static String DefaultDirectory;
 
     //---------------------------------------------
     // Constructor should not be exposed (singleton)
@@ -49,115 +43,25 @@ public final class FileLogger implements Logger {
     }
 
     /**
-     * Gets the maximum number of rotated logs to keep on
-     * the disk
+     * Gets the configuration currently in use on the file logger.
+     * Note that once it is set, it can no longer be modified and doing so
+     * will throw an exception
      *
-     * @return The number of *rotated* logs to keep (The total
-     * number of disk entries will be this number plus 1 for
-     * current log)
+     * @return The configuration currently in use
      */
-    public int getMaxRotateCount() {
-        return _maxRotateCount;
+    public LogFileConfiguration getConfig() {
+        return _config;
     }
 
     /**
-     * Sets the maximum number of rotated logs to keep on
-     * the disk
+     * Sets the configuration currently to use on the file logger.
+     * Note that once it is set, it can no longer be modified and doing so
+     * will throw an exception
      *
-     * @param maxRotateCount The number of *rotated* logs to keep
-     *                       (The total number of disk entries will
-     *                       be this number plus 1 for current log)
+     * @param config The configuration to use
      */
-    public void setMaxRotateCount(int maxRotateCount) {
-        if(_maxRotateCount == maxRotateCount) {
-            return;
-        }
-
-        _maxRotateCount = maxRotateCount;
-        _hasConfigChanges = true;
-    }
-
-    /**
-     * Gets the maximum size that a log file can grow to before
-     * performing a rollover.
-     *
-     * @return The maximum size of a given log file
-     */
-    public long getMaxSize() {
-        return _maxSize;
-    }
-
-    /**
-     * Sets the maximum size that a log file can grow to before
-     * performing a rollover.
-     *
-     * @param maxSize The maximum size of a given log file
-     */
-    public void setMaxSize(long maxSize) {
-        if(_maxSize == maxSize) {
-            return;
-        }
-
-        _maxSize = maxSize;
-        _hasConfigChanges = true;
-    }
-
-    /**
-     * Gets whether or not the logger will write to the file
-     * in plaintext (default is a proprietary binary encoding)
-     *
-     * @return Whether or not the logger uses plaintext
-     */
-    public boolean getUsePlaintext() {
-        return _usePlaintext;
-    }
-
-    /**
-     * Sets whether or not the logger will write to the file
-     * in plaintext (default is a proprietary binary encoding).
-     * Plaintext logging is not recommended because of performance
-     * hits.
-     *
-     * @param usePlaintext Whether or not the logger uses plaintext
-     */
-    public void setUsePlaintext(boolean usePlaintext) {
-        if(_usePlaintext == usePlaintext) {
-            return;
-        }
-
-        _usePlaintext = usePlaintext;
-        _hasConfigChanges = true;
-    }
-
-    /**
-     * Gets the directory that the logger will write to when
-     * writing its logs.
-     *
-     * @return The directory that the logger is writing to
-     */
-    public String getDirectory() {
-        return _directory;
-    }
-
-    /**
-     * Sets the directory that the logger will write to when
-     * writing its logs.  It is recommended to do this as
-     * early as possible because the library has no information
-     * about "default" locations until the first database
-     * configuration object is created
-     *
-     * @param directory The directory that the logger will write to
-     */
-    public void setDirectory(String directory) {
-        if(directory == null) {
-            directory = DefaultDirectory;
-        }
-
-        File directoryObj = new File(directory);
-        directoryObj.mkdirs();
-
-        _directory = directory;
-        _customDirectory = true;
+    public void setConfig(LogFileConfiguration config) {
+        _config = config == null ? null : config.readOnlyCopy();
         updateConfig();
     }
 
@@ -167,7 +71,11 @@ public final class FileLogger implements Logger {
      *
      * @param level The maximum level to include in the logs
      */
-    public void setLevel(LogLevel level) {
+    public void setLevel(LogLevel level) throws IllegalStateException {
+        if(_config == null) {
+            throw new IllegalStateException("Cannot set logging level without a configuration");
+        }
+
         if(level == null) {
             level = LogLevel.NONE;
         }
@@ -180,22 +88,6 @@ public final class FileLogger implements Logger {
         C4Log.setBinaryFileLevel(level.getValue());
     }
 
-    void initializeDefaultDirectory(String directory) {
-        String oldDir = _directory;
-        if(DefaultDirectory != directory) {
-            DefaultDirectory = directory;
-        }
-
-        if(!_customDirectory) {
-            File directoryObj = new File(DefaultDirectory);
-            directoryObj.mkdirs();
-
-            // Don't use public setter, it will register as custom
-            _directory = directory;
-            updateConfig();
-        }
-    }
-
     private void setupDomainObjects() {
         _domainObjects.put(LogDomain.DATABASE, C4Constants.C4LogDomain.Database);
         _domainObjects.put(LogDomain.QUERY, C4Constants.C4LogDomain.Query);
@@ -206,8 +98,13 @@ public final class FileLogger implements Logger {
     }
 
     private void updateConfig() {
-        C4Log.writeToBinaryFile(_directory, _level.getValue(), _maxRotateCount, _maxSize, _usePlaintext);
-        _hasConfigChanges = false;
+        if(_config != null) {
+            new File(_config.getDirectory()).mkdir();
+            C4Log.writeToBinaryFile(_config.getDirectory(), _level.getValue(), _config.getMaxRotateCount(),
+                    _config.getMaxSize(), _config.usesPlaintext());
+        } else {
+            C4Log.writeToBinaryFile(null, _level.getValue(), 1, 1024 * 500, false);
+        }
     }
 
     @Override
@@ -217,10 +114,6 @@ public final class FileLogger implements Logger {
 
     @Override
     public void log(LogLevel level, LogDomain domain, String message) {
-        if(_hasConfigChanges) {
-            updateConfig();
-        }
-
         if(level.compareTo(_level) < 0 || !_domainObjects.containsKey(domain)) {
             return;
         }

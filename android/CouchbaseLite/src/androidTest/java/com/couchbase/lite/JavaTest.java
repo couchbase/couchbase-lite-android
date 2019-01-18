@@ -62,6 +62,12 @@ public class JavaTest extends BaseTest {
         assertNotNull(flValue);
         Object obj = FLValue.toObject(flValue);
         assertEquals("\uD83D\uDE3A", obj);
+
+        realUtf8Data = new byte[] { (byte)0x4F, (byte)0x1E, (byte)0xEC, (byte)0x83, (byte)0x88, (byte)0xED, (byte)0x95, (byte)0xB4, (byte)0x20, (byte)0xEB, (byte)0xB3, (byte)0xB5, (byte)0x20, (byte)0xEB, (byte)0xA7, (byte)0x8E, (byte)0xEC, (byte)0x9D, (byte)0xB4, (byte)0x20, (byte)0xEB, (byte)0xB0, (byte)0x9B, (byte)0xEC, (byte)0x9C, (byte)0xBC, (byte)0xEC, (byte)0x84, (byte)0xB8, (byte)0xEC, (byte)0x9A, (byte)0x94, (byte)0x80, (byte)0x10 };
+        flValue = FLValue.fromData(realUtf8Data);
+        assertNotNull(flValue);
+        obj = FLValue.toObject(flValue);
+        assertEquals("\uBCF5", obj);
     }
 
     private void testRoundTrip(Object item) throws LiteCoreException {
