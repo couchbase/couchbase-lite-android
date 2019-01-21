@@ -68,15 +68,17 @@ abstract class AbstractDatabase {
     //---------------------------------------------
     // Load LiteCore library and its dependencies
     //---------------------------------------------
+
     static {
         NativeLibraryLoader.load();
-        LOG = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
+        log = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
         Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
     }
 
     //---------------------------------------------
-    // static variables
+    // Static variables
     //---------------------------------------------
+
     protected static final String TAG = Log.DATABASE;
     protected static final String DB_EXTENSION = "cblite2";
     protected static final int MAX_CHANGES = 100;
@@ -88,15 +90,10 @@ abstract class AbstractDatabase {
             | C4DatabaseFlags.kC4DB_AutoCompact
             | C4DatabaseFlags.kC4DB_SharedKeys;
 
-    protected static final com.couchbase.lite.Log LOG;
-
     //---------------------------------------------
-    // enums
+    // Member variables
     //---------------------------------------------
 
-    //---------------------------------------------
-    // member variables
-    //---------------------------------------------
     protected String name;
     protected final DatabaseConfiguration config;
     protected C4Database c4db;
@@ -150,6 +147,12 @@ abstract class AbstractDatabase {
     // API - public methods
     //---------------------------------------------
 
+    /**
+     * Gets the logging controller for the Couchbase Lite library to configure the
+     * logging settings and add custom logging.
+     */
+    public static final com.couchbase.lite.Log log;
+
     // Attributes:
 
     /**
@@ -171,7 +174,6 @@ abstract class AbstractDatabase {
             return c4db != null ? getC4Database().getPath() : null;
         }
     }
-
 
     /**
      * The number of documents in the database.
@@ -216,16 +218,6 @@ abstract class AbstractDatabase {
                 return null;
             }
         }
-    }
-
-    /**
-     * Gets the logging controller for the Couchbase Lite library to tweak the
-     * logging settings and add custom logging
-     *
-     * @return The logging controller
-     */
-    public static com.couchbase.lite.Log getLog() {
-        return LOG;
     }
 
     /**

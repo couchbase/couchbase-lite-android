@@ -392,21 +392,21 @@ public final class Log {
         boolean consoleSucceeded = false;
         try {
             LogDomain domain = LogDomain.valueOf(tag);
-            Database.getLog().getFile().log(level, domain, msg);
+            Database.log.getFile().log(level, domain, msg);
             fileSucceeded = true;
-            Database.getLog().getConsole().log(level, domain, msg);
+            Database.log.getConsole().log(level, domain, msg);
             consoleSucceeded = true;
-            Logger custom = Database.getLog().getCustom();
+            Logger custom = Database.log.getCustom();
             if(custom != null) {
                 custom.log(level, domain, msg);
             }
         } catch(Exception e) {
             if(fileSucceeded) {
-                Database.getLog().getFile().log(LogLevel.ERROR, LogDomain.DATABASE, e.toString());
+                Database.log.getFile().log(LogLevel.ERROR, LogDomain.DATABASE, e.toString());
             }
 
             if(consoleSucceeded) {
-                Database.getLog().getConsole().log(LogLevel.ERROR, LogDomain.DATABASE, e.toString());
+                Database.log.getConsole().log(LogLevel.ERROR, LogDomain.DATABASE, e.toString());
             }
         }
     }

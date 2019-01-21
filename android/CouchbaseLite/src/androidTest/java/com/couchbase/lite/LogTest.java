@@ -29,7 +29,7 @@ public class LogTest {
     public void testCustomLoggingLevels() {
         LogTestLogger customLogger = new LogTestLogger();
         Log.i("IGNORE", "IGNORE");
-        Database.getLog().setCustom(customLogger);
+        Database.log.setCustom(customLogger);
 
         for(int i = 5; i >= 1; i--) {
             customLogger.getLines().clear();
@@ -55,7 +55,7 @@ public class LogTest {
             public void run() {
                 LogLevel levels[] = { LogLevel.NONE, LogLevel.ERROR, LogLevel.WARNING, LogLevel.INFO, LogLevel.VERBOSE };
                 for (LogLevel level : levels) {
-                    Database.getLog().getFile().setLevel(level);
+                    Database.log.getFile().setLevel(level);
                     Log.v("DATABASE", "TEST VERBOSE");
                     Log.i("DATABASE", "TEST INFO");
                     Log.w("DATABASE", "TEST WARNING");
@@ -94,7 +94,7 @@ public class LogTest {
     public void testEnableAndDisableCustomLogging() {
         LogTestLogger customLogger = new LogTestLogger();
         Log.i("IGNORE", "IGNORE");
-        Database.getLog().setCustom(customLogger);
+        Database.log.setCustom(customLogger);
 
         customLogger.setLevel(LogLevel.NONE);
         Log.v(LogDomain.DATABASE.toString(), "TEST VERBOSE");
@@ -112,14 +112,14 @@ public class LogTest {
     }
 
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
-        LogFileConfiguration old = Database.getLog().getFile().getConfig();
-        Database.getLog().getFile().setConfig(config);
-        Database.getLog().getFile().setLevel(level);
+        LogFileConfiguration old = Database.log.getFile().getConfig();
+        Database.log.getFile().setConfig(config);
+        Database.log.getFile().setLevel(level);
         try {
             r.run();
         } finally {
-            Database.getLog().getFile().setLevel(LogLevel.INFO);
-            Database.getLog().getFile().setConfig(old);
+            Database.log.getFile().setLevel(LogLevel.INFO);
+            Database.log.getFile().setConfig(old);
         }
     }
 

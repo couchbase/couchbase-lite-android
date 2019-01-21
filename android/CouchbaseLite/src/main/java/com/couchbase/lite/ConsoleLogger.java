@@ -82,7 +82,7 @@ public final class ConsoleLogger implements Logger {
 
     private void setCallbackLevel(LogLevel level) {
         LogLevel callbackLevel = level;
-        Logger custom = Database.getLog().getCustom();
+        Logger custom = Database.log.getCustom();
         if(custom != null) {
             if(custom.getLevel().compareTo(callbackLevel) < 0) {
                 callbackLevel = custom.getLevel();
