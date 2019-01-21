@@ -71,7 +71,7 @@ public final class FileLogger implements Logger {
      *
      * @param level The maximum level to include in the logs
      */
-    public void setLevel(LogLevel level) throws IllegalStateException {
+    public void setLevel(LogLevel level) {
         if(_config == null) {
             throw new IllegalStateException("Cannot set logging level without a configuration");
         }

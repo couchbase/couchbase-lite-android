@@ -26,7 +26,7 @@ public final class LogFileConfiguration {
      *
      * @param directory The directory that the logs will be written to
      */
-    public LogFileConfiguration(String directory) throws IllegalArgumentException {
+    public LogFileConfiguration(String directory) {
         if(directory == null) {
             throw new IllegalArgumentException("directory cannot be null");
         }
@@ -40,7 +40,7 @@ public final class LogFileConfiguration {
      *
      * @param other The other configuration to copy settings from
      */
-    public LogFileConfiguration(LogFileConfiguration other) throws IllegalArgumentException  {
+    public LogFileConfiguration(LogFileConfiguration other) {
         if(other == null) {
             throw new IllegalArgumentException("other cannot be null");
         }
@@ -58,7 +58,7 @@ public final class LogFileConfiguration {
      * @param directory The directory that the logs will be written to
      * @param other The other configuration to copy settings from
      */
-    public LogFileConfiguration(String directory, LogFileConfiguration other) throws IllegalArgumentException  {
+    public LogFileConfiguration(String directory, LogFileConfiguration other) {
         this(directory);
         if(other != null) {
             maxRotateCount = other.maxRotateCount;
@@ -79,7 +79,7 @@ public final class LogFileConfiguration {
      * @param maxRotateCount The number of rotated logs to be saved
      * @return The self object
      */
-    public LogFileConfiguration setMaxRotateCount(int maxRotateCount) throws IllegalStateException  {
+    public LogFileConfiguration setMaxRotateCount(int maxRotateCount) {
         if (readonly)
             throw new IllegalStateException("LogFileConfiguration is readonly mode.");
 
@@ -95,7 +95,7 @@ public final class LogFileConfiguration {
      * @param maxSize The max size of the log file in bytes
      * @return The self object
      */
-    public LogFileConfiguration setMaxSize(long maxSize) throws IllegalStateException {
+    public LogFileConfiguration setMaxSize(long maxSize) {
         if (readonly)
             throw new IllegalStateException("LogFileConfiguration is readonly mode.");
 
@@ -111,7 +111,7 @@ public final class LogFileConfiguration {
      * @param usePlaintext Whether or not to log in plaintext
      * @return The self object
      */
-    public LogFileConfiguration setUsePlaintext(boolean usePlaintext) throws IllegalStateException {
+    public LogFileConfiguration setUsePlaintext(boolean usePlaintext) {
         if (readonly)
             throw new IllegalStateException("LogFileConfiguration is readonly mode.");
 
