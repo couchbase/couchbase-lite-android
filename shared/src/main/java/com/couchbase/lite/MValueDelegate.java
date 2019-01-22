@@ -44,6 +44,8 @@ final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
             case kFLDict:
                 cacheIt.set(true);
                 return mValueToDictionary(mv, parent);
+            case kFLData:
+                return new Blob("application/octet-stream", value.asData());
             default:
                 return value.asObject();
         }

@@ -35,7 +35,7 @@ public final class ArrayFunction {
      * @return The ARRAY_CONTAINS(expr, value) function.
      */
     public static Expression contains(Expression expression, Expression value) {
-        return new Expression.FunctionExpresson("ARRAY_CONTAINS()", Arrays.asList(expression, value));
+        return new Expression.FunctionExpression("ARRAY_CONTAINS()", Arrays.asList(expression, value));
     }
 
     /**
@@ -46,6 +46,6 @@ public final class ArrayFunction {
      * @return The ARRAY_LENGTH(expr) function.
      */
     public static Expression length(Expression expression) {
-        return new Expression.FunctionExpresson("ARRAY_LENGTH()", Arrays.asList(expression));
+        return new Expression.FunctionExpression("ARRAY_LENGTH()", Arrays.asList(expression));
     }
 }

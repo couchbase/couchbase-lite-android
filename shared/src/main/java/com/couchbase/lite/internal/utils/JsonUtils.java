@@ -37,7 +37,9 @@ public final class JsonUtils {
         JSONObject json = new JSONObject();
         for (String key : map.keySet()) {
             Object value = map.get(key);
-            if (value instanceof Map)
+            if (value == null)
+                json.put(key, JSONObject.NULL);
+            else if (value instanceof Map)
                 json.put(key, toJson((Map) value));
             else if (value instanceof List)
                 json.put(key, toJson((List) value));
@@ -52,7 +54,9 @@ public final class JsonUtils {
             return null;
         JSONArray json = new JSONArray();
         for (Object value : list) {
-            if (value instanceof Map)
+            if (value == null)
+                json.put(JSONObject.NULL);
+            else if (value instanceof Map)
                 json.put(toJson((Map) value));
             else if (value instanceof List)
                 json.put(toJson((List) value));

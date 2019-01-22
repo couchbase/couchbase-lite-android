@@ -1,7 +1,7 @@
 //
-// IndexBuilder.java
+// AbstractIndexBuilder.java
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 package com.couchbase.lite;
 
-public class IndexBuilder {
+/**
+ * Based IndexBuilder used for building database index objects.
+ */
+abstract class AbstractIndexBuilder {
+
     /**
      * Create a value index with the given index items. The index items are a list of
      * the properties or expressions to be indexed.
@@ -39,4 +44,5 @@ public class IndexBuilder {
     public static FullTextIndex fullTextIndex(FullTextIndexItem... items) {
         return new FullTextIndex(items);
     }
+
 }

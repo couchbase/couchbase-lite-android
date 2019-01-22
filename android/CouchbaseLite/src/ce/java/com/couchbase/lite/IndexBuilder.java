@@ -1,5 +1,5 @@
 //
-// IndexType.java
+// IndexBuilder.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -19,29 +19,8 @@
 package com.couchbase.lite;
 
 /**
- * Types of database indexes.
+ * IndexBuilder used for building database index objects.
  */
-public enum IndexType {
-    /**
-     * Regular index of property values.
-     */
-    Value(0),
-    /**
-     * Full-text index.
-     */
-    FullText(1),
-    /**
-     * Index of prediction() results (Enterprise Edition only)
-     */
-    Predictive(3);
+public final class IndexBuilder extends AbstractIndexBuilder {
 
-    private int value;
-
-    IndexType(int value) {
-        this.value = value;
-    }
-
-    int getValue() {
-        return value;
-    }
 }

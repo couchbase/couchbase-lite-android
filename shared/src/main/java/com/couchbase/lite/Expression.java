@@ -23,8 +23,10 @@ import com.couchbase.lite.internal.utils.DateUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * An expression used for constructing a query statement.
@@ -130,6 +132,24 @@ public abstract class Expression {
      * @return the value expression
      */
     public static Expression date(Date value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Creates value expression with the given map.
+     * @param value the map value
+     * @return the value expression.
+     */
+    public static Expression map(Map<String, Object> value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with the given list.
+     * @param value the list value.
+     * @return the value expression.
+     */
+    public static Expression list(List<Object> value) {
         return new ValueExpression(value);
     }
 
@@ -445,10 +465,7 @@ public abstract class Expression {
 
         @Override
         Object asJSON() {
-            if (value instanceof Date)
-                return DateUtils.toJson((Date) value);
-            else
-                return value;
+            return asJSON(value);
         }
 
         private boolean isSupportedType(Object value) {
@@ -456,7 +473,44 @@ public abstract class Expression {
                     || value instanceof String
                     || value instanceof Number   // including int, long, float, double
                     || value instanceof Boolean
-                    || value instanceof Date);
+                    || value instanceof Date
+                    || value instanceof Map
+                    || value instanceof List
+                    || value instanceof Expression);
+        }
+
+        private Object asJSON(Object value) {
+            if (value instanceof Date)
+                return DateUtils.toJson((Date) value);
+            else if (value instanceof Map)
+                return mapAsJSON((Map) value);
+            else if (value instanceof List)
+                return listAsJSON((List) value);
+            else if (value instanceof Expression)
+                return ((Expression)value).asJSON();
+            else {
+                if (!isSupportedType(value))
+                    throw new IllegalArgumentException("The value type is not supported: " + value);
+                return value;
+            }
+        }
+
+        private Object mapAsJSON(Map<String, Object> map) {
+            Map<String, Object> json = new HashMap<String, Object>();
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String key = entry.getKey();
+                json.put(entry.getKey(), asJSON(entry.getValue()));
+            }
+            return json;
+        }
+
+        private Object listAsJSON(List<Object> list) {
+            List<Object> json = new ArrayList<Object>();
+            json.add("[]"); // Array Operation
+            for (Object obj : list) {
+                json.add(asJSON(obj));
+            }
+            return json;
         }
     }
 
@@ -685,7 +739,7 @@ public abstract class Expression {
         }
     }
 
-    static final class FunctionExpresson extends Expression {
+    static final class FunctionExpression extends Expression {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
@@ -695,7 +749,7 @@ public abstract class Expression {
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        FunctionExpresson(String func, List<Expression> params) {
+        FunctionExpression(String func, List<Expression> params) {
             this.func = func;
             this.params = params;
         }

@@ -438,15 +438,17 @@ public final class Blob implements FLEncodable {
             MutableDocument doc = (MutableDocument) obj;
             Database db = doc.getDatabase();
             installInDatabase(db);
-        }
 
-        Map<String, Object> dict = jsonRepresentation();
-        encoder.beginDict(dict.size());
-        for (Map.Entry<String, Object> entry : dict.entrySet()) {
-            encoder.writeKey(entry.getKey());
-            encoder.writeValue(entry.getValue());
+            Map<String, Object> dict = jsonRepresentation();
+            encoder.beginDict(dict.size());
+            for (Map.Entry<String, Object> entry : dict.entrySet()) {
+                encoder.writeKey(entry.getKey());
+                encoder.writeValue(entry.getValue());
+            }
+            encoder.endDict();
+        } else {
+            encoder.writeData(getContent());
         }
-        encoder.endDict();
     }
 
     //---------------------------------------------

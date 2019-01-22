@@ -23,6 +23,7 @@ import com.couchbase.litecore.C4Query;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.C4QueryOptions;
 import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.fleece.AllocSlice;
 
 import org.json.JSONException;
 
@@ -136,11 +137,14 @@ abstract class AbstractQuery implements Query {
     public ResultSet execute() throws CouchbaseLiteException {
         try {
             C4QueryOptions options = new C4QueryOptions();
-            String paramJSON = parameters != null ? parameters.encodeAsJSON() : "{}";
+            if (parameters == null)
+                parameters = new Parameters();
+
+            AllocSlice params = parameters.encode();
             C4QueryEnumerator c4enum;
             synchronized (getDatabase().getLock()) {
                 check();
-                c4enum = c4query.run(options, paramJSON);
+                c4enum = c4query.run(options, params);
             }
             return new ResultSet(this, c4enum, columnNames);
         } catch (LiteCoreException e) {

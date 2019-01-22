@@ -1,7 +1,7 @@
 //
-// IndexType.java
+// Function.java
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,29 +19,8 @@
 package com.couchbase.lite;
 
 /**
- * Types of database indexes.
+ * Query functions.
  */
-public enum IndexType {
-    /**
-     * Regular index of property values.
-     */
-    Value(0),
-    /**
-     * Full-text index.
-     */
-    FullText(1),
-    /**
-     * Index of prediction() results (Enterprise Edition only)
-     */
-    Predictive(3);
-
-    private int value;
-
-    IndexType(int value) {
-        this.value = value;
-    }
-
-    int getValue() {
-        return value;
-    }
+public final class Function extends AbstractFunction {
+    private Function() {  }
 }
