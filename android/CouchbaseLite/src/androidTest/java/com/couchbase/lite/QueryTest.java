@@ -635,7 +635,6 @@ public class QueryTest extends BaseTest {
                 .from(ds)
                 .where(gender.equalTo(Expression.string("female")))
                 .groupBy(groupByExpr)
-                .having(null)
                 .orderBy(ordering);
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
