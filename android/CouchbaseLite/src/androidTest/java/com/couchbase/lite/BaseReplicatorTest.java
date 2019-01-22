@@ -134,9 +134,9 @@ public class BaseReplicatorTest extends BaseTest {
             repl.resetCheckpoint();
 
         repl.start();
-        boolean ret = latch.await(timeout, TimeUnit.SECONDS);
+        assertTrue(latch.await(timeout, TimeUnit.SECONDS));
         repl.removeChangeListener(token);
-        assertTrue(ret);
+
         return repl;
     }
 
