@@ -66,6 +66,7 @@ public final class Blob implements FLEncodable {
      */
     static final String kC4ObjectTypeProperty = "@type";
     static final String kC4ObjectType_Blob = "blob";
+    static final String kC4DataProperty = "data";
 
     // Max size of data that will be cached in memory with the CBLBlob
     static final int MAX_CACHED_CONTENT_LENGTH = 8 * 1024;
@@ -180,7 +181,12 @@ public final class Blob implements FLEncodable {
             this.length = ClassUtils.cast(properties.get("length"), Number.class).longValue();
         this.digest = ClassUtils.cast(properties.get("digest"), String.class);
         this.contentType = ClassUtils.cast(properties.get("content_type"), String.class);
-        if (this.digest == null) {
+
+        Object data = properties.get(kC4DataProperty);
+        if (data != null && data instanceof byte[])
+            this.content = (byte[]) data;
+
+        if (this.digest == null && this.content == null) {
             Log.w(TAG, "Blob read from database has missing digest");
             this.digest = "";
         }
@@ -433,22 +439,24 @@ public final class Blob implements FLEncodable {
     //FLEncodable
     @Override
     public void encodeTo(FLEncoder encoder) {
-        Object obj = encoder.getExtraInfo();
-        if (obj != null) {
-            MutableDocument doc = (MutableDocument) obj;
+        Object info = encoder.getExtraInfo();
+        if (info != null) {
+            MutableDocument doc = (MutableDocument) info;
             Database db = doc.getDatabase();
             installInDatabase(db);
+        }
 
-            Map<String, Object> dict = jsonRepresentation();
-            encoder.beginDict(dict.size());
-            for (Map.Entry<String, Object> entry : dict.entrySet()) {
-                encoder.writeKey(entry.getKey());
-                encoder.writeValue(entry.getValue());
-            }
-            encoder.endDict();
-        } else {
+        Map<String, Object> dict = jsonRepresentation();
+        encoder.beginDict(dict.size());
+        for (Map.Entry<String, Object> entry : dict.entrySet()) {
+            encoder.writeKey(entry.getKey());
+            encoder.writeValue(entry.getValue());
+        }
+        if (info == null) {
+            encoder.writeKey(kC4DataProperty);
             encoder.writeData(getContent());
         }
+        encoder.endDict();
     }
 
     //---------------------------------------------
