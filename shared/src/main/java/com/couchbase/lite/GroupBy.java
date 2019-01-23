@@ -51,9 +51,13 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      *
      * @param expression The expression
      * @return The Having object that represents the HAVING clause of the query.
+     * @throws RuntimeException when Expression parameter is null.
      */
     @Override
     public Having having(Expression expression) {
+        if(expression == null) {
+            throw new RuntimeException("Expression parameter cannot be null in Having clause.");
+        }
         return new Having(this, expression);
     }
 
