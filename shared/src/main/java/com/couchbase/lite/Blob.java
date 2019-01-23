@@ -64,9 +64,12 @@ public final class Blob implements FLEncodable {
      * The sub-document property that identifies it as a special type of object.
      * For example, a blob is represented as `{"@type":"blob", "digest":"xxxx", ...}`
      */
-    static final String kC4ObjectTypeProperty = "@type";
-    static final String kC4ObjectType_Blob = "blob";
-    static final String kC4DataProperty = "data";
+    static final String kMetaPropertyType = "@type";
+    static final String kMetaPropertyDigest = "digest";
+    static final String kMetaPropertyLength = "length";
+    static final String kMetaPropertyContentType = "content_type";
+    static final String kMetaPropertyData = "data";
+    static final String kBlobType = "blob";
 
     // Max size of data that will be cached in memory with the CBLBlob
     static final int MAX_CACHED_CONTENT_LENGTH = 8 * 1024;
@@ -174,7 +177,7 @@ public final class Blob implements FLEncodable {
     Blob(Database database, Map<String, Object> properties) {
         this.database = database;
         this.properties = new HashMap<>(properties);
-        this.properties.remove(kC4ObjectTypeProperty);
+        this.properties.remove(kMetaPropertyType);
 
         // NOTE: length field might not be set if length is unknown.
         if (properties.get("length") != null && properties.get("length") instanceof Number)
@@ -182,14 +185,12 @@ public final class Blob implements FLEncodable {
         this.digest = ClassUtils.cast(properties.get("digest"), String.class);
         this.contentType = ClassUtils.cast(properties.get("content_type"), String.class);
 
-        Object data = properties.get(kC4DataProperty);
+        Object data = properties.get(kMetaPropertyData);
         if (data != null && data instanceof byte[])
             this.content = (byte[]) data;
 
-        if (this.digest == null && this.content == null) {
-            Log.w(TAG, "Blob read from database has missing digest");
-            this.digest = "";
-        }
+        if (this.digest == null && this.content == null)
+            Log.w(TAG, "Blob read from database has neither digest nor data.");
     }
 
     //---------------------------------------------
@@ -330,9 +331,9 @@ public final class Blob implements FLEncodable {
             return properties;
         } else {
             Map<String, Object> props = new HashMap<>();
-            props.put("digest", digest);
-            props.put("length", length);
-            props.put("content_type", contentType);
+            props.put(kMetaPropertyDigest, digest);
+            props.put(kMetaPropertyLength, length);
+            props.put(kMetaPropertyContentType, contentType);
             return props;
         }
     }
@@ -375,7 +376,12 @@ public final class Blob implements FLEncodable {
 
     Map<String, Object> jsonRepresentation() {
         Map<String, Object> json = new HashMap<>(getProperties());
-        json.put(kC4ObjectTypeProperty, kC4ObjectType_Blob);
+        json.put(kMetaPropertyType, kBlobType);
+        if (digest != null) {
+            json.put(kMetaPropertyDigest, digest);
+        } else {
+            json.put(kMetaPropertyData, getContent());
+        }
         return json;
     }
 
@@ -451,10 +457,6 @@ public final class Blob implements FLEncodable {
         for (Map.Entry<String, Object> entry : dict.entrySet()) {
             encoder.writeKey(entry.getKey());
             encoder.writeValue(entry.getValue());
-        }
-        if (info == null) {
-            encoder.writeKey(kC4DataProperty);
-            encoder.writeData(getContent());
         }
         encoder.endDict();
     }

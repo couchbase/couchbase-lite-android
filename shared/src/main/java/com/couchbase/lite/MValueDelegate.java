@@ -59,7 +59,7 @@ final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
     }
 
     static Object createSpecialObjectOfType(String type, FLDict properties, DocContext context) {
-        if (Blob.kC4ObjectType_Blob.equals(type))
+        if (Blob.kBlobType.equals(type))
             return createBlob(properties, context);
         return null;
     }
@@ -80,7 +80,7 @@ final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
         FLValue value = mv.getValue();
         FLDict flDict = value.asFLDict();
         DocContext context = (DocContext) parent.getContext();
-        FLValue flType = flDict.get(Blob.kC4ObjectTypeProperty);
+        FLValue flType = flDict.get(Blob.kMetaPropertyType);
         String type = flType != null ? flType.asString() : null;
         if (type != null) {
             Object obj = createSpecialObjectOfType(type, flDict, context);
