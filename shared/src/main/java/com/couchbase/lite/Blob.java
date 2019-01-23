@@ -187,7 +187,7 @@ public final class Blob implements FLEncodable {
             this.content = (byte[]) data;
 
         if (this.digest == null && this.content == null) {
-            Log.w(TAG, "Blob read from database has missing digest");
+            Log.w(TAG, "Blob read from database has neither digest nor data.");
             this.digest = "";
         }
     }
