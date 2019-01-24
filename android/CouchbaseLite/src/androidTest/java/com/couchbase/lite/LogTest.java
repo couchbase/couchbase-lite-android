@@ -15,7 +15,6 @@ import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -198,8 +197,10 @@ public class LogTest {
                 }
 
                 try {
-                    byte[] encoded = Files.readAllBytes(lastModifiedFile.toPath());
-                    String contentsOfLastModified = new String(encoded, StandardCharsets.US_ASCII);
+                    byte[] b = new byte[(int) lastModifiedFile.length()];
+                    FileInputStream fileInputStream = new FileInputStream(lastModifiedFile);
+                    fileInputStream.read(b);
+                    String contentsOfLastModified = new String(b, StandardCharsets.US_ASCII);
                     assertTrue(contentsOfLastModified.contains(uuidString));
 
                 } catch (Exception e) {
