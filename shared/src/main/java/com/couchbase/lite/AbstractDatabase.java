@@ -1341,9 +1341,16 @@ abstract class AbstractDatabase {
     }
 
     private void purgeExpiredDocuments() {
-        int nPurged = getC4Database().purgeExpiredDocs();
-        Log.v(TAG, "Purged %d expired documents", nPurged);
-        scheduleDocumentExpiration(1000);
+        if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+            postExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    int nPurged = getC4Database().purgeExpiredDocs();
+                    Log.v(TAG, "Purged %d expired documents", nPurged);
+                    scheduleDocumentExpiration(1000);
+                }
+            });
+        }
     }
 
     private void cancelPurgeTimer() {
