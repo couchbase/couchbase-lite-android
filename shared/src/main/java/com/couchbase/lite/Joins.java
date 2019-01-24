@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,7 +53,7 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @throws IllegalArgumentException when expression is null.
      */
     @Override
-    public Where where(Expression expression) {
+    public Where where(@NonNull Expression expression) {
 
         if(expression == null) {
             throw new IllegalArgumentException("expression is null");
@@ -71,7 +73,7 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @throws IllegalArgumentException when orderings are null.
      */
     @Override
-    public OrderBy orderBy(Ordering... orderings) {
+    public OrderBy orderBy(@NonNull Ordering... orderings) {
 
         if(orderings == null) {
             throw new IllegalArgumentException("orderings is null");
@@ -91,7 +93,7 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @throws IllegalArgumentException when limit is null.
      */
     @Override
-    public Limit limit(Expression limit) {
+    public Limit limit(@NonNull Expression limit) {
 
         if(limit == null) {
             throw new IllegalArgumentException("limit is null");
@@ -109,7 +111,7 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @throws IllegalArgumentException when limit is null.
      */
     @Override
-    public Limit limit(Expression limit, Expression offset) {
+    public Limit limit(@NonNull Expression limit, Expression offset) {
 
         if(limit == null) {
             throw new IllegalArgumentException("limit is null");

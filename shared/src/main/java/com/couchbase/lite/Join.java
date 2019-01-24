@@ -113,7 +113,7 @@ public class Join {
      * @return The On object used for specifying join conditions.
      * @throws IllegalArgumentException when datasource is null.
      */
-    public static On join(DataSource datasource) {
+    public static On join(@NonNull DataSource datasource) {
 
         if(datasource == null) {
             throw new IllegalArgumentException("datasource is null");
@@ -129,7 +129,7 @@ public class Join {
      * @return The On object used for specifying join conditions.
      * @throws IllegalArgumentException when datasource is null.
      */
-    public static On leftJoin(DataSource datasource) {
+    public static On leftJoin(@NonNull DataSource datasource) {
 
         if(datasource == null) {
             throw new IllegalArgumentException("datasource is null");
@@ -145,7 +145,7 @@ public class Join {
      * @return The On object used for specifying join conditions.
      * @throws IllegalArgumentException when datasource is null.
      */
-    public static On leftOuterJoin(DataSource datasource) {
+    public static On leftOuterJoin(@NonNull DataSource datasource) {
 
         if(datasource == null) {
             throw new IllegalArgumentException("datasource is null");
@@ -161,7 +161,7 @@ public class Join {
      * @return The On object used for specifying join conditions.
      * @throws IllegalArgumentException when datasource is null.
      */
-    public static On innerJoin(DataSource datasource) {
+    public static On innerJoin(@NonNull DataSource datasource) {
 
         if(datasource == null) {
             throw new IllegalArgumentException("datasource is null");
@@ -177,7 +177,7 @@ public class Join {
      * @return The Join object used for specifying join conditions.
      * @throws IllegalArgumentException when datasource is null.
      */
-    public static Join crossJoin(DataSource datasource) {
+    public static Join crossJoin(@NonNull DataSource datasource) {
 
         if(datasource == null) {
             throw new IllegalArgumentException("datasource is null");

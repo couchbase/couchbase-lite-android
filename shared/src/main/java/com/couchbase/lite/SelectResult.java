@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * SelectResult represents a signle return value of the query statement.
  */
@@ -39,8 +41,13 @@ public class SelectResult {
          *
          * @param alias The data source alias name.
          * @return The SelectResult object with the data source alias name specified.
+         * @throws IllegalArgumentException when alias is null.
          */
-        public SelectResult from(String alias) {
+        public SelectResult from(@NonNull String alias) {
+
+            if(alias == null) {
+                throw new IllegalArgumentException("alias is null");
+            }
             this.expression = PropertyExpression.allFrom(alias);
             this.alias = alias;
             return this;
@@ -62,8 +69,13 @@ public class SelectResult {
          *
          * @param alias The alias name.
          * @return The SelectResult object with the alias name specified.
+         * @throws IllegalArgumentException when alias is null.
          */
-        public SelectResult as(String alias) {
+        public SelectResult as(@NonNull String alias) {
+
+            if(alias == null) {
+                throw new IllegalArgumentException("alias is null");
+            }
             this.alias = alias;
             return this;
         }
@@ -91,8 +103,13 @@ public class SelectResult {
      *
      * @param property The property name.
      * @return The SelectResult.As object that you can give the alias name to the returned value.
+     * @throws IllegalArgumentException when property is null.
      */
-    public static SelectResult.As property(String property) {
+    public static SelectResult.As property(@NonNull String property) {
+
+        if(property == null) {
+            throw new IllegalArgumentException("property is null");
+        }
         return new SelectResult.As(PropertyExpression.property(property));
     }
 
@@ -101,8 +118,13 @@ public class SelectResult {
      *
      * @param expression The expression.
      * @return The SelectResult.As object that you can give the alias name to the returned value.
+     * @throws IllegalArgumentException when expression is null.
      */
-    public static SelectResult.As expression(Expression expression) {
+    public static SelectResult.As expression(@NonNull Expression expression) {
+
+        if(expression == null) {
+            throw new IllegalArgumentException("expression is null");
+        }
         return new SelectResult.As(expression);
     }
 

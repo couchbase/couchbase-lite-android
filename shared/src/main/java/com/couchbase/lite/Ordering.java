@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,8 +91,13 @@ public abstract class Ordering {
      *
      * @param property the property name
      * @return the SortOrder object.
+     * @throws IllegalArgumentException when property is null.
      */
-    public static SortOrder property(String property) {
+    public static SortOrder property(@NonNull String property) {
+
+        if(property == null) {
+            throw new IllegalArgumentException("property is null");
+        }
         return expression(Expression.property(property));
     }
 
@@ -99,8 +106,13 @@ public abstract class Ordering {
      *
      * @param expression the expression object.
      * @return the SortOrder object.
+     * @throws IllegalArgumentException when expression is null.
      */
-    public static SortOrder expression(Expression expression) {
+    public static SortOrder expression(@NonNull Expression expression) {
+
+        if(expression == null) {
+            throw new IllegalArgumentException("expression is null");
+        }
         return new SortOrder(expression);
     }
 

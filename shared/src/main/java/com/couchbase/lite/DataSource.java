@@ -85,8 +85,13 @@ public class DataSource {
      *
      * @param database the database used as a source of data for query.
      * @return {@code DataSource.Database} object.
+     * @throws IllegalArgumentException when database is null.
      */
-    public static As database(com.couchbase.lite.Database database) {
+    public static As database(@NonNull com.couchbase.lite.Database database) {
+
+        if(database == null) {
+            throw new IllegalArgumentException("database is null");
+        }
         return new As(database);
     }
 

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Arrays;
 
 /**
@@ -50,7 +52,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      * @throws IllegalArgumentException when orderings is null.
      */
     @Override
-    public OrderBy orderBy(Ordering... orderings) {
+    public OrderBy orderBy(@NonNull Ordering... orderings) {
 
         if(orderings == null) {
             throw new IllegalArgumentException("orderings is null");
@@ -70,7 +72,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      * @throws IllegalArgumentException when limit is null.
      */
     @Override
-    public Limit limit(Expression limit) {
+    public Limit limit(@NonNull Expression limit) {
 
         if(limit == null) {
             throw new IllegalArgumentException("limit is null");
@@ -88,7 +90,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      * @throws IllegalArgumentException when limit is null.
      */
     @Override
-    public Limit limit(Expression limit, Expression offset) {
+    public Limit limit(@NonNull Expression limit, Expression offset) {
 
         if(limit == null) {
             throw new IllegalArgumentException("limit is null");

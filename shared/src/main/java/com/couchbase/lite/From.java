@@ -47,7 +47,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @throws IllegalArgumentException when joins is null.
      */
     @Override
-    public Joins join(Join... joins) {
+    public Joins join(@NonNull Join... joins) {
 
         if(joins == null) {
             throw new IllegalArgumentException("joins is null");
