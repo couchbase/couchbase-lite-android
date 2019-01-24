@@ -240,7 +240,7 @@ public class LogTest {
         });
     }
 
-    @Test @Ignore
+    @Test
     public void testFileLoggingMaxSize() {
         final File path = new File(
                 context.getCacheDir().getAbsolutePath(),
@@ -260,10 +260,7 @@ public class LogTest {
 
                 int maxRotateCount = config.getMaxRotateCount();
                 int totalFilesShouldBeInDirectory = (maxRotateCount + 1) * 5;
-                boolean isDebug = (
-                        (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0
-                );
-                if (!isDebug) {
+                if (!BuildConfig.DEBUG) {
                     totalFilesShouldBeInDirectory -= 1;
                 }
                 int totalLogFilesSaved = path.listFiles().length;
@@ -417,6 +414,7 @@ public class LogTest {
         Log.i(LogDomain.DATABASE.toString(), message);
         Log.w(LogDomain.DATABASE.toString(), message);
         Log.e(LogDomain.DATABASE.toString(), message);
+        Log.d(LogDomain.DATABASE.toString(), message);
     }
     //endregion
 }
