@@ -1,13 +1,11 @@
 package com.couchbase.lite;
 
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.internal.support.Log;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -16,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.UUID;
