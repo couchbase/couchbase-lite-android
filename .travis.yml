@@ -1,0 +1,32 @@
+language: android
+jdk: oraclejdk8
+sudo: true
+branches:
+  only:
+  - master
+android:
+  components:
+    # Use the latest revision of Android SDK Tools:
+    - tools
+    - platform-tools
+    # Build Tools and SDK version:
+    - build-tools-27.0.3
+    - android-27
+    # Android Emulator image:
+    - android-19
+    - sys-img-armeabi-v7a-android-19
+install:
+  - echo y | sdkmanager "ndk-bundle"
+  - echo y | sdkmanager "cmake;3.6.4111459"
+  - echo y | sdkmanager "lldb;3.1"
+before_script:
+  # Export NDK HOME:
+  - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
+  # Start an emulator:
+  - echo no | android create avd --force -n test -t android-19 --abi armeabi-v7a
+  - emulator -avd test -no-audio -no-window &
+  - android-wait-for-emulator
+  - adb shell input keyevent 82 &
+script:
+  - cd android && touch local.properties
+  - ./gradlew connectedAndroidTest
