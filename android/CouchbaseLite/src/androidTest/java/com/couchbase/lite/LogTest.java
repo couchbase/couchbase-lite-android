@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.internal.support.Log;
@@ -138,11 +139,16 @@ public class LogTest {
 
                 int maxRotateCount = config.getMaxRotateCount();
                 int totalFilesShouldBeInDirectory = (maxRotateCount + 1) * 5;
+                boolean isDebug = (
+                        (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0
+                );
+                if (!isDebug) {
+                    totalFilesShouldBeInDirectory -= 1;
+                }
                 int totalLogFilesSaved = path.listFiles().length;
                 assertEquals(totalFilesShouldBeInDirectory, totalLogFilesSaved);
             }
         });
-        emptyDirectory(path.getAbsolutePath());
     }
 
     @Test
@@ -174,7 +180,6 @@ public class LogTest {
                 }
             }
         });
-        emptyDirectory(path.getAbsolutePath());
     }
 
     @Test
@@ -226,10 +231,9 @@ public class LogTest {
                 }
             }
         });
-        emptyDirectory(path.getAbsolutePath());
     }
 
-    @Test @Ignore
+    @Test
     public void testFileLoggingHeader() {
         final File path = new File(
                 context.getCacheDir().getAbsolutePath(),
@@ -255,7 +259,6 @@ public class LogTest {
                 }
             }
         });
-        emptyDirectory(path.getAbsolutePath());
     }
 
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
@@ -276,7 +279,6 @@ public class LogTest {
             for (File log : f.listFiles()) {
                 log.delete();
             }
-            f.delete();
         }
         return path;
     }
