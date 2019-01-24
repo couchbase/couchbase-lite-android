@@ -101,9 +101,15 @@ public final class FileLogger implements Logger {
         if(_config != null) {
             new File(_config.getDirectory()).mkdir();
             C4Log.writeToBinaryFile(_config.getDirectory(), _level.getValue(), _config.getMaxRotateCount(),
-                    _config.getMaxSize(), _config.usesPlaintext());
+                    _config.getMaxSize(), _config.usesPlaintext(), CBLVersion.getUserAgent());
         } else {
-            C4Log.writeToBinaryFile(null, _level.getValue(), 1, 1024 * 500, false);
+            C4Log.writeToBinaryFile(
+                    null,
+                    _level.getValue(),
+                    1,
+                    1024 * 500,
+                    false,
+                    CBLVersion.getUserAgent());
         }
     }
 
