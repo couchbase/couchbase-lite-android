@@ -115,34 +115,30 @@ public class LogTest extends BaseTest {
     }
 
     @Test
-    public void testNonASCII() {
+    public void testNonASCII() throws CouchbaseLiteException {
         LogTestLogger customLogger = new LogTestLogger();
         customLogger.setLevel(LogLevel.VERBOSE);
         Database.log.setCustom(customLogger);
         Database.log.getConsole().setDomains(EnumSet.of(LogDomain.ALL));
         Database.log.getConsole().setLevel(LogLevel.VERBOSE);
-        try {
-            String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
-            MutableDocument doc = new MutableDocument();
-            doc.setString("hebrew", hebrew);
-            save(doc);
 
-            Query query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(db));
-            assertEquals(query.execute().allResults().size(), 1);
+        String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
+        MutableDocument doc = new MutableDocument();
+        doc.setString("hebrew", hebrew);
+        save(doc);
 
-            String expectedHebrew = "[{\"hebrew\":\"" + hebrew + "\"}]";
-            boolean found = false;
-            for (String line : customLogger.getLines()) {
-                if (line.contains(expectedHebrew)) {
-                    found = true;
-                    break;
-                }
+        Query query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(db));
+        assertEquals(query.execute().allResults().size(), 1);
+
+        String expectedHebrew = "[{\"hebrew\":\"" + hebrew + "\"}]";
+        boolean found = false;
+        for (String line : customLogger.getLines()) {
+            if (line.contains(expectedHebrew)) {
+                found = true;
+                break;
             }
-            assertTrue(found);
-
-        } catch(Exception e) {
-            fail("Exception during test callback " + e.toString());
         }
+        assertTrue(found);
     }
 
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
