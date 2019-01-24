@@ -1,11 +1,13 @@
 package com.couchbase.lite;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.internal.support.Log;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -13,12 +15,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -234,6 +239,147 @@ public class LogTest {
             }
         });
     }
+
+    @Test @Ignore
+    public void testFileLoggingMaxSize() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLoggingMaxSize"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        final LogFileConfiguration config = new LogFileConfiguration(logDirectory)
+                .setUsePlaintext(true)
+                .setMaxSize(1024);
+
+        testWithConfiguration(LogLevel.DEBUG, config, new Runnable() {
+            @Override
+            public void run() {
+
+                // this should create two files, as the 1KB logs + extra header
+                writeOneKiloByteOfLog();
+
+                int maxRotateCount = config.getMaxRotateCount();
+                int totalFilesShouldBeInDirectory = (maxRotateCount + 1) * 5;
+                boolean isDebug = (
+                        (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0
+                );
+                if (!isDebug) {
+                    totalFilesShouldBeInDirectory -= 1;
+                }
+                int totalLogFilesSaved = path.listFiles().length;
+                assertEquals(totalFilesShouldBeInDirectory, totalLogFilesSaved);
+            }
+        });
+    }
+
+    @Test
+    public void testFileLoggingDisableLogging() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLoggingDisableLogging"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        final LogFileConfiguration config = new LogFileConfiguration(logDirectory)
+                .setUsePlaintext(true);
+        testWithConfiguration(LogLevel.NONE, config, new Runnable() {
+            @Override
+            public void run() {
+                String uuidString = UUID.randomUUID().toString();
+                writeAllLogs(uuidString);
+
+                try {
+                    for (File log : path.listFiles()) {
+                        byte[] b = new byte[(int) log.length()];
+                        FileInputStream fileInputStream = new FileInputStream(log);
+                        fileInputStream.read(b);
+                        String contents = new String(b, StandardCharsets.US_ASCII);
+                        assertFalse(contents.contains(uuidString));
+                    }
+                } catch(Exception e) {
+                    fail("Exception during test callback " + e.toString());
+                }
+            }
+        });
+    }
+
+    @Test
+    public void testFileLoggingReEnableLogging() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLoggingReEnableLogging"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        LogFileConfiguration config = new LogFileConfiguration(logDirectory)
+                .setUsePlaintext(true);
+        testWithConfiguration(LogLevel.NONE, config, new Runnable() {
+            @Override
+            public void run() {
+                String uuidString = UUID.randomUUID().toString();
+                writeAllLogs(uuidString);
+
+                try {
+                    for (File log : path.listFiles()) {
+                        byte[] b = new byte[(int) log.length()];
+                        FileInputStream fileInputStream = new FileInputStream(log);
+                        fileInputStream.read(b);
+                        String contents = new String(b, StandardCharsets.US_ASCII);
+                        assertFalse(contents.contains(uuidString));
+                    }
+
+                    Database.log.getFile().setLevel(LogLevel.VERBOSE);
+                    writeAllLogs(uuidString);
+
+                    File[] filesExceptDebug = path.listFiles(new FilenameFilter() {
+                        @Override
+                        public boolean accept(File dir, String name) {
+                            return !name.toLowerCase().startsWith("cbl_debug_");
+                        }
+                    });
+
+                    for (File log : filesExceptDebug) {
+                        byte[] b = new byte[(int) log.length()];
+                        FileInputStream fileInputStream = new FileInputStream(log);
+                        fileInputStream.read(b);
+                        String contents = new String(b, StandardCharsets.US_ASCII);
+                        assertTrue(contents.contains(uuidString));
+                    }
+
+                } catch(Exception e) {
+                    fail("Exception during test callback " + e.toString());
+                }
+            }
+        });
+    }
+
+    @Test
+    public void testFileLoggingHeader() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLoggingHeader"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        LogFileConfiguration config = new LogFileConfiguration(logDirectory)
+                .setUsePlaintext(true);
+        testWithConfiguration(LogLevel.VERBOSE, config, new Runnable() {
+            @Override
+            public void run() {
+                writeOneKiloByteOfLog();
+
+                try {
+                    for (File log : path.listFiles()) {
+                        BufferedReader fin = new BufferedReader(new FileReader(log));
+                        String firstLine = fin.readLine();
+                        assertNotNull(firstLine);
+                        assertTrue(firstLine.contains("CouchbaseLite/"));
+                        assertTrue(firstLine.contains("Build/"));
+                        assertTrue(firstLine.contains("Commit/"));
+                    }
+                } catch(Exception e) {
+                    fail("Exception during test callback " + e.toString());
+                }
+            }
+        });
+    }
     //endregion
 
     //region Helper methods
@@ -256,8 +402,21 @@ public class LogTest {
                 log.delete();
             }
         }
-
         return path;
+    }
+
+    private static void writeOneKiloByteOfLog() {
+        String message = "11223344556677889900"; // ~43 bytes
+        for (int i = 0; i < 24; i++) { // 24 * 43 = 1032
+            writeAllLogs(message);
+        }
+    }
+
+    private static void writeAllLogs(String message) {
+        Log.v(LogDomain.DATABASE.toString(), message);
+        Log.i(LogDomain.DATABASE.toString(), message);
+        Log.w(LogDomain.DATABASE.toString(), message);
+        Log.e(LogDomain.DATABASE.toString(), message);
     }
     //endregion
 }
