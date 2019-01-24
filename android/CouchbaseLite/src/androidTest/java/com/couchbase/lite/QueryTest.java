@@ -685,32 +685,6 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testGroupByHavingNull() {
-        DataSource ds = DataSource.database(this.db);
-
-        Expression animal = Expression.property("animal");
-        Expression subject = Expression.property("subject");
-
-        SelectResult rsId = SelectResult.property("id");
-
-        Expression groupByExpr = animal;
-        Ordering ordering = Ordering.expression(animal);
-
-        try {
-            Query q = QueryBuilder
-                    .select(rsId)
-                    .from(ds)
-                    .where(subject.equalTo(Expression.string("biology")))
-                    .groupBy(groupByExpr)
-                    .having(null)
-                    .orderBy(ordering);
-        } catch (Exception ex) {
-            assertEquals(ex.getMessage(),
-                    "Expression parameter cannot be null in Having clause.");
-        }
-    }
-
-    @Test
     public void testParameters() throws Exception {
         loadNumbers(100);
 
