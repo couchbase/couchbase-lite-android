@@ -59,6 +59,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      *
      * @param expression the WHERE clause expression.
      * @return the WHERE component.
+     * @throws IllegalArgumentException when expression is null.
      */
     @Override
     public Where where(@NonNull Expression expression) {
@@ -78,6 +79,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      *
      * @param expressions The group by expression.
      * @return The GroupBy object that represents the GROUP BY clause of the query.
+     * @throws IllegalArgumentException when expressions is null.
      */
     @Override
     public GroupBy groupBy(@NonNull Expression... expressions) {
@@ -97,6 +99,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      *
      * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
+     * @throws IllegalArgumentException when orderings is null.
      */
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
@@ -116,6 +119,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      *
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
+     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit) {
@@ -133,6 +137,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @param limit  The limit expression.
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
+     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
