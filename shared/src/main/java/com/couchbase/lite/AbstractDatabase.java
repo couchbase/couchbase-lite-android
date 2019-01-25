@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
@@ -121,7 +123,7 @@ abstract class AbstractDatabase {
      * @param config The database config, Note: null config parameter is not allowed with Android platform
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
-    protected AbstractDatabase(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
+    protected AbstractDatabase(@NonNull  String name, @NonNull DatabaseConfiguration config) throws CouchbaseLiteException {
         // Logging version number of CBL
         Log.info(TAG, CBLVersion.getUserAgent());
 
@@ -219,7 +221,7 @@ abstract class AbstractDatabase {
      * @param id the document ID
      * @return the Document object
      */
-    public Document getDocument(String id) {
+    public Document getDocument(@NonNull String id) {
         if (id == null)
             throw new IllegalArgumentException("id cannot be null.");
 
