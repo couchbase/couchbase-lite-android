@@ -34,12 +34,10 @@ public final class FullTextIndexItem {
      *
      * @param property A property used to perform the match operation against with.
      * @return The full-text search index item.
-     * @throws IllegalArgumentException when property is null.
      */
     public static FullTextIndexItem property(@NonNull String property) {
-
-        if(property == null) {
-            throw new IllegalArgumentException("property is null");
+        if (property == null) {
+            throw new IllegalArgumentException("property is null.");
         }
         return new FullTextIndexItem(Expression.property(property));
     }
