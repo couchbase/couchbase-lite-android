@@ -49,13 +49,11 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      *
      * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
-     * @throws IllegalArgumentException when orderings is null.
      */
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
-
-        if(orderings == null) {
-            throw new IllegalArgumentException("orderings is null");
+        if (orderings == null) {
+            throw new IllegalArgumentException("orderings is null.");
         }
         return new OrderBy(this, Arrays.asList(orderings));
     }
@@ -69,13 +67,11 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      *
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
-     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, null);
     }
@@ -87,13 +83,11 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      * @param limit  The limit expression.
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
-     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, offset);
     }

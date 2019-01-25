@@ -50,13 +50,11 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      *
      * @param expression The where expression.
      * @return The Where object that represents the WHERE clause of the query.
-     * @throws IllegalArgumentException when expression is null.
      */
     @Override
     public Where where(@NonNull Expression expression) {
-
-        if(expression == null) {
-            throw new IllegalArgumentException("expression is null");
+        if (expression == null) {
+            throw new IllegalArgumentException("expression is null.");
         }
         return new Where(this, expression);
     }
@@ -70,13 +68,11 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      *
      * @param orderings The Ordering objects.
      * @return The OrderBy object that represents the ORDER BY clause of the query.
-     * @throws IllegalArgumentException when orderings are null.
      */
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
-
-        if(orderings == null) {
-            throw new IllegalArgumentException("orderings is null");
+        if (orderings == null) {
+            throw new IllegalArgumentException("orderings is null.");
         }
         return new OrderBy(this, Arrays.asList(orderings));
     }
@@ -90,13 +86,11 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      *
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
-     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, null);
     }
@@ -108,13 +102,11 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @param limit  The limit expression.
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
-     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, offset);
     }

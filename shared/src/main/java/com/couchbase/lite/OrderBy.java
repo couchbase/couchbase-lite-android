@@ -52,13 +52,11 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
      *
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
-     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, null);
     }
@@ -69,13 +67,11 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
      * @param limit  The limit expression.
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
-     * @throws IllegalArgumentException when limit is null.
      */
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, offset);
     }

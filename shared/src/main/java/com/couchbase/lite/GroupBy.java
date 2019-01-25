@@ -53,13 +53,11 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      *
      * @param expression The expression
      * @return The Having object that represents the HAVING clause of the query.
-     * @throws IllegalArgumentException when expression is null.
      */
     @Override
     public Having having(@NonNull Expression expression) {
-
-        if(expression == null) {
-            throw new IllegalArgumentException("expression is null");
+        if (expression == null) {
+            throw new IllegalArgumentException("expression is null.");
         }
         return new Having(this, expression);
     }
@@ -73,13 +71,11 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      *
      * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
-     * @throws IllegalArgumentException when orderings is null.
      */
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
-
-        if(orderings == null) {
-            throw new IllegalArgumentException("orderings is null");
+        if (orderings == null) {
+            throw new IllegalArgumentException("orderings is null.");
         }
         return new OrderBy(this, Arrays.asList(orderings));
     }
@@ -97,9 +93,8 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      */
     @Override
     public Limit limit(@NonNull Expression limit) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, null);
     }
@@ -115,9 +110,8 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      */
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
-
-        if(limit == null) {
-            throw new IllegalArgumentException("limit is null");
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
         }
         return new Limit(this, limit, offset);
     }

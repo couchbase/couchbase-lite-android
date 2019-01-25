@@ -56,12 +56,10 @@ public class DataSource {
          *
          * @param alias the alias to set.
          * @return the data source object with the given alias set.
-         * @throws IllegalArgumentException when alias is null.
          */
         public DataSource as(@NonNull String alias) {
-
-            if(alias == null) {
-                throw new IllegalArgumentException("alias is null");
+            if (alias == null) {
+                throw new IllegalArgumentException("alias is null.");
             }
             super.alias = alias;
             return this;
@@ -85,12 +83,10 @@ public class DataSource {
      *
      * @param database the database used as a source of data for query.
      * @return {@code DataSource.Database} object.
-     * @throws IllegalArgumentException when database is null.
      */
     public static As database(@NonNull com.couchbase.lite.Database database) {
-
-        if(database == null) {
-            throw new IllegalArgumentException("database is null");
+        if (database == null) {
+            throw new IllegalArgumentException("database is null.");
         }
         return new As(database);
     }

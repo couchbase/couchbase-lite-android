@@ -69,12 +69,10 @@ public class Join {
          *
          * @param expression The Expression object specifying the join conditions.
          * @return The Join object that represents a single JOIN clause of the query.
-         * @throws IllegalArgumentException when expression is null.
          */
         public Join on(@NonNull Expression expression) {
-
-            if(expression == null) {
-                throw new IllegalArgumentException("expression is null");
+            if (expression == null) {
+                throw new IllegalArgumentException("expression is null.");
             }
             this.on = expression;
             return this;
@@ -111,12 +109,10 @@ public class Join {
      *
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
-     * @throws IllegalArgumentException when datasource is null.
      */
     public static On join(@NonNull DataSource datasource) {
-
-        if(datasource == null) {
-            throw new IllegalArgumentException("datasource is null");
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource is null.");
         }
         return innerJoin(datasource);
     }
@@ -127,12 +123,10 @@ public class Join {
      *
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
-     * @throws IllegalArgumentException when datasource is null.
      */
     public static On leftJoin(@NonNull DataSource datasource) {
-
-        if(datasource == null) {
-            throw new IllegalArgumentException("datasource is null");
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource is null.");
         }
         return new On(kCBLLeftOuterJoin, datasource);
     }
@@ -143,12 +137,10 @@ public class Join {
      *
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
-     * @throws IllegalArgumentException when datasource is null.
      */
     public static On leftOuterJoin(@NonNull DataSource datasource) {
-
-        if(datasource == null) {
-            throw new IllegalArgumentException("datasource is null");
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource is null.");
         }
         return new On(kCBLLeftOuterJoin, datasource);
     }
@@ -159,12 +151,10 @@ public class Join {
      *
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
-     * @throws IllegalArgumentException when datasource is null.
      */
     public static On innerJoin(@NonNull DataSource datasource) {
-
-        if(datasource == null) {
-            throw new IllegalArgumentException("datasource is null");
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource is null.");
         }
         return new On(kCBLInnerJoin, datasource);
     }
@@ -175,12 +165,10 @@ public class Join {
      *
      * @param datasource The DataSource object of the JOIN clause.
      * @return The Join object used for specifying join conditions.
-     * @throws IllegalArgumentException when datasource is null.
      */
     public static Join crossJoin(@NonNull DataSource datasource) {
-
-        if(datasource == null) {
-            throw new IllegalArgumentException("datasource is null");
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource is null.");
         }
         return new Join(kCBLCrossJoin, datasource);
     }
