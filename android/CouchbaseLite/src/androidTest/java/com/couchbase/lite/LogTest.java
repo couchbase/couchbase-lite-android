@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -27,11 +28,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class LogTest {
+public class LogTest extends BaseTest {
     private Context context;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
+        super.setUp();
         context = InstrumentationRegistry.getTargetContext();
     }
 
@@ -381,6 +383,33 @@ public class LogTest {
         });
     }
     //endregion
+
+    @Test
+    public void testNonASCII() throws CouchbaseLiteException {
+        LogTestLogger customLogger = new LogTestLogger();
+        customLogger.setLevel(LogLevel.VERBOSE);
+        Database.log.setCustom(customLogger);
+        Database.log.getConsole().setDomains(EnumSet.of(LogDomain.ALL));
+        Database.log.getConsole().setLevel(LogLevel.VERBOSE);
+
+        String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
+        MutableDocument doc = new MutableDocument();
+        doc.setString("hebrew", hebrew);
+        save(doc);
+
+        Query query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(db));
+        assertEquals(query.execute().allResults().size(), 1);
+
+        String expectedHebrew = "[{\"hebrew\":\"" + hebrew + "\"}]";
+        boolean found = false;
+        for (String line : customLogger.getLines()) {
+            if (line.contains(expectedHebrew)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found);
+    }
 
     //region Helper methods
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
