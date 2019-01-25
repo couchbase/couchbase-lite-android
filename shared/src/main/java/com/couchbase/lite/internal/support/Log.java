@@ -351,6 +351,67 @@ public final class Log {
         sendToLoggers(LogLevel.ERROR, tag, msg);
     }
 
+    /**
+     * Send a DEBUG message.
+     *
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     *            the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     */
+    public static void d(String tag, String msg) {
+        sendToLoggers(LogLevel.DEBUG, tag, msg);
+    }
+
+    /**
+     * Send a DEBUG message and log the exception.
+     *
+     * @param tag Used to identify the source of a log message.  It usually identifies
+     *            the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     * @param tr  An exception to log
+     */
+    public static void d(String tag, String msg, Throwable tr) {
+        v(tag, "Exception: %s", tr.toString());
+    }
+
+    /**
+     * Send a DEBUG message.
+     *
+     * @param tag          Used to identify the source of a log message.  It usually identifies
+     *                     the class or activity where the log call occurs.
+     * @param formatString The string you would like logged plus format specifiers.
+     * @param args         Variable number of Object args to be used as params to formatString.
+     */
+    public static void d(String tag, String formatString, Object... args) {
+        String msg;
+        try {
+            msg = String.format(Locale.ENGLISH, formatString, args);
+        } catch (Exception e) {
+            msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
+        }
+        sendToLoggers(LogLevel.DEBUG, tag, msg);
+    }
+
+    /**
+     * Send a DEBUG message and log the exception.
+     *
+     * @param tag          Used to identify the source of a log message.  It usually identifies
+     *                     the class or activity where the log call occurs.
+     * @param formatString The string you would like logged plus format specifiers.
+     * @param tr           An exception to log
+     * @param args         Variable number of Object args to be used as params to formatString.
+     */
+    public static void d(String tag, String formatString, Throwable tr, Object... args) {
+        String msg;
+        try {
+            msg = String.format(formatString, args);
+            msg = String.format("%s (%s)", msg, tr.toString());
+        } catch (Exception e) {
+            msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
+        }
+        sendToLoggers(LogLevel.DEBUG, tag, msg);
+    }
+
     public static void setLogLevel(LogDomain domain, LogLevel level) {
         int actualLevel = level.equals(LogLevel.NONE) ? Log.NONE : Log.DEBUG;
         switch (domain) {

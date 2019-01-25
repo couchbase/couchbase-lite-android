@@ -1,13 +1,11 @@
 package com.couchbase.lite;
 
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.internal.support.Log;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -16,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -242,7 +239,7 @@ public class LogTest extends BaseTest {
         });
     }
 
-    @Test @Ignore
+    @Test
     public void testFileLoggingMaxSize() {
         final File path = new File(
                 context.getCacheDir().getAbsolutePath(),
@@ -262,10 +259,7 @@ public class LogTest extends BaseTest {
 
                 int maxRotateCount = config.getMaxRotateCount();
                 int totalFilesShouldBeInDirectory = (maxRotateCount + 1) * 5;
-                boolean isDebug = (
-                        (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0
-                );
-                if (!isDebug) {
+                if (!BuildConfig.DEBUG) {
                     totalFilesShouldBeInDirectory -= 1;
                 }
                 int totalLogFilesSaved = path.listFiles().length;
@@ -446,6 +440,7 @@ public class LogTest extends BaseTest {
         Log.i(LogDomain.DATABASE.toString(), message);
         Log.w(LogDomain.DATABASE.toString(), message);
         Log.e(LogDomain.DATABASE.toString(), message);
+        Log.d(LogDomain.DATABASE.toString(), message);
     }
     //endregion
 }
