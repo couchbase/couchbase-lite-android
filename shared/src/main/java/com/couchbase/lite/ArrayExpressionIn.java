@@ -40,12 +40,10 @@ public final class ArrayExpressionIn {
      *
      * @param expression the expression evaluated as an array object.
      * @return A Satisfies object.
-     * @throws IllegalArgumentException when expression is null.
      */
     public ArrayExpressionSatisfies in(@NonNull Expression expression) {
-
-        if(expression == null) {
-            throw new IllegalArgumentException("expression is null");
+        if (expression == null) {
+            throw new IllegalArgumentException("expression is null.");
         }
         return new ArrayExpressionSatisfies(type, variable, expression);
     }

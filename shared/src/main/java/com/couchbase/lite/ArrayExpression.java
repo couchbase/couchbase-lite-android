@@ -43,12 +43,10 @@ public final class ArrayExpression {
      *
      * @param variable The variable expression.
      * @return An In object
-     * @throws IllegalArgumentException when variable is null.
      */
     public static ArrayExpressionIn any(@NonNull VariableExpression variable) {
-
-        if(variable == null) {
-            throw new IllegalArgumentException("variable is null");
+        if (variable == null) {
+            throw new IllegalArgumentException("variable is null.");
         }
         return new ArrayExpressionIn(QuantifiesType.ANY, variable);
     }
@@ -63,12 +61,10 @@ public final class ArrayExpression {
      *
      * @param variable The variable expression.
      * @return An In object.
-     * @throws IllegalArgumentException when variable is null.
      */
     public static ArrayExpressionIn every(@NonNull VariableExpression variable) {
-
-        if(variable == null) {
-            throw new IllegalArgumentException("variable is null");
+        if (variable == null) {
+            throw new IllegalArgumentException("variable is null.");
         }
         return new ArrayExpressionIn(QuantifiesType.EVERY, variable);
     }
@@ -83,12 +79,10 @@ public final class ArrayExpression {
      *
      * @param variable The variable expression.
      * @return An In object.
-     * @throws IllegalArgumentException when variable is null.
      */
     public static ArrayExpressionIn anyAndEvery(@NonNull VariableExpression variable) {
-
-        if(variable == null) {
-            throw new IllegalArgumentException("variable is null");
+        if (variable == null) {
+            throw new IllegalArgumentException("variable is null.");
         }
         return new ArrayExpressionIn(QuantifiesType.ANY_AND_EVERY, variable);
     }
@@ -100,12 +94,10 @@ public final class ArrayExpression {
      *
      * @param name The variable name
      * @return A variable expression
-     * @throws IllegalArgumentException when name is null.
      */
     public static VariableExpression variable(@NonNull String name) {
-
-        if(name == null) {
-            throw new IllegalArgumentException("name is null");
+        if (name == null) {
+            throw new IllegalArgumentException("name is null.");
         }
         return new VariableExpression(name);
     }

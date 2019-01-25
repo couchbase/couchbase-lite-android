@@ -50,12 +50,10 @@ public class MetaExpression extends Expression {
      *
      * @param alias The data source alias name.
      * @return The Meta expression with the given alias name specified.
-     * @throws IllegalArgumentException when alias is null.
      */
     public Expression from(@NonNull String alias) {
-
-        if(alias == null) {
-            throw new IllegalArgumentException("alias is null");
+        if (alias == null) {
+            throw new IllegalArgumentException("alias is null.");
         }
         return new MetaExpression(this.keyPath, alias);
     }

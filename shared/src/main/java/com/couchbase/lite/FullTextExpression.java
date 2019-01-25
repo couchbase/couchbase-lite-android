@@ -46,12 +46,10 @@ public final class FullTextExpression {
      *
      * @param name The full-text index name.
      * @return The full-text expression.
-     * @throws IllegalArgumentException when name is null.
      */
     public static FullTextExpression index(@NonNull String name) {
-
-        if(name == null) {
-            throw new IllegalArgumentException("name is null");
+        if (name == null) {
+            throw new IllegalArgumentException("name is null.");
         }
         return new FullTextExpression(name);
     }
@@ -61,12 +59,10 @@ public final class FullTextExpression {
      *
      * @param query The search text
      * @return The full-text match expression
-     * @throws IllegalArgumentException when query is null.
      */
     public Expression match(@NonNull String query) {
-
-        if(query == null) {
-            throw new IllegalArgumentException("query is null");
+        if (query == null) {
+            throw new IllegalArgumentException("query is null.");
         }
         return new FullTextMatchExpression(this.name, query);
     }
