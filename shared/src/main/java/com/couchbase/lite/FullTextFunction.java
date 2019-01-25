@@ -43,12 +43,10 @@ public class FullTextFunction {
      *
      * @param indexName The index name.
      * @return The full-text rank function.
-     * @throws IllegalArgumentException when indexName is null.
      */
     public static Expression rank(@NonNull String indexName) {
-
-        if(indexName == null) {
-            throw new IllegalArgumentException("indexName is null");
+        if (indexName == null) {
+            throw new IllegalArgumentException("indexName is null.");
         }
         return new Expression.FunctionExpression("RANK()", Arrays.asList(Expression.string(indexName)));
     }
