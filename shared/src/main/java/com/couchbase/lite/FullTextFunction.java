@@ -18,6 +18,8 @@
 package com.couchbase.lite;
 
 
+import android.support.annotation.NonNull;
+
 import java.util.Arrays;
 
 /**
@@ -42,7 +44,10 @@ public class FullTextFunction {
      * @param indexName The index name.
      * @return The full-text rank function.
      */
-    public static Expression rank(String indexName) {
+    public static Expression rank(@NonNull String indexName) {
+        if (indexName == null) {
+            throw new IllegalArgumentException("indexName is null.");
+        }
         return new Expression.FunctionExpression("RANK()", Arrays.asList(Expression.string(indexName)));
     }
 }
