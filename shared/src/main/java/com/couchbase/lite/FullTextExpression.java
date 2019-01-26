@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Arrays;
 
 /**
@@ -45,7 +47,10 @@ public final class FullTextExpression {
      * @param name The full-text index name.
      * @return The full-text expression.
      */
-    public static FullTextExpression index(String name) {
+    public static FullTextExpression index(@NonNull String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("name is null.");
+        }
         return new FullTextExpression(name);
     }
 
@@ -55,7 +60,10 @@ public final class FullTextExpression {
      * @param query The search text
      * @return The full-text match expression
      */
-    public Expression match(String query) {
+    public Expression match(@NonNull String query) {
+        if (query == null) {
+            throw new IllegalArgumentException("query is null.");
+        }
         return new FullTextMatchExpression(this.name, query);
     }
 
