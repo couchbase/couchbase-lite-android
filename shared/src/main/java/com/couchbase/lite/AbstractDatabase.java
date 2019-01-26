@@ -1341,7 +1341,6 @@ abstract class AbstractDatabase {
     }
 
     private void purgeExpiredDocuments() {
-        // this comment needs to be removed before commit
         if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
             postExecutor.submit(new Runnable() {
                 @Override
