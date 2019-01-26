@@ -17,11 +17,15 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * Note: LimitRouter is an internal interface. This should not be public.
  */
 interface LimitRouter {
-    Limit limit(Expression limit);
+    @NonNull
+    Limit limit(@NonNull Expression limit);
 
-    Limit limit(Expression limit, Expression offset);
+    @NonNull
+    Limit limit(@NonNull Expression limit, Expression offset);
 }

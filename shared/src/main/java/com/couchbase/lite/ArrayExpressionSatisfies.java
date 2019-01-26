@@ -44,9 +44,10 @@ public final class ArrayExpressionSatisfies {
      * @param expression Parameter expression: The satisfies expression used for evaluating each item in the array.
      * @return The quantified expression.
      */
+    @NonNull
     public Expression satisfies(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new QuantifiedExpression(type, variable, inExpression, expression);
     }

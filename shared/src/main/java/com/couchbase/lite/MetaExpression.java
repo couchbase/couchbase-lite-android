@@ -51,9 +51,10 @@ public class MetaExpression extends Expression {
      * @param alias The data source alias name.
      * @return The Meta expression with the given alias name specified.
      */
+    @NonNull
     public Expression from(@NonNull String alias) {
         if (alias == null) {
-            throw new IllegalArgumentException("alias is null.");
+            throw new IllegalArgumentException("alias cannot be null.");
         }
         return new MetaExpression(this.keyPath, alias);
     }
@@ -61,6 +62,7 @@ public class MetaExpression extends Expression {
     //---------------------------------------------
     // package level access
     //---------------------------------------------
+
     @Override
     Object asJSON() {
         List<Object> json = new ArrayList<>();

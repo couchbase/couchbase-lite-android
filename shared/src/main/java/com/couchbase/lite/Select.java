@@ -55,10 +55,11 @@ public final class Select extends AbstractQuery implements FromRouter {
      * @param dataSource the data source.
      * @return the From component.
      */
+    @NonNull
     @Override
     public From from(@NonNull DataSource dataSource) {
         if (dataSource == null) {
-            throw new IllegalArgumentException("dataSource is null.");
+            throw new IllegalArgumentException("dataSource cannot be null.");
         }
         return new From(this, dataSource);
     }

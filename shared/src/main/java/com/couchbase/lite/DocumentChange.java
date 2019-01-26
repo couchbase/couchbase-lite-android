@@ -18,6 +18,8 @@
 package com.couchbase.lite;
 
 
+import android.support.annotation.NonNull;
+
 /**
  * Provides details about a Document change.
  */
@@ -34,6 +36,7 @@ public final class DocumentChange {
     /**
      * Return the Database instance
      */
+    @NonNull
     public Database getDatabase() {
         return database;
     }
@@ -41,10 +44,12 @@ public final class DocumentChange {
     /**
      * Returns the changed document ID
      */
+    @NonNull
     public String getDocumentID() {
         return documentID;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "DocumentChange{" +

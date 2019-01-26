@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 public class QueryBuilder {
     //---------------------------------------------
     // Constructor
@@ -35,7 +37,10 @@ public class QueryBuilder {
      * @param results The array of the SelectResult object for specifying the returned values.
      * @return A Select object.
      */
-    public static Select select(SelectResult... results) {
+    @NonNull
+    public static Select select(@NonNull SelectResult... results) {
+        if (results == null)
+            throw new IllegalArgumentException("results cannot be null.");
         return new Select(false, results);
     }
 
@@ -46,7 +51,10 @@ public class QueryBuilder {
      * @param results The array of the SelectResult object for specifying the returned values.
      * @return A Select distinct object.
      */
-    public static Select selectDistinct(SelectResult... results) {
+    @NonNull
+    public static Select selectDistinct(@NonNull SelectResult... results) {
+        if (results == null)
+            throw new IllegalArgumentException("results cannot be null.");
         return new Select(true, results);
     }
 }

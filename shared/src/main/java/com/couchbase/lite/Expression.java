@@ -53,6 +53,7 @@ public abstract class Expression {
      * @param value the value
      * @return the value expression
      */
+    @NonNull
     public static Expression value(Object value) {
         return new ValueExpression(value);
     }
@@ -63,6 +64,7 @@ public abstract class Expression {
      * @param value the String value
      * @return the value expression
      */
+    @NonNull
     public static Expression string(String value) {
         return new ValueExpression(value);
     }
@@ -73,6 +75,7 @@ public abstract class Expression {
      * @param value the Number value
      * @return the value expression
      */
+    @NonNull
     public static Expression number(Number value) {
         return new ValueExpression(value);
     }
@@ -83,6 +86,7 @@ public abstract class Expression {
      * @param value the integer value
      * @return the value expression
      */
+    @NonNull
     public static Expression intValue(int value) {
         return new ValueExpression(value);
     }
@@ -93,6 +97,7 @@ public abstract class Expression {
      * @param value the long value
      * @return the value expression
      */
+    @NonNull
     public static Expression longValue(long value) {
         return new ValueExpression(value);
     }
@@ -103,6 +108,7 @@ public abstract class Expression {
      * @param value the float value
      * @return the value expression
      */
+    @NonNull
     public static Expression floatValue(float value) {
         return new ValueExpression(value);
     }
@@ -113,6 +119,7 @@ public abstract class Expression {
      * @param value the double value
      * @return the value expression
      */
+    @NonNull
     public static Expression doubleValue(double value) {
         return new ValueExpression(value);
     }
@@ -123,6 +130,7 @@ public abstract class Expression {
      * @param value the boolean value
      * @return the value expression
      */
+    @NonNull
     public static Expression booleanValue(boolean value) {
         return new ValueExpression(value);
     }
@@ -133,6 +141,7 @@ public abstract class Expression {
      * @param value the Date value
      * @return the value expression
      */
+    @NonNull
     public static Expression date(Date value) {
         return new ValueExpression(value);
     }
@@ -142,6 +151,7 @@ public abstract class Expression {
      * @param value the map value
      * @return the value expression.
      */
+    @NonNull
     public static Expression map(Map<String, Object> value) {
         return new ValueExpression(value);
     }
@@ -151,6 +161,7 @@ public abstract class Expression {
      * @param value the list value.
      * @return the value expression.
      */
+    @NonNull
     public static Expression list(List<Object> value) {
         return new ValueExpression(value);
     }
@@ -160,6 +171,7 @@ public abstract class Expression {
      *
      * @return a property expression.
      */
+    @NonNull
     public static PropertyExpression all() {
         return new PropertyExpression(PropertyExpression.kCBLAllPropertiesName);
     }
@@ -170,9 +182,10 @@ public abstract class Expression {
      * @param property the name of the property in the form of a key path.
      * @return a property expression.
      */
+    @NonNull
     public static PropertyExpression property(@NonNull String property) {
         if (property == null) {
-            throw new IllegalArgumentException("property is null.");
+            throw new IllegalArgumentException("property cannot be null.");
         }
         return new PropertyExpression(property);
     }
@@ -183,9 +196,10 @@ public abstract class Expression {
      * @param name The parameter name
      * @return A parameter expression.
      */
+    @NonNull
     public static Expression parameter(@NonNull String name) {
         if (name == null) {
-            throw new IllegalArgumentException("name is null.");
+            throw new IllegalArgumentException("name cannot be null.");
         }
         return new ParameterExpression(name);
     }
@@ -196,9 +210,10 @@ public abstract class Expression {
      * @param expression the expression to be negated.
      * @return a negated expression.
      */
+    @NonNull
     public static Expression negated(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new CompoundExpression(Arrays.asList(expression), CompoundExpression.OpType.Not);
     }
@@ -209,9 +224,10 @@ public abstract class Expression {
      * @param expression the expression to be negated.
      * @return a negated expression.
      */
+    @NonNull
     public static Expression not(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return negated(expression);
     }
@@ -222,9 +238,10 @@ public abstract class Expression {
      * @param expression the expression to multiply by.
      * @return a multiply expression.
      */
+    @NonNull
     public Expression multiply(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Multiply);
     }
@@ -235,9 +252,10 @@ public abstract class Expression {
      * @param expression the expression to divide by.
      * @return a divide expression.
      */
+    @NonNull
     public Expression divide(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Divide);
     }
@@ -248,9 +266,10 @@ public abstract class Expression {
      * @param expression the expression to modulo by.
      * @return a modulo expression.
      */
+    @NonNull
     public Expression modulo(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Modulus);
     }
@@ -261,9 +280,10 @@ public abstract class Expression {
      * @param expression an expression to add to the current expression.
      * @return an add expression.
      */
+    @NonNull
     public Expression add(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Add);
     }
@@ -274,9 +294,10 @@ public abstract class Expression {
      * @param expression an expression to subtract from the current expression.
      * @return a substract expression.
      */
+    @NonNull
     public Expression subtract(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Subtract);
     }
@@ -288,10 +309,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a less than expression.
      */
+    @NonNull
     public Expression lessThan(@NonNull Expression expression) {
-
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.LessThan);
     }
@@ -303,9 +324,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a less than or equal to expression.
      */
+    @NonNull
     public Expression lessThanOrEqualTo(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.LessThanOrEqualTo);
     }
@@ -317,6 +339,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a greater than expression.
      */
+    @NonNull
     public Expression greaterThan(@NonNull Expression expression) {
         if (expression == null) {
             throw new IllegalArgumentException("expression is null");
@@ -331,9 +354,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a greater than or equal to expression.
      */
+    @NonNull
     public Expression greaterThanOrEqualTo(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.GreaterThanOrEqualTo);
     }
@@ -345,9 +369,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return an equal to expression.
      */
+    @NonNull
     public Expression equalTo(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.EqualTo);
     }
@@ -359,9 +384,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a NOT equal to exprssion.
      */
+    @NonNull
     public Expression notEqualTo(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.NotEqualTo);
     }
@@ -373,9 +399,10 @@ public abstract class Expression {
      * @param expression the expression to AND with the current expression.
      * @return a logical AND expression.
      */
+    @NonNull
     public Expression and(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OpType.And);
     }
@@ -387,9 +414,10 @@ public abstract class Expression {
      * @param expression the expression to OR with the current expression.
      * @return a logical OR exprssion.
      */
+    @NonNull
     public Expression or(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OpType.Or);
     }
@@ -401,9 +429,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a Like expression.
      */
+    @NonNull
     public Expression like(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Like);
     }
@@ -415,9 +444,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a regex match expression.
      */
+    @NonNull
     public Expression regex(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.RegexLike);
     }
@@ -429,9 +459,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return an IS expression.
      */
+    @NonNull
     public Expression is(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Is);
     }
@@ -443,9 +474,10 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return an IS NOT expression.
      */
+    @NonNull
     public Expression isNot(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new BinaryExpression(this, expression, BinaryExpression.OpType.IsNot);
     }
@@ -458,9 +490,10 @@ public abstract class Expression {
      * @param expression2 the inclusive upper bound expression.
      * @return a between expression.
      */
+    @NonNull
     public Expression between(@NonNull Expression expression1, @NonNull Expression expression2) {
         if (expression1 == null || expression2 == null) {
-            throw new IllegalArgumentException("expression1 or expression2 is null.");
+            throw new IllegalArgumentException("expression1 or expression2 cannot be null.");
         }
         Expression aggr = new AggregateExpression(Arrays.asList(expression1, expression2));
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.Between);
@@ -475,6 +508,7 @@ public abstract class Expression {
      *
      * @return An IS NULL expression.
      */
+    @NonNull
     public Expression isNullOrMissing() {
         return new UnaryExpression(this, UnaryExpression.OpType.Null)
                 .or(new UnaryExpression(this, UnaryExpression.OpType.Missing));
@@ -486,6 +520,7 @@ public abstract class Expression {
      *
      * @return An IS NOT NULL expression.
      */
+    @NonNull
     public Expression notNullOrMissing() {
         return negated(isNullOrMissing());
     }
@@ -500,9 +535,10 @@ public abstract class Expression {
      * @param collation 　The collation object.
      * @return A Collate expression.
      */
+    @NonNull
     public Expression collate(@NonNull Collation collation) {
         if (collation == null) {
-            throw new IllegalArgumentException("collation is null.");
+            throw new IllegalArgumentException("collation cannot be null.");
         }
         return new CollationExpression(this, collation);
     }
@@ -514,14 +550,16 @@ public abstract class Expression {
      * @param expressions the expression array to evaluate with.
      * @return an IN expression.
      */
+    @NonNull
     public Expression in(@NonNull Expression... expressions) {
         if (expressions == null) {
-            throw new IllegalArgumentException("expressions is null.");
+            throw new IllegalArgumentException("expressions cannot be null.");
         }
         Expression aggr = new AggregateExpression(Arrays.asList(expressions));
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.In);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(Locale.ENGLISH, "%s[json=%s]", getClass().getSimpleName(), asJSON());
@@ -711,7 +749,7 @@ public abstract class Expression {
 
         CompoundExpression(List<Expression> subexpressions, OpType type) {
             if (subexpressions == null)
-                throw new AssertionError("subexpressions is null.");
+                throw new AssertionError("subexpressions cannot be null.");
             this.type = type;
             this.subexpressions = subexpressions;
         }
@@ -749,7 +787,7 @@ public abstract class Expression {
 
         UnaryExpression(Expression operand, OpType type) {
             if (operand == null)
-                throw new AssertionError("operand is null.");
+                throw new AssertionError("operand cannot be null.");
             this.operand = operand;
             this.type = type;
         }

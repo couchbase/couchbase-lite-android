@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -35,6 +37,7 @@ public final class DatabaseChange {
     /**
      * Returns the database instance
      */
+    @NonNull
     public Database getDatabase() {
         return database;
     }
@@ -44,6 +47,7 @@ public final class DatabaseChange {
      *
      * @return
      */
+    @NonNull
     public List<String> getDocumentIDs() {
         return documentIDs;
     }

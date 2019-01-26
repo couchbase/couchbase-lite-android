@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
@@ -113,6 +115,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      *
      * @return the document's ID
      */
+    @NonNull
     public String getId() {
         return _id;
     }
@@ -137,6 +140,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      *
      * @return the MutableDocument instance
      */
+    @NonNull
     public MutableDocument toMutable() {
         return new MutableDocument(this, null);
     }
@@ -160,6 +164,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      *
      * @return all keys
      */
+    @NonNull
     @Override
     public List<String> getKeys() {
         return _dict.getKeys();
@@ -175,7 +180,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the object value or nil.
      */
     @Override
-    public Object getValue(String key) {
+    public Object getValue(@NonNull String key) {
         return _dict.getValue(key);
     }
 
@@ -187,7 +192,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the String or null.
      */
     @Override
-    public String getString(String key) {
+    public String getString(@NonNull String key) {
         return _dict.getString(key);
     }
 
@@ -199,7 +204,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the Number or nil.
      */
     @Override
-    public Number getNumber(String key) {
+    public Number getNumber(@NonNull String key) {
         return _dict.getNumber(key);
     }
 
@@ -212,7 +217,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the int value.
      */
     @Override
-    public int getInt(String key) {
+    public int getInt(@NonNull String key) {
         return _dict.getInt(key);
     }
 
@@ -225,7 +230,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the long value.
      */
     @Override
-    public long getLong(String key) {
+    public long getLong(@NonNull String key) {
         return _dict.getLong(key);
     }
 
@@ -238,7 +243,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the float value.
      */
     @Override
-    public float getFloat(String key) {
+    public float getFloat(@NonNull String key) {
         return _dict.getFloat(key);
     }
 
@@ -251,7 +256,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the double value.
      */
     @Override
-    public double getDouble(String key) {
+    public double getDouble(@NonNull String key) {
         return _dict.getDouble(key);
     }
 
@@ -263,7 +268,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the boolean value.
      */
     @Override
-    public boolean getBoolean(String key) {
+    public boolean getBoolean(@NonNull String key) {
         return _dict.getBoolean(key);
     }
 
@@ -275,7 +280,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the Blob value or null.
      */
     @Override
-    public Blob getBlob(String key) {
+    public Blob getBlob(@NonNull String key) {
         return _dict.getBlob(key);
     }
 
@@ -291,7 +296,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the Date value or null.
      */
     @Override
-    public Date getDate(String key) {
+    public Date getDate(@NonNull String key) {
         return _dict.getDate(key);
     }
 
@@ -303,7 +308,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return The Array object or null.
      */
     @Override
-    public Array getArray(String key) {
+    public Array getArray(@NonNull String key) {
         return _dict.getArray(key);
     }
 
@@ -316,7 +321,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return The Dictionary object or null.
      */
     @Override
-    public Dictionary getDictionary(String key) {
+    public Dictionary getDictionary(@NonNull String key) {
         return _dict.getDictionary(key);
     }
 
@@ -326,6 +331,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      *
      * @return the Map object representing the content of the current object in the JSON format.
      */
+    @NonNull
     @Override
     public Map<String, Object> toMap() {
         return _dict.toMap();
@@ -340,7 +346,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the boolean value representing whether a property exists or not.
      */
     @Override
-    public boolean contains(String key) {
+    public boolean contains(@NonNull String key) {
         return _dict.contains(key);
     }
 
@@ -353,6 +359,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      *
      * @return The key iterator
      */
+    @NonNull
     @Override
     public Iterator<String> iterator() {
         return getKeys().iterator();

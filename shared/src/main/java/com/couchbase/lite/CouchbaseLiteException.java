@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Map;
 
 /**
@@ -57,8 +59,10 @@ public final class CouchbaseLiteException extends Exception implements CBLError.
      * @param domain the error domain
      * @param code   the error code
      */
-    public CouchbaseLiteException(String domain, int code) {
+    public CouchbaseLiteException(@NonNull String domain, int code) {
         super();
+        if (domain == null)
+            throw new IllegalArgumentException("domain cannot be null.");
         this.domain = domain;
         this.code = code;
         this.info = null;
@@ -71,8 +75,10 @@ public final class CouchbaseLiteException extends Exception implements CBLError.
      * @param domain  the error domain
      * @param code    the error code
      */
-    public CouchbaseLiteException(String message, String domain, int code) {
+    public CouchbaseLiteException(String message, @NonNull String domain, int code) {
         super(message);
+        if (domain == null)
+            throw new IllegalArgumentException("domain cannot be null.");
         this.domain = domain;
         this.code = code;
         this.info = null;
@@ -85,8 +91,10 @@ public final class CouchbaseLiteException extends Exception implements CBLError.
      * @param code   the error code
      * @param cause  the cause
      */
-    public CouchbaseLiteException(String domain, int code, Throwable cause) {
+    public CouchbaseLiteException(@NonNull String domain, int code, Throwable cause) {
         super(cause);
+        if (domain == null)
+            throw new IllegalArgumentException("domain cannot be null.");
         this.domain = domain;
         this.code = code;
         this.info = null;
@@ -100,15 +108,19 @@ public final class CouchbaseLiteException extends Exception implements CBLError.
      * @param domain  the error domain
      * @param code    the error code
      */
-    public CouchbaseLiteException(String message, Throwable cause, String domain, int code) {
+    public CouchbaseLiteException(@NonNull String message, Throwable cause, String domain, int code) {
         super(message, cause);
+        if (domain == null)
+            throw new IllegalArgumentException("domain cannot be null.");
         this.domain = domain;
         this.code = code;
         this.info = null;
     }
 
-    public CouchbaseLiteException(String domain, int code, Map<String, Object> info) {
+    public CouchbaseLiteException(@NonNull String domain, int code, Map<String, Object> info) {
         super();
+        if (domain == null)
+            throw new IllegalArgumentException("domain cannot be null.");
         this.domain = domain;
         this.code = code;
         this.info = info;
@@ -119,10 +131,10 @@ public final class CouchbaseLiteException extends Exception implements CBLError.
      *
      * @return The numerical domain code for this error.
      */
+    @NonNull
     public String getDomain() {
         return domain;
     }
-
 
     /**
      * Access the error code for this error.
@@ -137,6 +149,7 @@ public final class CouchbaseLiteException extends Exception implements CBLError.
         return info;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "CouchbaseLiteException{" +

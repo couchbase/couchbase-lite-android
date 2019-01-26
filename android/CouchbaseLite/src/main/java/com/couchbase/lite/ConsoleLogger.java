@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.couchbase.litecore.C4Log;
@@ -43,6 +44,7 @@ public final class ConsoleLogger implements Logger {
      *
      * @return The currently active domains
      */
+    @NonNull
     public EnumSet<LogDomain> getDomains() {
         return _domains;
     }
@@ -53,10 +55,9 @@ public final class ConsoleLogger implements Logger {
      *
      * @param domains The domains to make active
      */
-    public void setDomains(EnumSet<LogDomain> domains) {
-        if(domains == null) {
+    public void setDomains(@NonNull EnumSet<LogDomain> domains) {
+        if(domains == null)
             throw new IllegalArgumentException("domains cannot be null.");
-        }
 
         _domains = domains;
     }
@@ -67,20 +68,21 @@ public final class ConsoleLogger implements Logger {
      *
      * @param level The maximum level to include in the logs
      */
-    public void setLevel(LogLevel level) {
-        if(level == null) {
-            level = LogLevel.NONE;
-        }
+    public void setLevel(@NonNull LogLevel level) {
+        if(level == null)
+            throw new IllegalArgumentException("level cannot be null.");
 
-        if(_level == level) {
+        if(_level == level)
             return;
-        }
 
         _level = level;
         setCallbackLevel(level);
     }
 
-    private void setCallbackLevel(LogLevel level) {
+    private void setCallbackLevel(@NonNull LogLevel level) {
+        if(level == null)
+            throw new IllegalArgumentException("level cannot be null.");
+
         LogLevel callbackLevel = level;
         Logger custom = Database.log.getCustom();
         if(custom != null) {
@@ -92,6 +94,7 @@ public final class ConsoleLogger implements Logger {
         C4Log.setCallbackLevel(callbackLevel.getValue());
     }
 
+    @NonNull
     @Override
     public LogLevel getLevel() {
         return _level;

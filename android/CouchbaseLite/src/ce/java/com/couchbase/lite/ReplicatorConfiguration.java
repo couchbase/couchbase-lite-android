@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +75,7 @@ public final class ReplicatorConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+
     private boolean readonly = false;
     private Database database = null;
     private Endpoint target = null;
@@ -90,7 +93,10 @@ public final class ReplicatorConfiguration {
     // Constructors
     //---------------------------------------------
 
-    public ReplicatorConfiguration(ReplicatorConfiguration config) {
+    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
+        if (config == null)
+            throw new IllegalArgumentException("config cannot be null.");
+
         this.readonly = false;
         this.database = config.database;
         this.target = config.target;
@@ -105,7 +111,12 @@ public final class ReplicatorConfiguration {
         this.pushFilter = config.pushFilter;
     }
 
-    public ReplicatorConfiguration(Database database, Endpoint target) {
+    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
+        if (database == null)
+            throw new IllegalArgumentException("config cannot be null.");
+        if (target == null)
+            throw new IllegalArgumentException("target cannot be null.");
+
         this.readonly = false;
         this.replicatorType = PUSH_AND_PULL;
         this.database = database;
@@ -123,7 +134,10 @@ public final class ReplicatorConfiguration {
      * @param replicatorType The replicator type.
      * @return The self object.
      */
-    public ReplicatorConfiguration setReplicatorType(ReplicatorType replicatorType) {
+    @NonNull
+    public ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
+        if (replicatorType == null)
+            throw new IllegalArgumentException("replicatorType cannot be null.");
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
         this.replicatorType = replicatorType;
@@ -139,6 +153,7 @@ public final class ReplicatorConfiguration {
      * @param continuous The continuous flag.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setContinuous(boolean continuous) {
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -154,6 +169,7 @@ public final class ReplicatorConfiguration {
      * @param authenticator The authenticator.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setAuthenticator(Authenticator authenticator) {
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -167,6 +183,7 @@ public final class ReplicatorConfiguration {
      * @param pinnedServerCertificate the SSL certificate.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setPinnedServerCertificate(byte[] pinnedServerCertificate) {
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -180,6 +197,7 @@ public final class ReplicatorConfiguration {
      * @param headers The HTTP Headers.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setHeaders(Map<String, String> headers) {
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -196,6 +214,7 @@ public final class ReplicatorConfiguration {
      * @param channels The Sync Gateway channel names.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setChannels(List<String> channels) {
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -210,6 +229,7 @@ public final class ReplicatorConfiguration {
      * @param documentIDs The document IDs.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setDocumentIDs(List<String> documentIDs) {
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -224,6 +244,7 @@ public final class ReplicatorConfiguration {
      * @param pushFilter The filter to filter the document to be pushed.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setPushFilter(ReplicationFilter pushFilter){
         if(readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -238,6 +259,7 @@ public final class ReplicatorConfiguration {
      * @param pullFilter The filter to filter the document to be pulled.
      * @return The self object.
      */
+    @NonNull
     public ReplicatorConfiguration setPullFilter(ReplicationFilter pullFilter){
         if(readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
@@ -252,6 +274,7 @@ public final class ReplicatorConfiguration {
     /**
      * Return the local database to replicate with the replication target.
      */
+    @NonNull
     public Database getDatabase() {
         return database;
     }
@@ -259,6 +282,7 @@ public final class ReplicatorConfiguration {
     /**
      * Return the replication target to replicate with.
      */
+    @NonNull
     public Endpoint getTarget() {
         return target;
     }
@@ -266,6 +290,7 @@ public final class ReplicatorConfiguration {
     /**
      * Return Replicator type indicating the direction of the replicator.
      */
+    @NonNull
     public ReplicatorType getReplicatorType() {
         return replicatorType;
     }

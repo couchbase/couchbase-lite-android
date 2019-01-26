@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.litecore.fleece.MArray;
 import com.couchbase.litecore.fleece.MCollection;
 import com.couchbase.litecore.fleece.MValue;
@@ -75,6 +77,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param data the array
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setData(List<Object> data) {
         synchronized (_sharedLock) {
@@ -92,6 +95,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setValue(int index, Object value) {
         synchronized (_sharedLock) {
@@ -109,6 +113,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the String object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setString(int index, String value) {
         return setValue(index, value);
@@ -121,6 +126,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Number object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setNumber(int index, Number value) {
         return setValue(index, value);
@@ -133,6 +139,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the int value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setInt(int index, int value) {
         return setValue(index, value);
@@ -145,6 +152,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the long value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setLong(int index, long value) {
         return setValue(index, value);
@@ -157,6 +165,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the float value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setFloat(int index, float value) {
         return setValue(index, value);
@@ -169,6 +178,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the double value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setDouble(int index, double value) {
         return setValue(index, value);
@@ -181,6 +191,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the boolean value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setBoolean(int index, boolean value) {
         return setValue(index, value);
@@ -193,6 +204,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Blob object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setBlob(int index, Blob value) {
         return setValue(index, value);
@@ -205,6 +217,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Date object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setDate(int index, Date value) {
         return setValue(index, value);
@@ -217,6 +230,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Array object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setArray(int index, Array value) {
         return setValue(index, value);
@@ -229,6 +243,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Dictionary object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray setDictionary(int index, Dictionary value) {
         return setValue(index, value);
@@ -240,6 +255,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addValue(Object value) {
         synchronized (_sharedLock) {
@@ -254,6 +270,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the String object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addString(String value) {
         return addValue(value);
@@ -265,6 +282,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Number object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addNumber(Number value) {
         return addValue(value);
@@ -276,6 +294,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the int value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addInt(int value) {
         return addValue(value);
@@ -287,6 +306,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the long value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addLong(long value) {
         return addValue(value);
@@ -298,6 +318,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the float value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addFloat(float value) {
         return addValue(value);
@@ -309,6 +330,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the double value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addDouble(double value) {
         return addValue(value);
@@ -320,6 +342,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the boolean value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addBoolean(boolean value) {
         return addValue(value);
@@ -331,6 +354,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Blob object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addBlob(Blob value) {
         return addValue(value);
@@ -342,6 +366,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Date object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addDate(Date value) {
         return addValue(value);
@@ -353,6 +378,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Array object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addArray(Array value) {
         return addValue(value);
@@ -364,6 +390,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Dictonary object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray addDictionary(Dictionary value) {
         return addValue(value);
@@ -376,6 +403,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertValue(int index, Object value) {
         synchronized (_sharedLock) {
@@ -392,6 +420,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the String object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertString(int index, String value) {
         return insertValue(index, value);
@@ -404,6 +433,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Number object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertNumber(int index, Number value) {
         return insertValue(index, value);
@@ -416,6 +446,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the int value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertInt(int index, int value) {
         return insertValue(index, value);
@@ -428,6 +459,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the long value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertLong(int index, long value) {
         return insertValue(index, value);
@@ -440,6 +472,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the float value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertFloat(int index, float value) {
         return insertValue(index, value);
@@ -452,6 +485,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the double value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertDouble(int index, double value) {
         return insertValue(index, value);
@@ -464,6 +498,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the boolean value
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertBoolean(int index, boolean value) {
         return insertValue(index, value);
@@ -476,6 +511,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Blob object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertBlob(int index, Blob value) {
         return insertValue(index, value);
@@ -488,6 +524,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Date object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertDate(int index, Date value) {
         return insertValue(index, value);
@@ -500,6 +537,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Array object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertArray(int index, Array value) {
         return insertValue(index, value);
@@ -512,6 +550,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param value the Dictionary object
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray insertDictionary(int index, Dictionary value) {
         return insertValue(index, value);
@@ -523,6 +562,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param index the index. This value must not exceed the bounds of the array.
      * @return The self object
      */
+    @NonNull
     @Override
     public MutableArray remove(int index) {
         synchronized (_sharedLock) {

@@ -35,9 +35,10 @@ public final class ValueIndexItem {
      * @param property the property name
      * @return The value index item
      */
+    @NonNull
     public static ValueIndexItem property(@NonNull String property) {
         if (property == null) {
-            throw new IllegalArgumentException("property is null.");
+            throw new IllegalArgumentException("property cannot be null.");
         }
         return new ValueIndexItem(Expression.property(property));
     }
@@ -48,9 +49,10 @@ public final class ValueIndexItem {
      * @param expression The expression to index. Typically a property expression.
      * @return The value index item
      */
+    @NonNull
     public static ValueIndexItem expression(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new ValueIndexItem(expression);
     }

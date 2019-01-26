@@ -48,6 +48,7 @@ public abstract class Ordering {
          *
          * @return the OrderBy object.
          */
+        @NonNull
         public Ordering ascending() {
             this.isAscending = true;
             return this;
@@ -58,6 +59,7 @@ public abstract class Ordering {
          *
          * @return the OrderBy object.
          */
+        @NonNull
         public Ordering descending() {
             this.isAscending = false;
             return this;
@@ -77,6 +79,7 @@ public abstract class Ordering {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
+
     Ordering() {
 
     }
@@ -92,9 +95,10 @@ public abstract class Ordering {
      * @param property the property name
      * @return the SortOrder object.
      */
+    @NonNull
     public static SortOrder property(@NonNull String property) {
         if (property == null) {
-            throw new IllegalArgumentException("property is null.");
+            throw new IllegalArgumentException("property cannot be null.");
         }
         return expression(Expression.property(property));
     }
@@ -105,9 +109,10 @@ public abstract class Ordering {
      * @param expression the expression object.
      * @return the SortOrder object.
      */
+    @NonNull
     public static SortOrder expression(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new SortOrder(expression);
     }

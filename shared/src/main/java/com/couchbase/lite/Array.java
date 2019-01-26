@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLEncodable;
@@ -269,6 +271,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      *
      * @return the List object representing the content of the current object in the JSON format.
      */
+    @NonNull
     @Override
     public List<Object> toList() {
         synchronized (_sharedLock) {
@@ -285,6 +288,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      *
      * @return the MutableArray instance
      */
+    @NonNull
     public MutableArray toMutable() {
         synchronized (_sharedLock) {
             return new MutableArray(_array, true);
@@ -298,6 +302,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     /**
      * encodeTo(FlEncoder) is internal method. Please don't use this method.
      */
+    @NonNull
     @Override
     public void encodeTo(FLEncoder enc) {
         Encoder encoder = new Encoder(enc);
@@ -309,6 +314,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Iterable implementation
     //---------------------------------------------
 
+    @NonNull
     @Override
     public Iterator<Object> iterator() {
         return new ArrayIterator();
