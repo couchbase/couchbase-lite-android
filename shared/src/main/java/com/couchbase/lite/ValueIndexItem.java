@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * Value Index Item
  */
@@ -33,7 +35,10 @@ public final class ValueIndexItem {
      * @param property the property name
      * @return The value index item
      */
-    public static ValueIndexItem property(String property) {
+    public static ValueIndexItem property(@NonNull String property) {
+        if (property == null) {
+            throw new IllegalArgumentException("property is null.");
+        }
         return new ValueIndexItem(Expression.property(property));
     }
 
@@ -43,7 +48,10 @@ public final class ValueIndexItem {
      * @param expression The expression to index. Typically a property expression.
      * @return The value index item
      */
-    public static ValueIndexItem expression(Expression expression) {
+    public static ValueIndexItem expression(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression is null.");
+        }
         return new ValueIndexItem(expression);
     }
 }

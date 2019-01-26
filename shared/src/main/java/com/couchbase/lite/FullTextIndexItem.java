@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * Full-text Index Item.
  */
@@ -33,7 +35,10 @@ public final class FullTextIndexItem {
      * @param property A property used to perform the match operation against with.
      * @return The full-text search index item.
      */
-    public static FullTextIndexItem property(String property) {
+    public static FullTextIndexItem property(@NonNull String property) {
+        if (property == null) {
+            throw new IllegalArgumentException("property is null.");
+        }
         return new FullTextIndexItem(Expression.property(property));
     }
 }
