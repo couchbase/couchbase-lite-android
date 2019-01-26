@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Arrays;
 
 /**
@@ -44,7 +46,10 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @return The GroupBy object.
      */
     @Override
-    public GroupBy groupBy(Expression... expressions) {
+    public GroupBy groupBy(@NonNull Expression... expressions) {
+        if (expressions == null) {
+            throw new IllegalArgumentException("expressions is null.");
+        }
         return new GroupBy(this, Arrays.asList(expressions));
     }
 
@@ -59,7 +64,10 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @return the ORDER BY component.
      */
     @Override
-    public OrderBy orderBy(Ordering... orderings) {
+    public OrderBy orderBy(@NonNull Ordering... orderings) {
+        if (orderings == null) {
+            throw new IllegalArgumentException("orderings is null.");
+        }
         return new OrderBy(this, Arrays.asList(orderings));
     }
 
@@ -74,7 +82,10 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @return The Limit object.
      */
     @Override
-    public Limit limit(Expression limit) {
+    public Limit limit(@NonNull Expression limit) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
+        }
         return new Limit(this, limit, null);
     }
 
@@ -87,7 +98,10 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @return The Limit object.
      */
     @Override
-    public Limit limit(Expression limit, Expression offset) {
+    public Limit limit(@NonNull Expression limit, Expression offset) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
+        }
         return new Limit(this, limit, offset);
     }
 }

@@ -1274,7 +1274,6 @@ public class QueryTest extends BaseTest {
 
         Query q = QueryBuilder.select(S_STRING)
                 .from(DataSource.database(db))
-                .where(null)
                 .orderBy(Ordering.expression(STRING.collate(NO_LOCALE)));
 
         final String[] expected = {"A", "Å", "B", "Z"};
@@ -1296,7 +1295,6 @@ public class QueryTest extends BaseTest {
 
             q = QueryBuilder.select(S_STRING)
                     .from(DataSource.database(db))
-                    .where(null)
                     .orderBy(Ordering.expression(STRING.collate(WITH_LOCALE)));
 
             final String[] expected2 = {"A", "Å", "B", "Z"};
@@ -1319,7 +1317,6 @@ public class QueryTest extends BaseTest {
 
             q = QueryBuilder.select(S_STRING)
                     .from(DataSource.database(db))
-                    .where(null)
                     .orderBy(Ordering.expression(STRING.collate(WITH_LOCALE)));
 
             final String[] expected2 = {"A", "B", "Z", "Å"};

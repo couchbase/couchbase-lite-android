@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,7 +57,10 @@ public class DataSource {
          * @param alias the alias to set.
          * @return the data source object with the given alias set.
          */
-        public DataSource as(String alias) {
+        public DataSource as(@NonNull String alias) {
+            if (alias == null) {
+                throw new IllegalArgumentException("alias is null.");
+            }
             super.alias = alias;
             return this;
         }
@@ -79,7 +84,10 @@ public class DataSource {
      * @param database the database used as a source of data for query.
      * @return {@code DataSource.Database} object.
      */
-    public static As database(com.couchbase.lite.Database database) {
+    public static As database(@NonNull com.couchbase.lite.Database database) {
+        if (database == null) {
+            throw new IllegalArgumentException("database is null.");
+        }
         return new As(database);
     }
 

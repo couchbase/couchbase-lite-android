@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,7 +55,10 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      * @return The Having object that represents the HAVING clause of the query.
      */
     @Override
-    public Having having(Expression expression) {
+    public Having having(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression is null.");
+        }
         return new Having(this, expression);
     }
 
@@ -68,7 +73,10 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      * @return the ORDER BY component.
      */
     @Override
-    public OrderBy orderBy(Ordering... orderings) {
+    public OrderBy orderBy(@NonNull Ordering... orderings) {
+        if (orderings == null) {
+            throw new IllegalArgumentException("orderings is null.");
+        }
         return new OrderBy(this, Arrays.asList(orderings));
     }
 
@@ -81,9 +89,13 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      *
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
+     * @throws IllegalArgumentException when limit is null.
      */
     @Override
-    public Limit limit(Expression limit) {
+    public Limit limit(@NonNull Expression limit) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
+        }
         return new Limit(this, limit, null);
     }
 
@@ -94,9 +106,13 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
      * @param limit  The limit expression.
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
+     * @throws IllegalArgumentException when limit is null.
      */
     @Override
-    public Limit limit(Expression limit, Expression offset) {
+    public Limit limit(@NonNull Expression limit, Expression offset) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
+        }
         return new Limit(this, limit, offset);
     }
 

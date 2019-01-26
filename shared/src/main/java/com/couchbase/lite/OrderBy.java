@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +54,10 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
      * @return The Limit object that represents the LIMIT clause of the query.
      */
     @Override
-    public Limit limit(Expression limit) {
+    public Limit limit(@NonNull Expression limit) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
+        }
         return new Limit(this, limit, null);
     }
 
@@ -64,7 +69,10 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
      * @return The Limit object that represents the LIMIT clause of the query.
      */
     @Override
-    public Limit limit(Expression limit, Expression offset) {
+    public Limit limit(@NonNull Expression limit, Expression offset) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit is null.");
+        }
         return new Limit(this, limit, offset);
     }
 
