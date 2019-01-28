@@ -50,6 +50,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
      */
+    @NonNull
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
         if (orderings == null) {
@@ -68,6 +69,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit) {
         if (limit == null) {
@@ -84,6 +86,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
         if (limit == null) {

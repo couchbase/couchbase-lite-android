@@ -17,9 +17,12 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * Note: GroupByRouter is an internal interface. This should not be public.
  */
 interface GroupByRouter {
-    GroupBy groupBy(Expression... expressions);
+    @NonNull
+    GroupBy groupBy(@NonNull Expression... expressions);
 }

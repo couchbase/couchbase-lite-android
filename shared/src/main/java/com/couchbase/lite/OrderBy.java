@@ -32,11 +32,13 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
+
     private List<Ordering> orderings;
 
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
+
     OrderBy(AbstractQuery query, List<Ordering> orderings) {
         copy(query);
         this.orderings = orderings;
@@ -53,10 +55,11 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit) {
         if (limit == null) {
-            throw new IllegalArgumentException("limit is null.");
+            throw new IllegalArgumentException("limit cannot be null.");
         }
         return new Limit(this, limit, null);
     }
@@ -68,10 +71,11 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
         if (limit == null) {
-            throw new IllegalArgumentException("limit is null.");
+            throw new IllegalArgumentException("limit cannot be null.");
         }
         return new Limit(this, limit, offset);
     }

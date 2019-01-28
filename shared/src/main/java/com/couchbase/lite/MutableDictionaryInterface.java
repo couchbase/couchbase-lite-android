@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Date;
 import java.util.Map;
 
@@ -25,40 +27,56 @@ import java.util.Map;
  */
 interface MutableDictionaryInterface extends DictionaryInterface {
     // Set JSON or platform dictionary as a content.
+
+    @NonNull
     MutableDictionaryInterface setData(Map<String, Object> data);
 
     // set
-    MutableDictionaryInterface setValue(String key, Object value);
 
-    MutableDictionaryInterface setString(String key, String value);
+    @NonNull
+    MutableDictionaryInterface setValue(@NonNull String key, Object value);
 
-    MutableDictionaryInterface setNumber(String key, Number value);
+    @NonNull
+    MutableDictionaryInterface setString(@NonNull String key, String value);
 
-    MutableDictionaryInterface setInt(String key, int value);
+    @NonNull
+    MutableDictionaryInterface setNumber(@NonNull String key, Number value);
 
-    MutableDictionaryInterface setLong(String key, long value);
+    @NonNull
+    MutableDictionaryInterface setInt(@NonNull String key, int value);
 
-    MutableDictionaryInterface setFloat(String key, float value);
+    @NonNull
+    MutableDictionaryInterface setLong(@NonNull String key, long value);
 
-    MutableDictionaryInterface setDouble(String key, double value);
+    @NonNull
+    MutableDictionaryInterface setFloat(@NonNull String key, float value);
 
-    MutableDictionaryInterface setBoolean(String key, boolean value);
+    @NonNull
+    MutableDictionaryInterface setDouble(@NonNull String key, double value);
 
-    MutableDictionaryInterface setBlob(String key, Blob value);
+    @NonNull
+    MutableDictionaryInterface setBoolean(@NonNull String key, boolean value);
 
-    MutableDictionaryInterface setDate(String key, Date value);
+    @NonNull
+    MutableDictionaryInterface setBlob(@NonNull String key, Blob value);
 
-    MutableDictionaryInterface setArray(String key, Array value);
+    @NonNull
+    MutableDictionaryInterface setDate(@NonNull String key, Date value);
 
-    MutableDictionaryInterface setDictionary(String key, Dictionary value);
+    @NonNull
+    MutableDictionaryInterface setArray(@NonNull String key, Array value);
+
+    @NonNull
+    MutableDictionaryInterface setDictionary(@NonNull String key, Dictionary value);
 
     // remove
 
-    MutableDictionaryInterface remove(String key);
+    @NonNull
+    MutableDictionaryInterface remove(@NonNull String key);
 
     // overridden
 
-    MutableArrayInterface getArray(String key);
+    MutableArrayInterface getArray(@NonNull String key);
 
-    MutableDictionaryInterface getDictionary(String key);
+    MutableDictionaryInterface getDictionary(@NonNull String key);
 }

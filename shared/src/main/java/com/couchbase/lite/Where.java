@@ -30,6 +30,7 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
+
     Where(AbstractQuery query, Expression where) {
         copy(query);
         setWhere(where);
@@ -45,10 +46,11 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @param expressions The expression objects.
      * @return The GroupBy object.
      */
+    @NonNull
     @Override
     public GroupBy groupBy(@NonNull Expression... expressions) {
         if (expressions == null) {
-            throw new IllegalArgumentException("expressions is null.");
+            throw new IllegalArgumentException("expressions cannot be null.");
         }
         return new GroupBy(this, Arrays.asList(expressions));
     }
@@ -63,6 +65,7 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
      */
+    @NonNull
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
         if (orderings == null) {
@@ -81,6 +84,7 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @param limit The limit Expression object
      * @return The Limit object.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit) {
         if (limit == null) {
@@ -97,6 +101,7 @@ public final class Where extends AbstractQuery implements GroupByRouter, OrderBy
      * @param offset The offset Expression object
      * @return The Limit object.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
         if (limit == null) {

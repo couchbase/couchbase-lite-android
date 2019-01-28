@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.litecore.C4BlobKey;
@@ -123,7 +125,7 @@ public final class Blob implements FLEncodable {
      * @param contentType The type of content this Blob will represent
      * @param content     The data that this Blob will contain
      */
-    public Blob(String contentType, byte[] content) {
+    public Blob(@NonNull String contentType, @NonNull byte[] content) {
         if (contentType == null)
             throw new IllegalArgumentException("contentType cannot be null.");
         if (content == null)
@@ -140,7 +142,7 @@ public final class Blob implements FLEncodable {
      * @param contentType The type of content this Blob will represent
      * @param stream      The stream of data that this Blob will consume
      */
-    public Blob(String contentType, InputStream stream) {
+    public Blob(@NonNull String contentType, @NonNull InputStream stream) {
         if (contentType == null)
             throw new IllegalArgumentException("contentType cannot be null.");
         if (stream == null)
@@ -158,7 +160,7 @@ public final class Blob implements FLEncodable {
      * @param fileURL     A URL to a file containing the data that this Blob will represent.
      * @throws IOException
      */
-    public Blob(String contentType, URL fileURL) throws IOException {
+    public Blob(@NonNull String contentType, @NonNull URL fileURL) throws IOException {
         if (contentType == null)
             throw new IllegalArgumentException("contentType cannot be null.");
         if (fileURL == null)
@@ -298,6 +300,7 @@ public final class Blob implements FLEncodable {
      *
      * @return the type of content
      */
+    @NonNull
     public String getContentType() {
         return contentType;
     }
@@ -325,6 +328,7 @@ public final class Blob implements FLEncodable {
      *
      * @return the metadata associated with this Blob
      */
+    @NonNull
     public Map<String, Object> getProperties() {
         if (properties != null) {
             // Blob read from database;
@@ -347,6 +351,7 @@ public final class Blob implements FLEncodable {
      *
      * @return a string representation of the object
      */
+    @NonNull
     @Override
     public String toString() {
         return String.format(Locale.ENGLISH, "Blob[%s; %d KB]",

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Constants;
@@ -180,6 +182,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             return total;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return "Progress{" +
@@ -227,6 +230,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         /**
          * The current activity level.
          */
+        @NonNull
         public ActivityLevel getActivityLevel() {
             return activityLevel;
         }
@@ -234,6 +238,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         /**
          * The current progress of the replicator.
          */
+        @NonNull
         public Replicator.Progress getProgress() {
             return progress;
         }
@@ -242,6 +247,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             return error;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return "Status{" +
@@ -305,7 +311,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      *
      * @param config
      */
-    public AbstractReplicator(ReplicatorConfiguration config) {
+    public AbstractReplicator(@NonNull ReplicatorConfiguration config) {
+        if (config == null)
+            throw new IllegalArgumentException("config cannot be null.");
+
         this.config = config.readonlyCopy();
         this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
         this.docEndedListenerTokens = synchronizedSet(new HashSet<DocumentReplicationListenerToken>());
@@ -365,6 +374,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      *
      * @return
      */
+    @NonNull
     public ReplicatorConfiguration getConfig() {
         return config.readonlyCopy();
     }
@@ -374,11 +384,16 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      *
      * @return
      */
+    @NonNull
     public Status getStatus() {
         return status.copy();
     }
 
-    public ListenerToken addChangeListener(ReplicatorChangeListener listener) {
+    @NonNull
+    public ListenerToken addChangeListener(@NonNull ReplicatorChangeListener listener) {
+        if (listener == null)
+            throw new IllegalArgumentException("listener cannot be null.");
+
         return addChangeListener(null, listener);
     }
 
@@ -387,7 +402,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      *
      * @param listener
      */
-    public ListenerToken addChangeListener(Executor executor, ReplicatorChangeListener listener) {
+    @NonNull
+    public ListenerToken addChangeListener(Executor executor, @NonNull ReplicatorChangeListener listener) {
+        if (listener == null)
+            throw new IllegalArgumentException("listener cannot be null.");
+
         synchronized (lock) {
             if (listener == null)
                 throw new IllegalArgumentException();
@@ -400,7 +419,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     /**
      * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
      */
-    public void removeChangeListener(ListenerToken token) {
+    public void removeChangeListener(@NonNull ListenerToken token) {
+        if (token == null)
+            throw new IllegalArgumentException("token cannot be null.");
+
         synchronized (lock) {
             if (token == null || (!(token instanceof ReplicatorChangeListenerToken) && !(token instanceof DocumentReplicationListenerToken)))
                 throw new IllegalArgumentException();
@@ -418,7 +440,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      * @param listener
      * @return ListenerToken A token to remove the handler later
      */
-    public ListenerToken addDocumentReplicationListener(DocumentReplicationListener listener) {
+    @NonNull
+    public ListenerToken addDocumentReplicationListener(@NonNull DocumentReplicationListener listener) {
+        if (listener == null)
+            throw new IllegalArgumentException("listener cannot be null.");
+
         return addDocumentReplicationListener(null, listener);
     }
 
@@ -427,10 +453,12 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      *
      * @param listener
      */
-    public ListenerToken addDocumentReplicationListener(Executor executor, DocumentReplicationListener listener) {
+    @NonNull
+    public ListenerToken addDocumentReplicationListener(Executor executor, @NonNull DocumentReplicationListener listener) {
+        if (listener == null)
+            throw new IllegalArgumentException("listener cannot be null.");
+
         synchronized (lock) {
-            if (listener == null)
-                throw new IllegalArgumentException();
             setProgressLevel(ReplicatorProgressLevel.PER_DOCUMENT);
             DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
@@ -451,6 +479,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         }
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (desc == null)

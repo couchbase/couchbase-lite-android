@@ -47,6 +47,7 @@ public final class FullTextExpression {
      * @param name The full-text index name.
      * @return The full-text expression.
      */
+    @NonNull
     public static FullTextExpression index(@NonNull String name) {
         if (name == null) {
             throw new IllegalArgumentException("name is null.");
@@ -60,6 +61,7 @@ public final class FullTextExpression {
      * @param query The search text
      * @return The full-text match expression
      */
+    @NonNull
     public Expression match(@NonNull String query) {
         if (query == null) {
             throw new IllegalArgumentException("query is null.");

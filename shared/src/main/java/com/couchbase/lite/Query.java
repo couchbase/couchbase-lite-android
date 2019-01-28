@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.concurrent.Executor;
 
 /**
@@ -53,6 +55,7 @@ public interface Query {
      * @return the ResultSet for the query result.
      * @throws CouchbaseLiteException if there is an error when running the query.
      */
+    @NonNull
     ResultSet execute() throws CouchbaseLiteException;
 
     /**
@@ -69,6 +72,7 @@ public interface Query {
      * @return a string describing the implementation of the compiled query.
      * @throws CouchbaseLiteException if an error occurs
      */
+    @NonNull
     String explain() throws CouchbaseLiteException;
 
     /**
@@ -77,7 +81,8 @@ public interface Query {
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
      */
-    ListenerToken addChangeListener(QueryChangeListener listener);
+    @NonNull
+    ListenerToken addChangeListener(@NonNull QueryChangeListener listener);
 
     /**
      * Adds a query change listener with the dispatch queue on which changes
@@ -88,12 +93,13 @@ public interface Query {
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
      */
-    ListenerToken addChangeListener(Executor executor, QueryChangeListener listener);
+    @NonNull
+    ListenerToken addChangeListener(Executor executor, @NonNull QueryChangeListener listener);
 
     /**
      * Removes a change listener wih the given listener token.
      *
      * @param token The listener token.
      */
-    void removeChangeListener(ListenerToken token);
+    void removeChangeListener(@NonNull ListenerToken token);
 }

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.EnumSet;
 
 /**
@@ -25,5 +27,5 @@ import java.util.EnumSet;
  * push and pull will not be allowed.
  **/
 public interface ReplicationFilter {
-    boolean filtered(Document document, EnumSet<DocumentFlag> flags);
+    boolean filtered(@NonNull Document document, @NonNull EnumSet<DocumentFlag> flags);
 }

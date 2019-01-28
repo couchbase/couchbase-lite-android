@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.net.URI;
 import java.util.Locale;
 
@@ -45,7 +47,7 @@ public final class URLEndpoint implements Endpoint {
      *
      * @param url The url.
      */
-    public URLEndpoint(URI url) {
+    public URLEndpoint(@NonNull URI url) {
         if (url == null)
             throw new IllegalArgumentException("url cannot be null.");
 
@@ -64,6 +66,7 @@ public final class URLEndpoint implements Endpoint {
         this.url = url;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "URLEndpoint{" +
@@ -78,6 +81,7 @@ public final class URLEndpoint implements Endpoint {
     /**
      * Returns the url.
      */
+    @NonNull
     public URI getURL() {
         return url;
     }

@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.litecore.C4Error;
 
 import java.util.EnumSet;
@@ -62,6 +64,7 @@ public final class ReplicatedDocument {
     /**
      * The current document id.
      */
+    @NonNull
     public String getID() {
         return id;
     }
@@ -69,6 +72,7 @@ public final class ReplicatedDocument {
     /**
      * The current status flag of the document. eg. deleted, access removed
      */
+    @NonNull
     public EnumSet<DocumentFlag> flags() {
         return documentFlags;
     }
@@ -80,6 +84,7 @@ public final class ReplicatedDocument {
         return error.getCode() != 0 ? CBLStatus.convertError(error) : null;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "ReplicatedDocument {" +

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 
 import java.util.Locale;
@@ -67,6 +69,7 @@ final class LiveQuery implements DatabaseChangeListener {
     // API - public methods
     //---------------------------------------------
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(Locale.ENGLISH, "%s[%s]", this.getClass().getSimpleName(), query.toString());
@@ -75,8 +78,9 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
     // Implementation of DatabaseChangeListener
     //---------------------------------------------
+
     @Override
-    public void changed(DatabaseChange change) {
+    public void changed(@NonNull DatabaseChange change) {
         synchronized (lock) {
             if (willUpdate)
                 return; // Already a pending update scheduled

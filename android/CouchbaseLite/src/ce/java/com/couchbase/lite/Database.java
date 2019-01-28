@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.litecore.C4Constants;
 
 /**
@@ -31,7 +33,7 @@ public final class Database extends AbstractDatabase {
      * @param config The database config, Note: null config parameter is not allowed with Android platform
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
-    public Database(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
+    public Database(@NonNull String name, @NonNull DatabaseConfiguration config) throws CouchbaseLiteException {
         super(name, config);
     }
 

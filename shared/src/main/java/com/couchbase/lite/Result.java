@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.SharedKeys;
@@ -236,6 +238,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      *
      * @return The List representing all values.
      */
+    @NonNull
     @Override
     public List<Object> toList() {
         List<Object> array = new ArrayList<>();
@@ -253,6 +256,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     /**
      * Return All projecting keys
      */
+    @NonNull
     @Override
     public List<String> getKeys() {
         return new ArrayList<>(rs.getColumnNames().keySet());
@@ -266,7 +270,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The Object.
      */
     @Override
-    public Object getValue(String key) {
+    public Object getValue(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getValue(index) : null;
     }
@@ -279,7 +286,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The String object.
      */
     @Override
-    public String getString(String key) {
+    public String getString(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getString(index) : null;
     }
@@ -292,7 +302,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The Number object.
      */
     @Override
-    public Number getNumber(String key) {
+    public Number getNumber(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getNumber(index) : null;
     }
@@ -305,7 +318,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The integer value.
      */
     @Override
-    public int getInt(String key) {
+    public int getInt(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getInt(index) : 0;
     }
@@ -318,7 +334,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The long value.
      */
     @Override
-    public long getLong(String key) {
+    public long getLong(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getLong(index) : 0L;
     }
@@ -331,7 +350,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The float value.
      */
     @Override
-    public float getFloat(String key) {
+    public float getFloat(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getFloat(index) : 0.0f;
     }
@@ -344,7 +366,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The double value.
      */
     @Override
-    public double getDouble(String key) {
+    public double getDouble(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getDouble(index) : 0.0;
     }
@@ -357,7 +382,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The boolean value.
      */
     @Override
-    public boolean getBoolean(String key) {
+    public boolean getBoolean(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getBoolean(index) : false;
     }
@@ -370,7 +398,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The Blob object.
      */
     @Override
-    public Blob getBlob(String key) {
+    public Blob getBlob(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getBlob(index) : null;
     }
@@ -383,7 +414,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The Date object.
      */
     @Override
-    public Date getDate(String key) {
+    public Date getDate(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getDate(index) : null;
     }
@@ -396,7 +430,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The Array object.
      */
     @Override
-    public Array getArray(String key) {
+    public Array getArray(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getArray(index) : null;
     }
@@ -409,7 +446,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return The Dictionary object.
      */
     @Override
-    public Dictionary getDictionary(String key) {
+    public Dictionary getDictionary(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         int index = indexForColumnName(key);
         return index >= 0 ? getDictionary(index) : null;
     }
@@ -421,6 +461,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      *
      * @return The Map representing all values.
      */
+    @NonNull
     @Override
     public Map<String, Object> toMap() {
         List<Object> values = toList();
@@ -440,7 +481,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return True if exists, otherwise false.
      */
     @Override
-    public boolean contains(String key) {
+    public boolean contains(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         return indexForColumnName(key) >= 0;
     }
 
@@ -453,6 +497,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      *
      * @return The Iterator object of all result keys.
      */
+    @NonNull
     @Override
     public Iterator<String> iterator() {
         return getKeys().iterator();

@@ -42,9 +42,10 @@ public class SelectResult {
          * @param alias The data source alias name.
          * @return The SelectResult object with the data source alias name specified.
          */
+        @NonNull
         public SelectResult from(@NonNull String alias) {
             if (alias == null) {
-                throw new IllegalArgumentException("alias is null.");
+                throw new IllegalArgumentException("alias cannot be null.");
             }
             this.expression = PropertyExpression.allFrom(alias);
             this.alias = alias;
@@ -68,9 +69,10 @@ public class SelectResult {
          * @param alias The alias name.
          * @return The SelectResult object with the alias name specified.
          */
+        @NonNull
         public SelectResult as(@NonNull String alias) {
             if (alias == null) {
-                throw new IllegalArgumentException("alias is null.");
+                throw new IllegalArgumentException("alias cannot be null.");
             }
             this.alias = alias;
             return this;
@@ -100,9 +102,10 @@ public class SelectResult {
      * @param property The property name.
      * @return The SelectResult.As object that you can give the alias name to the returned value.
      */
+    @NonNull
     public static SelectResult.As property(@NonNull String property) {
         if (property == null) {
-            throw new IllegalArgumentException("property is null.");
+            throw new IllegalArgumentException("property cannot be null.");
         }
         return new SelectResult.As(PropertyExpression.property(property));
     }
@@ -113,9 +116,10 @@ public class SelectResult {
      * @param expression The expression.
      * @return The SelectResult.As object that you can give the alias name to the returned value.
      */
+    @NonNull
     public static SelectResult.As expression(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new SelectResult.As(expression);
     }
@@ -126,6 +130,7 @@ public class SelectResult {
      *
      * @return The SelectResult.From object that you can specify the data source alias name.
      */
+    @NonNull
     public static SelectResult.From all() {
         PropertyExpression expr = PropertyExpression.allFrom(null);
         return new SelectResult.From(expr);

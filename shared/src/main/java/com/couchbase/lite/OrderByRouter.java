@@ -18,9 +18,12 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * Note: OrderByRouter is an internal interface. This should not be public.
  */
 interface OrderByRouter {
-    OrderBy orderBy(Ordering... orderings);
+    @NonNull
+    OrderBy orderBy(@NonNull Ordering... orderings);
 }

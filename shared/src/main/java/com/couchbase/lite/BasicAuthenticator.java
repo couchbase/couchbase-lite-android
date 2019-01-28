@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,7 +46,12 @@ public final class BasicAuthenticator extends Authenticator {
     // Constructor
     //---------------------------------------------
 
-    public BasicAuthenticator(String username, String password) {
+    public BasicAuthenticator(@NonNull String username, @NonNull String password) {
+        if (username == null)
+            throw new IllegalArgumentException("username cannot be null.");
+        if (password == null)
+            throw new IllegalArgumentException("password cannot be null.");
+
         this.username = username;
         this.password = password;
     }
@@ -53,10 +60,12 @@ public final class BasicAuthenticator extends Authenticator {
     // Getters
     //---------------------------------------------
 
+    @NonNull
     public String getUsername() {
         return username;
     }
 
+    @NonNull
     public String getPassword() {
         return password;
     }

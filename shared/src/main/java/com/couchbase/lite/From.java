@@ -45,10 +45,11 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @param joins The Join objects.
      * @return The Joins object that represents the JOIN clause of the query.
      */
+    @NonNull
     @Override
     public Joins join(@NonNull Join... joins) {
         if (joins == null) {
-            throw new IllegalArgumentException("joins is null.");
+            throw new IllegalArgumentException("joins cannot be null.");
         }
         return new Joins(this, Arrays.asList(joins));
     }
@@ -63,10 +64,11 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @param expression the WHERE clause expression.
      * @return the WHERE component.
      */
+    @NonNull
     @Override
     public Where where(@NonNull Expression expression) {
         if (expression == null) {
-            throw new IllegalArgumentException("expression is null.");
+            throw new IllegalArgumentException("expression cannot be null.");
         }
         return new Where(this, expression);
     }
@@ -81,10 +83,11 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @param expressions The group by expression.
      * @return The GroupBy object that represents the GROUP BY clause of the query.
      */
+    @NonNull
     @Override
     public GroupBy groupBy(@NonNull Expression... expressions) {
         if (expressions == null) {
-            throw new IllegalArgumentException("expressions is null.");
+            throw new IllegalArgumentException("expressions cannot be null.");
         }
         return new GroupBy(this, Arrays.asList(expressions));
     }
@@ -99,10 +102,11 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
      */
+    @NonNull
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
         if(orderings == null) {
-            throw new IllegalArgumentException("orderings is null.");
+            throw new IllegalArgumentException("orderings cannot be null.");
         }
         return new OrderBy(this, Arrays.asList(orderings));
     }
@@ -117,10 +121,11 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit) {
         if (limit == null) {
-            throw new IllegalArgumentException("limit is null.");
+            throw new IllegalArgumentException("limit cannot be null.");
         }
         return new Limit(this, limit, null);
     }
@@ -133,10 +138,11 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
         if(limit == null) {
-            throw new IllegalArgumentException("limit is null.");
+            throw new IllegalArgumentException("limit cannot be null.");
         }
         return new Limit(this, limit, offset);
     }

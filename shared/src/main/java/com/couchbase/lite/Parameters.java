@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.AllocSlice;
@@ -71,7 +73,9 @@ public final class Parameters {
      * @param value The value.
      * @return The self object.
      */
-    public Parameters setValue(String name, Object value) {
+    public Parameters setValue(@NonNull String name, Object value) {
+        if (name == null)
+            throw new IllegalArgumentException("name cannot be null.");
         if (readonly)
             throw new IllegalStateException("Parameters is readonly mode.");
         map.put(name, value);
@@ -86,7 +90,8 @@ public final class Parameters {
      * @param value The String value.
      * @return The self object.
      */
-    public Parameters setString(String name, String value) {
+    @NonNull
+    public Parameters setString(@NonNull String name, String value) {
         return setValue(name, value);
     }
 
@@ -98,7 +103,8 @@ public final class Parameters {
      * @param value The Number value.
      * @return The self object.
      */
-    public Parameters setNumber(String name, Number value) {
+    @NonNull
+    public Parameters setNumber(@NonNull String name, Number value) {
         return setValue(name, value);
     }
 
@@ -110,7 +116,8 @@ public final class Parameters {
      * @param value The int value.
      * @return The self object.
      */
-    public Parameters setInt(String name, int value) {
+    @NonNull
+    public Parameters setInt(@NonNull String name, int value) {
         return setValue(name, value);
     }
 
@@ -122,7 +129,8 @@ public final class Parameters {
      * @param value The long value.
      * @return The self object.
      */
-    public Parameters setLong(String name, long value) {
+    @NonNull
+    public Parameters setLong(@NonNull String name, long value) {
         return setValue(name, value);
     }
 
@@ -134,7 +142,8 @@ public final class Parameters {
      * @param value The float value.
      * @return The self object.
      */
-    public Parameters setFloat(String name, float value) {
+    @NonNull
+    public Parameters setFloat(@NonNull String name, float value) {
         return setValue(name, value);
     }
 
@@ -146,7 +155,8 @@ public final class Parameters {
      * @param value The double value.
      * @return The self object.
      */
-    public Parameters setDouble(String name, double value) {
+    @NonNull
+    public Parameters setDouble(@NonNull String name, double value) {
         return setValue(name, value);
     }
 
@@ -158,7 +168,8 @@ public final class Parameters {
      * @param value The boolean value.
      * @return The self object.
      */
-    public Parameters setBoolean(String name, boolean value) {
+    @NonNull
+    public Parameters setBoolean(@NonNull String name, boolean value) {
         return setValue(name, value);
     }
 
@@ -170,7 +181,8 @@ public final class Parameters {
      * @param value The date value.
      * @return The self object.
      */
-    public Parameters setDate(String name, Date value) {
+    @NonNull
+    public Parameters setDate(@NonNull String name, Date value) {
         return setValue(name, value);
     }
 
@@ -182,7 +194,8 @@ public final class Parameters {
      * @param value The Blob value.
      * @return The self object.
      */
-    public Parameters setBlob(String name, Blob value) {
+    @NonNull
+    public Parameters setBlob(@NonNull String name, Blob value) {
         return setValue(name, value);
     }
 
@@ -194,7 +207,8 @@ public final class Parameters {
      * @param value The Dictionary value.
      * @return The self object.
      */
-    public Parameters setDictionary(String name, Dictionary value) {
+    @NonNull
+    public Parameters setDictionary(@NonNull String name, Dictionary value) {
         return setValue(name, value);
     }
 
@@ -206,7 +220,8 @@ public final class Parameters {
      * @param value The Array value.
      * @return The self object.
      */
-    public Parameters setArray(String name, Array value) {
+    @NonNull
+    public Parameters setArray(@NonNull String name, Array value) {
         return setValue(name, value);
     }
 
@@ -216,7 +231,9 @@ public final class Parameters {
      * @param name The parameter name.
      * @return The parameter value.
      */
-    public Object getValue(String name) {
+    public Object getValue(@NonNull String name) {
+        if (name == null)
+            throw new IllegalArgumentException("name cannot be null.");
         return map.get(name);
     }
 
