@@ -19,16 +19,13 @@ package com.couchbase.lite.internal.support;
 
 import android.support.annotation.NonNull;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
  public final class Run {
     private static final HashSet<String> Instances = new HashSet<>();
-    private static final ReentrantReadWriteLock InstancesLock = new ReentrantReadWriteLock();
 
     @NonNull
-    public static void once(@NonNull String tag, @NonNull Runnable action) {
+    public static synchronized void once(@NonNull String tag, @NonNull Runnable action) {
         if(tag == null) {
             throw new IllegalArgumentException("tag cannot be null");
         }
@@ -37,21 +34,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
             throw new IllegalArgumentException("action cannot be null");
         }
 
-        InstancesLock.readLock().lock();
-        try {
-            if(Instances.contains(tag)) {
-                return;
-            }
-        } finally {
-            InstancesLock.readLock().unlock();
+        if(Instances.contains(tag)) {
+            return;
         }
 
-        InstancesLock.writeLock().lock();
-        try {
-            Instances.add(tag);
-            action.run();
-        } finally {
-            InstancesLock.writeLock().unlock();
-        }
+        Instances.add(tag);
+        action.run();
     }
 }
