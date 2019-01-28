@@ -1340,6 +1340,7 @@ abstract class AbstractDatabase {
             Log.v(TAG, "No pending doc expirations");
     }
 
+    // test comment
     private void purgeExpiredDocuments() {
         if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
             postExecutor.submit(new Runnable() {
