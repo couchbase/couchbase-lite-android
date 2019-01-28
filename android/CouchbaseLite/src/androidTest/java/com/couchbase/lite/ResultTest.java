@@ -19,7 +19,9 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,6 +55,9 @@ public class ResultTest extends BaseTest {
     final static SelectResult SR_ARRAY = SelectResult.property("array");
     final static SelectResult SR_BLOB = SelectResult.property("blob");
     final static SelectResult SR_NO_KEY = SelectResult.property("non_existing_key");
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     private static Query generateQuery(Database db, String docID) {
         Expression exDocID = Expression.string(docID);
@@ -110,7 +115,9 @@ public class ResultTest extends BaseTest {
                     assertTrue(r.getValue("blob") instanceof Blob);
                     assertNull(r.getValue("non_existing_key"));
 
-                    assertNull(r.getValue(null));
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getValue(null);
+
                     assertNull(r.getValue("not_in_query_select"));
                 }
             });
@@ -184,8 +191,9 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getString("blob"));
                     assertNull(r.getString("non_existing_key"));
 
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getString(null);
 
-                    assertNull(r.getString(null));
                     assertNull(r.getString("not_in_query_select"));
                 }
             });
@@ -260,7 +268,9 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getNumber("blob"));
                     assertNull(r.getNumber("non_existing_key"));
 
-                    assertNull(r.getNumber(null));
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getNumber(null);
+
                     assertNull(r.getNumber("not_in_query_select"));
                 }
             });
@@ -336,7 +346,9 @@ public class ResultTest extends BaseTest {
                     assertEquals(0, r.getInt("blob"));
                     assertEquals(0, r.getInt("non_existing_key"));
 
-                    assertEquals(0, r.getInt(null));
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getInt(null);
+
                     assertEquals(0, r.getInt("not_in_query_select"));
 
                 }
@@ -412,7 +424,9 @@ public class ResultTest extends BaseTest {
                     assertEquals(0, r.getLong("blob"));
                     assertEquals(0, r.getLong("non_existing_key"));
 
-                    assertEquals(0, r.getLong(null));
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getLong(null);
+
                     assertEquals(0, r.getLong("not_in_query_select"));
                 }
             });
@@ -486,7 +500,9 @@ public class ResultTest extends BaseTest {
                     assertEquals(0.0f, r.getFloat("blob"), 0.0f);
                     assertEquals(0.0f, r.getFloat("non_existing_key"), 0.0f);
 
-                    assertEquals(0.0f, r.getFloat(null), 0.0f);
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getFloat(null);
+
                     assertEquals(0.0f, r.getFloat("not_in_query_select"), 0.0f);
                 }
             });
@@ -560,8 +576,9 @@ public class ResultTest extends BaseTest {
                     assertEquals(0.0, r.getDouble("blob"), 0.0);
                     assertEquals(0.0, r.getDouble("non_existing_key"), 0.0);
 
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getDouble(null);
 
-                    assertEquals(0.0, r.getDouble(null), 0.0);
                     assertEquals(0.0, r.getDouble("not_in_query_select"), 0.0);
                 }
             });
@@ -635,7 +652,9 @@ public class ResultTest extends BaseTest {
                     assertEquals(true, r.getBoolean("blob"));
                     assertEquals(false, r.getBoolean("non_existing_key"));
 
-                    assertEquals(false, r.getBoolean(null));
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getBoolean(null);
+
                     assertEquals(false, r.getBoolean("not_in_query_select"));
                 }
             });
@@ -709,7 +728,9 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getDate("blob"));
                     assertNull(r.getDate("non_existing_key"));
 
-                    assertNull(r.getDate(null));
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getDate(null);
+
                     assertNull(r.getDate("not_in_query_select"));
                 }
             });
@@ -785,8 +806,9 @@ public class ResultTest extends BaseTest {
                             r.getBlob("blob").getContent()));
                     assertNull(r.getBlob("non_existing_key"));
 
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getBlob(null);
 
-                    assertNull(r.getBlob(null));
                     assertNull(r.getBlob("not_in_query_select"));
                 }
             });
@@ -867,8 +889,9 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getDictionary("blob"));
                     assertNull(r.getDictionary("non_existing_key"));
 
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getDictionary(null);
 
-                    assertNull(r.getDictionary(null));
                     assertNull(r.getDictionary("not_in_query_select"));
                 }
             });
@@ -949,7 +972,9 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getArray("blob"));
                     assertNull(r.getArray("non_existing_key"));
 
-                    assertNull(r.getArray(null));
+                    thrown.expect(IllegalArgumentException.class);
+                    r.getArray(null);
+
                     assertNull(r.getArray("not_in_query_select"));
                 }
             });
@@ -1052,7 +1077,10 @@ public class ResultTest extends BaseTest {
 
                     // not exists -> false
                     assertFalse(r.contains("non_existing_key"));
-                    assertFalse(r.contains(null));
+
+                    thrown.expect(IllegalArgumentException.class);
+                    r.contains(null);
+
                     assertFalse(r.contains("not_in_query_select"));
                 }
             });
