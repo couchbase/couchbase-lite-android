@@ -20,6 +20,7 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.support.Run;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
@@ -137,8 +138,16 @@ abstract class AbstractDatabase {
         this.name = name;
         this.config = config.readonlyCopy();
         this.shellMode = false;
+        Run.once("CheckFileLogger", new Runnable() {
+            @Override
+            public void run() {
+                if(Database.log.getFile().getConfig() == null) {
+                    Log.w(TAG, "Database.log.getFile().getConfig() is null, meaning file logging is disabled.  Log files required for product support are not being generated.");
+                }
+            }
+        });
 
-        String tempdir = this.config.getTempDir();
+                String tempdir = this.config.getTempDir();
         if (tempdir != null)
             C4.setenv("TMPDIR", tempdir, 1);
         open();
