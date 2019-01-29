@@ -59,6 +59,7 @@ import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.couchbase.lite.CBLError.Code.CBLErrorCantOpenFile;
 import static com.couchbase.lite.CBLError.Code.CBLErrorNotADatabaseFile;
@@ -100,16 +101,16 @@ abstract class AbstractDatabase {
     protected final DatabaseConfiguration config;
     protected final boolean shellMode;
     protected C4Database c4db;
-    protected ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
-    protected ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
+    protected ScheduledExecutorService queryExecutor; // Executor for LiveQuery. one per db.
+    protected ScheduledExecutorService postExecutor;  // Executor for posting Database/Document Change notification
     protected ChangeNotifier<DatabaseChange> dbChangeNotifier;
     protected C4DatabaseObserver c4DBObserver;
     protected Map<String, DocumentChangeNotifier> docChangeNotifiers;
     protected final SharedKeys sharedKeys;
     protected Set<Replicator> activeReplications;
     protected Set<LiveQuery> activeLiveQueries;
-    protected final Object lock = new Object(); // lock for thread-safety
     protected Timer purgeTimer;
+    protected final Object lock = new Object();     // Main database lock object for thread-safety
 
     //---------------------------------------------
     // Constructors
@@ -928,13 +929,27 @@ abstract class AbstractDatabase {
         }
     }
 
-    ScheduledExecutorService getQueryExecutor() {
-        return queryExecutor;
-    }
-
     File getFilePath() {
         String path = getPath();
         return path != null ? new File(path) : null;
+    }
+
+    //////// Execution:
+
+    void scheduleOnPostNotificationExecutor(@NonNull Runnable runnable, /* Milliseconds */ long delay) {
+        synchronized (postExecutor) {
+            if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+                postExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
+    void scheduleOnQueryExecutor(@NonNull Runnable runnable, /* Milliseconds */ long delay) {
+        synchronized (queryExecutor) {
+            if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
+                queryExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+            }
+        }
     }
 
     //---------------------------------------------
@@ -1086,14 +1101,12 @@ abstract class AbstractDatabase {
         c4DBObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
             @Override
             public void callback(C4DatabaseObserver observer, Object context) {
-                if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
-                    postExecutor.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            postDatabaseChanged();
-                        }
-                    });
-                }
+                scheduleOnPostNotificationExecutor(new Runnable() {
+                    @Override
+                    public void run() {
+                        postDatabaseChanged();
+                    }
+                }, 0);
             }
         }, this);
     }
@@ -1309,11 +1322,16 @@ abstract class AbstractDatabase {
     }
 
     private void shutdownExecutorService() {
-        if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
-            ExecutorUtils.shutdownAndAwaitTermination(postExecutor, 60);
+        synchronized (postExecutor) {
+            if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+                ExecutorUtils.shutdownAndAwaitTermination(postExecutor, 60);
+            }
         }
-        if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
-            ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
+
+        synchronized (queryExecutor) {
+            if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
+                ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
+            }
         }
     }
 
@@ -1341,9 +1359,17 @@ abstract class AbstractDatabase {
     }
 
     private void purgeExpiredDocuments() {
-        int nPurged = getC4Database().purgeExpiredDocs();
-        Log.v(TAG, "Purged %d expired documents", nPurged);
-        scheduleDocumentExpiration(1000);
+        // Aligning with database/document change notification to avoid race condition
+        // between ending transaction and handling change notification when the documents
+        // are purged
+        scheduleOnPostNotificationExecutor(new Runnable() {
+            @Override
+            public void run() {
+                int nPurged = getC4Database().purgeExpiredDocs();
+                Log.v(TAG, "Purged %d expired documents", nPurged);
+                scheduleDocumentExpiration(1000);
+            }
+        }, 0);
     }
 
     private void cancelPurgeTimer() {
@@ -1354,4 +1380,5 @@ abstract class AbstractDatabase {
             }
         }
     }
+
 }

@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 package com.couchbase.lite;
 
 import com.couchbase.litecore.C4DocumentObserver;
@@ -25,13 +26,22 @@ class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
     String docID;
     C4DocumentObserver obs;
 
-    DocumentChangeNotifier(Database db, String docID) {
+    DocumentChangeNotifier(final Database db, final String docID) {
         this.db = db;
         this.docID = docID;
         this.obs = db.c4db.createDocumentObserver(docID, new C4DocumentObserverListener() {
             @Override
-            public void callback(C4DocumentObserver observer, String docID, long sequence, Object context) {
-                ((DocumentChangeNotifier) context).postChange();
+            public void callback(final C4DocumentObserver observer,
+                                 final String docID,
+                                 final long sequence,
+                                 final Object context) {
+                db.scheduleOnPostNotificationExecutor(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((DocumentChangeNotifier) context).postChange();
+                    }
+                }, 0);
+
             }
         }, this);
     }

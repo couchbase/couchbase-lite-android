@@ -188,15 +188,12 @@ final class LiveQuery implements DatabaseChangeListener {
 
         willUpdate = true;
 
-        ScheduledExecutorService executor = query.getDatabase().getQueryExecutor();
-        if (executor != null && !executor.isShutdown() && !executor.isTerminated()) {
-            executor.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    update();
-                }
-            }, delay, TimeUnit.MILLISECONDS);
-        }
+        query.getDatabase().scheduleOnQueryExecutor(new Runnable() {
+            @Override
+            public void run() {
+                update();
+            }
+        }, delay);
     }
 
     /**
