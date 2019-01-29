@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,6 +51,7 @@ public class Collation {
          * @param ignoreCase True for case-insenstivie; false for case-senstive.
          * @return The ASCII Collation object.
          */
+        @NonNull
         public ASCII ignoreCase(boolean ignoreCase) {
             this.ignoreCase = ignoreCase;
             return this;
@@ -75,6 +78,7 @@ public class Collation {
          * @param ignoreCase True for case-insenstivie; false for case-senstive.
          * @return The Unicode Collation object.
          */
+        @NonNull
         public Unicode ignoreCase(boolean ignoreCase) {
             this.ignoreCase = ignoreCase;
             return this;
@@ -87,6 +91,7 @@ public class Collation {
          * @param ignoreAccents True for accent-insenstivie; false for accent-senstive.
          * @return The Unicode Collation object.
          */
+        @NonNull
         public Unicode ignoreAccents(boolean ignoreAccents) {
             this.ignoreAccents = ignoreAccents;
             return this;
@@ -104,6 +109,7 @@ public class Collation {
          *               appropriately base on the locale.
          * @return
          */
+        @NonNull
         public Unicode locale(String locale) {
             this.locale = locale;
             return this;
@@ -124,6 +130,7 @@ public class Collation {
      *
      * @return The ASCII collation.
      */
+    @NonNull
     public static ASCII ascii() {
         return new ASCII();
     }
@@ -135,10 +142,12 @@ public class Collation {
      *
      * @return The Unicode collation.
      */
+    @NonNull
     public static Unicode unicode() {
         return new Unicode();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Collation{" +

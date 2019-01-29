@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Date;
 import java.util.List;
 
@@ -51,5 +53,6 @@ interface ArrayInterface {
 
     DictionaryInterface getDictionary(int index);
 
+    @NonNull
     List<Object> toList();
 }

@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.litecore.C4Error;
 
 import java.util.List;
@@ -49,6 +51,7 @@ public final class DocumentReplication {
     /**
      * Return the source replicator object.
      */
+    @NonNull
     public Replicator getReplicator() {
         return replicator;
     }
@@ -60,6 +63,7 @@ public final class DocumentReplication {
         return pushing;
     }
 
+    @NonNull
     public List<ReplicatedDocument> getDocuments() { return documents; }
 }
 

@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -41,18 +42,18 @@ public final class DatabaseConfiguration {
     // Constructors
     //---------------------------------------------
 
-    public DatabaseConfiguration(Context context) {
+    public DatabaseConfiguration(@NonNull Context context) {
         if (context == null)
-            throw new IllegalArgumentException("context is null");
+            throw new IllegalArgumentException("context cannot be null.");
         this.readonly = false;
         this.context = context;
         this.directory = context.getFilesDir().getAbsolutePath();
         this.customDir = false;
     }
 
-    public DatabaseConfiguration(DatabaseConfiguration config) {
+    public DatabaseConfiguration(@NonNull DatabaseConfiguration config) {
         if (config == null)
-            throw new IllegalArgumentException("config is null");
+            throw new IllegalArgumentException("config cannot be null.");
         this.readonly = false;
         this.context = config.context;
         this.directory = config.directory;
@@ -69,9 +70,9 @@ public final class DatabaseConfiguration {
      * @param directory the directory
      * @return The self object.
      */
-    public DatabaseConfiguration setDirectory(String directory) {
+    public DatabaseConfiguration setDirectory(@NonNull String directory) {
         if (directory == null)
-            throw new IllegalArgumentException("null directory is not allowed");
+            throw new IllegalArgumentException("directory cannot be null.");
         if (readonly)
             throw new IllegalStateException("DatabaseConfiguration is readonly mode.");
         this.directory = directory;
@@ -84,6 +85,7 @@ public final class DatabaseConfiguration {
      *
      * @return the directory
      */
+    @NonNull
     public String getDirectory() {
         return directory;
     }

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +43,7 @@ public final class FullTextIndex extends AbstractIndex {
      * Without setting the value, the current locale's language will be used. Setting
      * a nil or "" value to disable the language features.
      */
+    @NonNull
     public FullTextIndex setLanguage(String language) {
         this.language = language;
         return this;
@@ -49,6 +52,7 @@ public final class FullTextIndex extends AbstractIndex {
     /**
      * Set the true value to ignore accents/diacritical marks. The default value is false.
      */
+    @NonNull
     public FullTextIndex ignoreAccents(boolean ignoreAccents) {
         this.ignoreAccents = ignoreAccents;
         return this;

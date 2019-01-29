@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,7 +70,11 @@ public class Join {
          * @param expression The Expression object specifying the join conditions.
          * @return The Join object that represents a single JOIN clause of the query.
          */
-        public Join on(Expression expression) {
+        @NonNull
+        public Join on(@NonNull Expression expression) {
+            if (expression == null) {
+                throw new IllegalArgumentException("expression cannot be null.");
+            }
             this.on = expression;
             return this;
         }
@@ -76,6 +82,7 @@ public class Join {
         //---------------------------------------------
         // Package level access
         //---------------------------------------------
+
         @Override
         Object asJSON() {
             Map<String, Object> json = new HashMap<>();
@@ -89,6 +96,7 @@ public class Join {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+
     private Join(String type, DataSource dataSource) {
         this.type = type;
         this.dataSource = dataSource;
@@ -105,7 +113,11 @@ public class Join {
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
      */
-    public static On join(DataSource datasource) {
+    @NonNull
+    public static On join(@NonNull DataSource datasource) {
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource cannot be null.");
+        }
         return innerJoin(datasource);
     }
 
@@ -116,7 +128,11 @@ public class Join {
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
      */
-    public static On leftJoin(DataSource datasource) {
+    @NonNull
+    public static On leftJoin(@NonNull DataSource datasource) {
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource cannot be null.");
+        }
         return new On(kCBLLeftOuterJoin, datasource);
     }
 
@@ -127,7 +143,11 @@ public class Join {
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
      */
-    public static On leftOuterJoin(DataSource datasource) {
+    @NonNull
+    public static On leftOuterJoin(@NonNull DataSource datasource) {
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource cannot be null.");
+        }
         return new On(kCBLLeftOuterJoin, datasource);
     }
 
@@ -138,7 +158,11 @@ public class Join {
      * @param datasource The DataSource object of the JOIN clause.
      * @return The On object used for specifying join conditions.
      */
-    public static On innerJoin(DataSource datasource) {
+    @NonNull
+    public static On innerJoin(@NonNull DataSource datasource) {
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource cannot be null.");
+        }
         return new On(kCBLInnerJoin, datasource);
     }
 
@@ -149,13 +173,18 @@ public class Join {
      * @param datasource The DataSource object of the JOIN clause.
      * @return The Join object used for specifying join conditions.
      */
-    public static Join crossJoin(DataSource datasource) {
+    @NonNull
+    public static Join crossJoin(@NonNull DataSource datasource) {
+        if (datasource == null) {
+            throw new IllegalArgumentException("datasource cannot be null.");
+        }
         return new Join(kCBLCrossJoin, datasource);
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
     Object asJSON() {
         Map<String, Object> json = new HashMap<>();
         json.put("JOIN", type);

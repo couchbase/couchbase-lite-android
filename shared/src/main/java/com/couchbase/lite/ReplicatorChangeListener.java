@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * The listener interface for receiving Replicator change events.
  */
@@ -26,5 +28,5 @@ public interface ReplicatorChangeListener {
      *
      * @param change the Replicator change information
      */
-    void changed(ReplicatorChange change);
+    void changed(@NonNull ReplicatorChange change);
 }

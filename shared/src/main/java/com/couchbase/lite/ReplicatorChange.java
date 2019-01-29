@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * ReplicatorChange contains the replicator status information.
  */
@@ -32,6 +34,7 @@ public final class ReplicatorChange {
     /**
      * Return the source replicator object.
      */
+    @NonNull
     public Replicator getReplicator() {
         return replicator;
     }
@@ -39,10 +42,12 @@ public final class ReplicatorChange {
     /**
      * Return the replicator status.
      */
+    @NonNull
     public Replicator.Status getStatus() {
         return status;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "ReplicatorChange{" +

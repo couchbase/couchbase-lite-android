@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * QueryChange contains the information about the query result changes reported
  * by a query object.
@@ -27,7 +29,7 @@ public final class QueryChange {
     //---------------------------------------------
     private Query query;
     private ResultSet rs;
-    private Throwable error; // TODO: CouchbaseLiteException????
+    private Throwable error;
 
     //---------------------------------------------
     // constructors
@@ -45,6 +47,7 @@ public final class QueryChange {
     /**
      * Return the source live query object.
      */
+    @NonNull
     public Query getQuery() {
         return query;
     }
@@ -52,6 +55,7 @@ public final class QueryChange {
     /**
      * Return the new query result.
      */
+    @NonNull
     public ResultSet getResults() {
         return rs;
     }

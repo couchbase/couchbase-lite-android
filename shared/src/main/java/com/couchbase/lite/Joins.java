@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,11 +30,13 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+
     private List<Join> joins;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+
     Joins(AbstractQuery query, List<Join> joins) {
         copy(query);
         this.joins = joins;
@@ -49,8 +53,12 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @param expression The where expression.
      * @return The Where object that represents the WHERE clause of the query.
      */
+    @NonNull
     @Override
-    public Where where(Expression expression) {
+    public Where where(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
         return new Where(this, expression);
     }
 
@@ -64,8 +72,12 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @param orderings The Ordering objects.
      * @return The OrderBy object that represents the ORDER BY clause of the query.
      */
+    @NonNull
     @Override
-    public OrderBy orderBy(Ordering... orderings) {
+    public OrderBy orderBy(@NonNull Ordering... orderings) {
+        if (orderings == null) {
+            throw new IllegalArgumentException("orderings cannot be null.");
+        }
         return new OrderBy(this, Arrays.asList(orderings));
     }
 
@@ -79,8 +91,12 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @param limit The limit expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
-    public Limit limit(Expression limit) {
+    public Limit limit(@NonNull Expression limit) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit cannot be null.");
+        }
         return new Limit(this, limit, null);
     }
 
@@ -92,14 +108,19 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
      * @param offset The offset expression.
      * @return The Limit object that represents the LIMIT clause of the query.
      */
+    @NonNull
     @Override
-    public Limit limit(Expression limit, Expression offset) {
+    public Limit limit(@NonNull Expression limit, Expression offset) {
+        if (limit == null) {
+            throw new IllegalArgumentException("limit cannot be null.");
+        }
         return new Limit(this, limit, offset);
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
     Object asJSON() {
         List<Object> json = new ArrayList<>();
         for (Join join : joins)

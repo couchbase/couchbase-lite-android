@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.litecore.C4Log;
 
 /**
@@ -41,6 +43,7 @@ public final class Log {
      *
      * @return The logger that writes to the Android system log
      */
+    @NonNull
     public ConsoleLogger getConsole() {
         return _consoleLogger;
     }
@@ -50,6 +53,7 @@ public final class Log {
      *
      * @return The logger that writes to log files
      */
+    @NonNull
     public FileLogger getFile() {
         return _fileLogger;
     }

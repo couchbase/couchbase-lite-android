@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +58,7 @@ public final class PropertyExpression extends Expression {
      * @param alias The alias name of the data source.
      * @return The property Expression with the given data source alias name.
      */
+    @NonNull
     public Expression from(String alias) {
         return new PropertyExpression(this.keyPath, alias);
     }

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Document;
 
@@ -101,6 +103,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      *
      * @return The MutableDocument object
      */
+    @NonNull
     @Override
     public MutableDocument toMutable() {
         return new MutableDocument(this, _dict);
@@ -119,6 +122,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param data the dictionary object.
      * @return this Document instance
      */
+    @NonNull
     @Override
     public MutableDocument setData(Map<String, Object> data) {
         ((MutableDictionary) _dict).setData(data);
@@ -134,8 +138,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param value the Object value.
      * @return this Document instance
      */
+    @NonNull
     @Override
-    public MutableDocument setValue(String key, Object value) {
+    public MutableDocument setValue(@NonNull String key, Object value) {
         ((MutableDictionary) _dict).setValue(key, value);
         return this;
     }
@@ -147,8 +152,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the String value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setString(String key, String value) {
+    public MutableDocument setString(@NonNull String key, String value) {
         return setValue(key, value);
     }
 
@@ -159,8 +165,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the Number value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setNumber(String key, Number value) {
+    public MutableDocument setNumber(@NonNull String key, Number value) {
         return setValue(key, value);
     }
 
@@ -171,8 +178,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the integer value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setInt(String key, int value) {
+    public MutableDocument setInt(@NonNull String key, int value) {
         return setValue(key, value);
     }
 
@@ -183,8 +191,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the long value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setLong(String key, long value) {
+    public MutableDocument setLong(@NonNull String key, long value) {
         return setValue(key, value);
     }
 
@@ -195,8 +204,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the float value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setFloat(String key, float value) {
+    public MutableDocument setFloat(@NonNull String key, float value) {
         return setValue(key, value);
     }
 
@@ -207,8 +217,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the double value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setDouble(String key, double value) {
+    public MutableDocument setDouble(@NonNull String key, double value) {
         return setValue(key, value);
     }
 
@@ -219,8 +230,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the boolean value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setBoolean(String key, boolean value) {
+    public MutableDocument setBoolean(@NonNull String key, boolean value) {
         return setValue(key, value);
     }
 
@@ -231,8 +243,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the Blob value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setBlob(String key, Blob value) {
+    public MutableDocument setBlob(@NonNull String key, Blob value) {
         return setValue(key, value);
     }
 
@@ -243,8 +256,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the Date value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setDate(String key, Date value) {
+    public MutableDocument setDate(@NonNull String key, Date value) {
         return setValue(key, value);
     }
 
@@ -255,8 +269,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the Array value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setArray(String key, Array value) {
+    public MutableDocument setArray(@NonNull String key, Array value) {
         return setValue(key, value);
     }
 
@@ -267,8 +282,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the Dictionary value.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument setDictionary(String key, Dictionary value) {
+    public MutableDocument setDictionary(@NonNull String key, Dictionary value) {
         return setValue(key, value);
     }
 
@@ -278,8 +294,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the key.
      * @return this MutableDocument instance
      */
+    @NonNull
     @Override
-    public MutableDocument remove(String key) {
+    public MutableDocument remove(@NonNull String key) {
         ((MutableDictionary) _dict).remove(key);
         return this;
     }
@@ -292,7 +309,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @return the Array object.
      */
     @Override
-    public MutableArray getArray(String key) {
+    public MutableArray getArray(@NonNull String key) {
         return ((MutableDictionary) _dict).getArray(key);
     }
 
@@ -304,7 +321,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @return the Dictionary object or null if the key doesn't exist.
      */
     @Override
-    public MutableDictionary getDictionary(String key) {
+    public MutableDictionary getDictionary(@NonNull String key) {
         return ((MutableDictionary) _dict).getDictionary(key);
     }
 

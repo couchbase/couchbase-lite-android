@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * The listener interface for receiving Live Query change events.
  */
@@ -27,5 +29,5 @@ public interface QueryChangeListener extends ChangeListener<QueryChange> {
      * @param change the query change informaiton
      */
     @Override
-    void changed(QueryChange change);
+    void changed(@NonNull QueryChange change);
 }

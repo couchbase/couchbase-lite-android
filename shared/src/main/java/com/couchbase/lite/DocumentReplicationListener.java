@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * The listener interface for receiving Document replicated events.
  */
@@ -27,5 +29,5 @@ public interface DocumentReplicationListener {
      *
      * @param replication the Document replicated information
      */
-    void replication(DocumentReplication replication);
+    void replication(@NonNull DocumentReplication replication);
 }

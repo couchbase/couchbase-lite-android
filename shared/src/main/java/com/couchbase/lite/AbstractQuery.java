@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.litecore.C4Query;
@@ -133,6 +135,7 @@ abstract class AbstractQuery implements Query {
      * @return the ResultSet for the query result.
      * @throws CouchbaseLiteException if there is an error when running the query.
      */
+    @NonNull
     @Override
     public ResultSet execute() throws CouchbaseLiteException {
         try {
@@ -166,6 +169,7 @@ abstract class AbstractQuery implements Query {
      * @return a string describing the implementation of the compiled query.
      * @throws CouchbaseLiteException if an error occurs
      */
+    @NonNull
     @Override
     public String explain() throws CouchbaseLiteException {
         synchronized (getDatabase().getLock()) {
@@ -180,8 +184,11 @@ abstract class AbstractQuery implements Query {
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
      */
+    @NonNull
     @Override
-    public ListenerToken addChangeListener(QueryChangeListener listener) {
+    public ListenerToken addChangeListener(@NonNull QueryChangeListener listener) {
+        if (listener == null)
+            throw new IllegalArgumentException("listener cannot be null.");
         return addChangeListener(null, listener);
     }
 
@@ -194,10 +201,11 @@ abstract class AbstractQuery implements Query {
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
      */
+    @NonNull
     @Override
-    public ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
+    public ListenerToken addChangeListener(Executor executor, @NonNull QueryChangeListener listener) {
         if (listener == null)
-            throw new IllegalArgumentException("listener parameter is null.");
+            throw new IllegalArgumentException("listener cannot be null.");
         return liveQuery().addChangeListener(executor, listener);
     }
 
@@ -207,12 +215,13 @@ abstract class AbstractQuery implements Query {
      * @param token The listener token.
      */
     @Override
-    public void removeChangeListener(ListenerToken token) {
+    public void removeChangeListener(@NonNull ListenerToken token) {
         if (token == null)
-            throw new IllegalArgumentException("The given token is null");
+            throw new IllegalArgumentException("token cannot be null.");
         liveQuery().removeChangeListener(token);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(Locale.ENGLISH, "%s[json=%s]", this.getClass().getSimpleName(), _asJSON());

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Log;
@@ -78,13 +80,9 @@ public final class FileLogger implements Logger {
      *
      * @param level The maximum level to include in the logs
      */
-    public void setLevel(LogLevel level) {
+    public void setLevel(@NonNull LogLevel level) {
         if(_config == null) {
             throw new IllegalStateException("Cannot set logging level without a configuration");
-        }
-
-        if(level == null) {
-            level = LogLevel.NONE;
         }
 
         if(_level.equals(level)) {
@@ -120,6 +118,7 @@ public final class FileLogger implements Logger {
         }
     }
 
+    @NonNull
     @Override
     public LogLevel getLevel() {
         return LogLevel.values()[C4Log.getBinaryFileLevel()];

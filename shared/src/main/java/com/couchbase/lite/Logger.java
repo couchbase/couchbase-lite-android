@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * The logging interface for Couchbase Lite.  If an application wants
  * to receive log messages to an arbitrary endpoint, then it can by
@@ -29,6 +31,7 @@ public interface Logger {
      *
      * @return The maximum level to log
      */
+    @NonNull
     LogLevel getLevel();
 
     /**
@@ -38,5 +41,5 @@ public interface Logger {
      * @param domain    The domain of the message to log
      * @param message   The content of the message to log
      */
-    void log(LogLevel level, LogDomain domain, String message);
+    void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message);
 }

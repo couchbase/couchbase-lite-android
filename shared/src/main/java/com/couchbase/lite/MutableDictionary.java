@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.litecore.fleece.MCollection;
 import com.couchbase.litecore.fleece.MDict;
 import com.couchbase.litecore.fleece.MValue;
@@ -73,6 +75,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param data the dictionary object.
      * @return The self object.
      */
+    @NonNull
     @Override
     public MutableDictionary setData(Map<String, Object> data) {
         synchronized (_sharedLock) {
@@ -92,8 +95,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value the object value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setValue(String key, Object value) {
+    public MutableDictionary setValue(@NonNull String key, Object value) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             MValue oldValue = _dict.get(key);
             value = Fleece.toCBLObject(value);
@@ -110,8 +117,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The String value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setString(String key, String value) {
+    public MutableDictionary setString(@NonNull String key, String value) {
         return setValue(key, value);
     }
 
@@ -122,8 +130,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The number value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setNumber(String key, Number value) {
+    public MutableDictionary setNumber(@NonNull String key, Number value) {
         return setValue(key, value);
     }
 
@@ -134,8 +143,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The int value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setInt(String key, int value) {
+    public MutableDictionary setInt(@NonNull String key, int value) {
         return setValue(key, value);
     }
 
@@ -146,8 +156,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The long value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setLong(String key, long value) {
+    public MutableDictionary setLong(@NonNull String key, long value) {
         return setValue(key, value);
     }
 
@@ -158,8 +169,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The float value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setFloat(String key, float value) {
+    public MutableDictionary setFloat(@NonNull String key, float value) {
         return setValue(key, value);
     }
 
@@ -170,8 +182,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The double value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setDouble(String key, double value) {
+    public MutableDictionary setDouble(@NonNull String key, double value) {
         return setValue(key, value);
     }
 
@@ -182,8 +195,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The boolean value.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setBoolean(String key, boolean value) {
+    public MutableDictionary setBoolean(@NonNull String key, boolean value) {
         return setValue(key, value);
     }
 
@@ -194,8 +208,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The Blob object.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setBlob(String key, Blob value) {
+    public MutableDictionary setBlob(@NonNull String key, Blob value) {
         return setValue(key, value);
     }
 
@@ -206,8 +221,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The Date object.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setDate(String key, Date value) {
+    public MutableDictionary setDate(@NonNull String key, Date value) {
         return setValue(key, value);
     }
 
@@ -218,8 +234,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The Array object.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setArray(String key, Array value) {
+    public MutableDictionary setArray(@NonNull String key, Array value) {
         return setValue(key, value);
     }
 
@@ -230,8 +247,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param value The Dictionary object.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary setDictionary(String key, Dictionary value) {
+    public MutableDictionary setDictionary(@NonNull String key, Dictionary value) {
         return setValue(key, value);
     }
 
@@ -241,8 +259,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param key the key.
      * @return The self object.
      */
+    @NonNull
     @Override
-    public MutableDictionary remove(String key) {
+    public MutableDictionary remove(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             _dict.remove(key);
             return this;
@@ -257,7 +279,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @return the Array object.
      */
     @Override
-    public MutableArray getArray(String key) {
+    public MutableArray getArray(@NonNull String key) {
         return (MutableArray) super.getArray(key);
     }
 
@@ -269,7 +291,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @return the Dictionary object or null if the key doesn't exist.
      */
     @Override
-    public MutableDictionary getDictionary(String key) {
+    public MutableDictionary getDictionary(@NonNull String key) {
         return (MutableDictionary) super.getDictionary(key);
     }
 

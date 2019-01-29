@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Locale;
 import java.util.Map;
 
@@ -46,7 +48,7 @@ public final class SessionAuthenticator extends Authenticator {
      *
      * @param sessionID Sync Gateway session ID
      */
-    public SessionAuthenticator(String sessionID) {
+    public SessionAuthenticator(@NonNull String sessionID) {
         this(sessionID, DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME);
     }
 
@@ -57,7 +59,10 @@ public final class SessionAuthenticator extends Authenticator {
      * @param sessionID  Sync Gateway session ID
      * @param cookieName The cookie name
      */
-    public SessionAuthenticator(String sessionID, String cookieName) {
+    public SessionAuthenticator(@NonNull String sessionID, String cookieName) {
+        if (sessionID == null)
+            throw new IllegalArgumentException("sessionID cannot be null.");
+
         this.sessionID = sessionID;
         this.cookieName = cookieName != null ? cookieName : DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME;
     }
@@ -69,6 +74,7 @@ public final class SessionAuthenticator extends Authenticator {
     /**
      * Return session ID of the session created by a Sync Gateway.
      */
+    @NonNull
     public String getSessionID() {
         return sessionID;
     }
@@ -84,6 +90,7 @@ public final class SessionAuthenticator extends Authenticator {
     //---------------------------------------------
     // Authenticator abstract method implementation
     //---------------------------------------------
+
     @Override
     void authenticate(Map<String, Object> options) {
         String current = (String) options.get(kC4ReplicatorOptionCookies);

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLEncodable;
@@ -92,6 +94,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         }
     }
 
+    @NonNull
     @Override
     public List<String> getKeys() {
         synchronized (_sharedLock) {
@@ -117,7 +120,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the object value or nil.
      */
     @Override
-    public Object getValue(String key) {
+    public Object getValue(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             return _get(_dict, key).asNative(_dict);
         }
@@ -130,7 +136,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the String or null.
      */
     @Override
-    public String getString(String key) {
+    public String getString(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             Object obj = _get(_dict, key).asNative(_dict);
             return obj instanceof String ? (String) obj : null;
@@ -144,7 +153,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the Number or nil.
      */
     @Override
-    public Number getNumber(String key) {
+    public Number getNumber(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             Object obj = _get(_dict, key).asNative(_dict);
             return CBLConverter.asNumber(obj);
@@ -160,7 +172,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the int value.
      */
     @Override
-    public int getInt(String key) {
+    public int getInt(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             return CBLConverter.asInteger(_get(_dict, key), _dict);
         }
@@ -175,7 +190,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the long value.
      */
     @Override
-    public long getLong(String key) {
+    public long getLong(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             return CBLConverter.asLong(_get(_dict, key), _dict);
         }
@@ -190,7 +208,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the float value.
      */
     @Override
-    public float getFloat(String key) {
+    public float getFloat(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             return CBLConverter.asFloat(_get(_dict, key), _dict);
         }
@@ -205,7 +226,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the double value.
      */
     @Override
-    public double getDouble(String key) {
+    public double getDouble(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             return CBLConverter.asDouble(_get(_dict, key), _dict);
         }
@@ -219,7 +243,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the boolean value.
      */
     @Override
-    public boolean getBoolean(String key) {
+    public boolean getBoolean(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             Object obj = _get(_dict, key).asNative(_dict);
             return CBLConverter.asBoolean(obj);
@@ -234,7 +261,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the Blob value or null.
      */
     @Override
-    public Blob getBlob(String key) {
+    public Blob getBlob(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             Object obj = _get(_dict, key).asNative(_dict);
             return obj instanceof Blob ? (Blob) obj : null;
@@ -253,7 +283,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the Date value or null.
      */
     @Override
-    public Date getDate(String key) {
+    public Date getDate(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         return DateUtils.fromJson(getString(key));
     }
 
@@ -265,7 +298,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the Array object.
      */
     @Override
-    public Array getArray(String key) {
+    public Array getArray(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             Object obj = _get(_dict, key).asNative(_dict);
             return obj instanceof Array ? (Array) obj : null;
@@ -280,7 +316,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the Dictionary object or null if the key doesn't exist.
      */
     @Override
-    public Dictionary getDictionary(String key) {
+    public Dictionary getDictionary(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             Object obj = _get(_dict, key).asNative(_dict);
             return obj instanceof Dictionary ? (Dictionary) obj : null;
@@ -312,7 +351,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the boolean value representing whether a property exists or not.
      */
     @Override
-    public boolean contains(String key) {
+    public boolean contains(@NonNull String key) {
+        if (key == null)
+            throw new IllegalArgumentException("key cannot be null.");
+
         synchronized (_sharedLock) {
             return !_get(_dict, key).isEmpty();
         }
@@ -323,6 +365,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      *
      * @return the MutableDictionary instance
      */
+    @NonNull
     public MutableDictionary toMutable() {
         synchronized (_sharedLock) {
             return new MutableDictionary(_dict, true);
@@ -336,6 +379,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     /**
      * encodeTo(FlEncoder) is internal method. Please don't use this method.
      */
+    @NonNull
     @Override
     public void encodeTo(FLEncoder enc) {
         Encoder encoder = new Encoder(enc);
@@ -346,6 +390,8 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
+
+    @NonNull
     @Override
     public Iterator<String> iterator() {
         return getKeys().iterator();

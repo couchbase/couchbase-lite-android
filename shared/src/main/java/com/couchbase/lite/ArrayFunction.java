@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Arrays;
 
 /**
@@ -34,7 +36,11 @@ public final class ArrayFunction {
      * @param value      The value to search for in the given array expression.
      * @return The ARRAY_CONTAINS(expr, value) function.
      */
-    public static Expression contains(Expression expression, Expression value) {
+    @NonNull
+    public static Expression contains(@NonNull Expression expression, @NonNull Expression value) {
+        if (expression == null || value == null) {
+            throw new IllegalArgumentException("expression and value cannot be null.");
+        }
         return new Expression.FunctionExpression("ARRAY_CONTAINS()", Arrays.asList(expression, value));
     }
 
@@ -45,7 +51,11 @@ public final class ArrayFunction {
      * @param expression The expression that evluates to an array.
      * @return The ARRAY_LENGTH(expr) function.
      */
-    public static Expression length(Expression expression) {
+    @NonNull
+    public static Expression length(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
         return new Expression.FunctionExpression("ARRAY_LENGTH()", Arrays.asList(expression));
     }
 }

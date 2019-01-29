@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.LiteCoreException;
@@ -103,6 +105,7 @@ public class ResultSet implements Iterable<Result> {
      *
      * @return List of Results
      */
+    @NonNull
     public List<Result> allResults() {
         List<Result> results = new ArrayList<>();
         Result result;
@@ -122,6 +125,7 @@ public class ResultSet implements Iterable<Result> {
      *
      * @return an iterator over the elements in this list in proper sequence
      */
+    @NonNull
     @Override
     public Iterator<Result> iterator() {
         return allResults().iterator();

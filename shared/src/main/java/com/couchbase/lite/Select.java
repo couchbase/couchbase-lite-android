@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,8 +55,12 @@ public final class Select extends AbstractQuery implements FromRouter {
      * @param dataSource the data source.
      * @return the From component.
      */
+    @NonNull
     @Override
-    public From from(DataSource dataSource) {
+    public From from(@NonNull DataSource dataSource) {
+        if (dataSource == null) {
+            throw new IllegalArgumentException("dataSource cannot be null.");
+        }
         return new From(this, dataSource);
     }
 

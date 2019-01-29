@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,13 +51,18 @@ public class MetaExpression extends Expression {
      * @param alias The data source alias name.
      * @return The Meta expression with the given alias name specified.
      */
-    public Expression from(String alias) {
+    @NonNull
+    public Expression from(@NonNull String alias) {
+        if (alias == null) {
+            throw new IllegalArgumentException("alias cannot be null.");
+        }
         return new MetaExpression(this.keyPath, alias);
     }
 
     //---------------------------------------------
     // package level access
     //---------------------------------------------
+
     @Override
     Object asJSON() {
         List<Object> json = new ArrayList<>();

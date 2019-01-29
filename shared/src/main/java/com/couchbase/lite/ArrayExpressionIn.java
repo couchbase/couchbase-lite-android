@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 /**
  * The In class represents the IN clause object in a quantified operator (ANY/ANY AND EVERY/EVERY
  * <variable name> IN <expr> SATISFIES <expr>). The IN clause is used for specifying an array
@@ -39,7 +41,11 @@ public final class ArrayExpressionIn {
      * @param expression the expression evaluated as an array object.
      * @return A Satisfies object.
      */
-    public ArrayExpressionSatisfies in(Expression expression) {
+    @NonNull
+    public ArrayExpressionSatisfies in(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
         return new ArrayExpressionSatisfies(type, variable, expression);
     }
 }
