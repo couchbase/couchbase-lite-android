@@ -16,8 +16,8 @@ public final class Replicator extends AbstractReplicator {
     }
 
     @Override
-    void initC4Socket(int hash) {
-        C4Socket.socketFactory.put(hash, CBLWebSocket.class);
+    void initSocketFactory(Object socketFactoryContext) {
+        C4Socket.socketFactory.put(socketFactoryContext, CBLWebSocket.class);
     }
 
     @Override
