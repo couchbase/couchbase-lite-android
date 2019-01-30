@@ -1,7 +1,7 @@
 //
 // build.gradle
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,26 +24,26 @@ apply plugin: 'maven-publish'
 
 // NOTE: moved from project build.gradle to make CBL compilable as sub-module of application
 buildscript {
-    repositories {
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.0'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-    }
+   repositories {
+       google()
+       jcenter()
+   }
+   dependencies {
+       classpath 'com.android.tools.build:gradle:3.1.0'
+       classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+   }
 }
 
 /**
  * group and version
  */
-group   = 'com.couchbase.lite'
+group = 'com.couchbase.lite'
 version = file("${projectDir}/../../version.txt").text.trim()
 
 // -PbuildNumber=123
 def buildNo = "0"
 if (hasProperty("buildNumber")) {
-    buildNo = buildNumber;
+    buildNo = buildNumber
 }
 
 // git commit hash
@@ -55,6 +55,9 @@ def getGitHash = { ->
     }
     return stdout.toString().trim()
 }
+
+def sharedSrc = "${projectDir}/../../shared/src"
+def liteCore = "${projectDir}/../../libs/couchbase-lite-core"
 
 /**
  * The android block is where you configure all your Android-specific
@@ -76,7 +79,7 @@ android {
         }
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
+                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19'
                 cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 // explicitly build libs
                 targets 'LiteCoreJNI'
@@ -98,27 +101,27 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path "${projectDir}/../../libs/couchbase-lite-core/CMakeLists.txt"
+            path "${sharedSrc}/main/cpp/CMakeLists.txt"
         }
     }
     sourceSets {
         main {
             java.srcDirs = [
-                    "src/ce/java",                                          // CE android specific codes
-                    "src/main/java",                                        // android specific codes
-                    "${projectDir}/../../shared/src/main/java",             // shared java codes
-                    "${projectDir}/../../libs/couchbase-lite-core/Java/src" // lite-core java codes
+                "src/ce/java",                                          // CE android specific code
+                "src/main/java",                                        // android specific code
+                "${sharedSrc}/main/java",                               // shared java code
+                "${sharedSrc}/main/cpp/src"                             // lite-core java code
             ]
         }
         androidTest {
             java.srcDirs = [
-                    "src/androidTest/java",                                        // android specific codes
-                    "${projectDir}/../../libs/couchbase-lite-core/Java/androidTest/java" // lite-core java codes
+                "src/androidTest/java",                                 // android specific code
+                "${sharedSrc}/androidTest/java"                         // lite-core java code
             ]
             assets.srcDirs = [
-                    "src/main/assets",
-                    "src/androidTest/assets",
-                    "${projectDir}/../../libs/couchbase-lite-core/C/tests/data" // lite-core test assets
+                "src/main/assets",
+                "src/androidTest/assets",
+                "${liteCore}/C/tests/data" // lite-core test assets
             ]
         }
     }
@@ -130,9 +133,12 @@ android {
 }
 
 dependencies {
-    implementation 'com.squareup.okhttp3:okhttp:3.9.1'
     compileOnly 'com.android.support:support-annotations:28.0.0'
+
+    implementation 'com.squareup.okhttp3:okhttp:3.9.1'
+
     testImplementation 'junit:junit:4.12'
+
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 }
@@ -151,6 +157,17 @@ def bintrayKey = properties.getProperty('bintray.key')
 def mavenRepoUrl = properties.getProperty('maven.repo.url')
 def mavenRepoUser = properties.getProperty('maven.repo.user')
 def mavenRepoPass = properties.getProperty('maven.repo.pass')
+
+// ----------------------------------------------------------------
+// delete .externalNativeBuild to force rerun of cmake
+//  This is necessary because 'clean' deletes the file 'zconf.h'
+//  which is in .../build/intermediates, causing subsequent
+//  builds to fail.
+// ----------------------------------------------------------------
+
+clean.doFirst {
+    delete "${projectDir}/.externalNativeBuild"
+}
 
 // ----------------------------------------------------------------
 // javadoc.jar and source.jar
@@ -180,7 +197,7 @@ task javadoc(type: Javadoc) {
     }
 
     include 'com/couchbase/lite/*'
-    //exclude '**/internal/**'
+    exclude '**/internal/**'
     //exclude '**/litecore/**'
 
     /* Turn off javadoc 8 overly pedantic lint checking */
@@ -211,7 +228,7 @@ def gitUrl = 'https://github.com:couchbase/couchbase-lite-android.git'
 // JFrog Bintray - JCenter deployment
 bintray {
     user = bintrayUser
-    key  = bintrayKey
+    key = bintrayKey
     publications = ['mavenJava']
     pkg {
         repo = 'couchbase'
