@@ -1,6 +1,8 @@
 
 # Couchbase Lite 2.0
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Build Status](https://travis-ci.org/couchbase/couchbase-lite-android.svg?branch=master)](https://travis-ci.org/couchbase/couchbase-lite-android)
+
 **Couchbase Lite** is an embedded lightweight, document-oriented (NoSQL), syncable database engine.
 
 Couchbase Lite 2.0 has a completely new set of APIs. The implementation is on top of [Couchbase Lite Core](https://github.com/couchbase/couchbase-lite-core), which is also a new cross-platform implementation of database CRUD and query features, as well as document versioning.
