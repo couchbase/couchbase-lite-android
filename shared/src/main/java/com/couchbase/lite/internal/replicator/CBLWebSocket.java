@@ -211,7 +211,7 @@ public final class CBLWebSocket extends C4Socket {
     // ---------------------------------------------------------------------------------------------
     // Socket Factory Callbacks
     // ---------------------------------------------------------------------------------------------
-    public static void socket_open(long socket, int socketFactoryContext, String scheme, String hostname, int port, String path, byte[] optionsFleece) {
+    public static void socket_open(long socket, Object socketFactoryContext, String scheme, String hostname, int port, String path, byte[] optionsFleece) {
         Log.e(TAG, "CBLWebSocket.socket_open()");
 
         Map<String, Object> options = null;

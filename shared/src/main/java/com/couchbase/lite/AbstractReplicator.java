@@ -521,7 +521,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         super.finalize();
     }
 
-    abstract void initC4Socket(int hash);
+    abstract void initSocketFactory(Object socketFactoryContext);
 
     abstract int framing();
 
@@ -583,12 +583,19 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
         }
 
-        int hash = hashCode();
-        initC4Socket(hash);
+        Object socketFactoryContext = this;
+
+        // Figure out C4Socket Factory class based on target type:
+        // Note: We should call this method something else:
+        initSocketFactory(socketFactoryContext);
+
         int framing = framing();
         if (schema() != null)
             schema = schema();
-        C4Socket.socketFactoryContext.put(hash, (Replicator) this);
+
+        // This allow the socket callback to map from the socket factory context
+        // and the replicator:
+        C4Socket.socketFactoryContext.put(socketFactoryContext, (Replicator) this);
 
         // Push / Pull / Continuous:
         boolean push = isPush(config.getReplicatorType());
@@ -659,7 +666,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                         c4ReplPushFilter,
                         c4ReplPullFilter,
                         this,
-                        hash,
+                        socketFactoryContext,
                         framing);
             }
             status = c4repl.getStatus();
