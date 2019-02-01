@@ -127,35 +127,47 @@ abstract class AbstractDatabase {
      */
     protected AbstractDatabase(@NonNull String name, @NonNull DatabaseConfiguration config)
             throws CouchbaseLiteException {
-        // Logging version number of CBL
-        Log.info(TAG, CBLVersion.getUserAgent());
+        // Logging:
+        Run.once("DATABASE_INIT_LOGGING", new Runnable() {
+            @Override
+            public void run() {
+                // Logging version number of CBL
+                Log.info(TAG, CBLVersion.getUserAgent());
+
+                // Check file logging
+                if(Database.log.getFile().getConfig() == null) {
+                    Log.w(TAG, "Database.log.getFile().getConfig() is null, meaning file " +
+                            "logging is disabled. Log files required for product support are " +
+                            "not being generated.");
+                }
+            }
+        });
 
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("id cannot be null.");
         if (config == null)
             throw new IllegalArgumentException("id cannot be null.");
 
+        // Name:
         this.name = name;
-        this.config = config.readonlyCopy();
-        this.shellMode = false;
-        Run.once("CheckFileLogger", new Runnable() {
-            @Override
-            public void run() {
-                if(Database.log.getFile().getConfig() == null) {
-                    Log.w(TAG, "Database.log.getFile().getConfig() is null, meaning file logging is disabled.  Log files required for product support are not being generated.");
-                }
-            }
-        });
 
-                String tempdir = this.config.getTempDir();
-        if (tempdir != null)
-            C4.setenv("TMPDIR", tempdir, 1);
-        open();
-        this.sharedKeys = new SharedKeys(c4db);
+        // Copy configuration
+        this.config = config.readonlyCopy();
+
+        this.shellMode = false;
         this.postExecutor = Executors.newSingleThreadScheduledExecutor();
         this.queryExecutor = Executors.newSingleThreadScheduledExecutor();
         this.activeReplications = Collections.synchronizedSet(new HashSet<Replicator>());
         this.activeLiveQueries = Collections.synchronizedSet(new HashSet<LiveQuery>());
+
+        // Set the temp directory based on Database Configuration:
+        config.setTempDir();
+
+        // Open the database:
+        open();
+
+        // Initialize a shared keys:
+        this.sharedKeys = new SharedKeys(c4db);
     }
 
     /**
@@ -754,6 +766,9 @@ abstract class AbstractDatabase {
         int databaseFlags = DEFAULT_DATABASE_FLAGS;
         int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
         byte[] encryptionKey = null;
+
+        // Set the temp directory based on Database Configuration:
+        config.setTempDir();
 
         try {
             C4Database.copy(fromPath,

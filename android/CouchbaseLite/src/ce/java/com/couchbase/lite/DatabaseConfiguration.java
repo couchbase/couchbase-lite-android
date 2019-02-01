@@ -20,44 +20,21 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 /**
  * Configuration for opening a database.
  */
-public final class DatabaseConfiguration {
-    private static final String TEMP_DIR_NAME = "tmp";
-
-    //---------------------------------------------
-    // member variables
-    //---------------------------------------------
-    private boolean readonly = false;
-    private Context context = null;
-    private String directory = null;
-    private boolean customDir = false;
+public final class DatabaseConfiguration extends AbstractDatabaseConfiguration {
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     public DatabaseConfiguration(@NonNull Context context) {
-        if (context == null)
-            throw new IllegalArgumentException("context cannot be null.");
-        this.readonly = false;
-        this.context = context;
-        this.directory = context.getFilesDir().getAbsolutePath();
-        this.customDir = false;
+        super(context);
     }
 
     public DatabaseConfiguration(@NonNull DatabaseConfiguration config) {
-        if (config == null)
-            throw new IllegalArgumentException("config cannot be null.");
-        this.readonly = false;
-        this.context = config.context;
-        this.directory = config.directory;
-        this.customDir = config.customDir;
+        super(config);
     }
 
     //---------------------------------------------
@@ -65,29 +42,17 @@ public final class DatabaseConfiguration {
     //---------------------------------------------
 
     /**
-     * Set the path to the directory to store the database in. If the directory doesn't already exist it willbe created when the database is opened.
+     * Set the path to the directory to store the database in. If the directory doesn't already
+     * exist it will be created when the database is opened.
      *
      * @param directory the directory
      * @return The self object.
      */
-    public DatabaseConfiguration setDirectory(@NonNull String directory) {
-        if (directory == null)
-            throw new IllegalArgumentException("directory cannot be null.");
-        if (readonly)
-            throw new IllegalStateException("DatabaseConfiguration is readonly mode.");
-        this.directory = directory;
-        this.customDir = true;
-        return this;
-    }
-
-    /**
-     * Returns the path to the directory to store the database in.
-     *
-     * @return the directory
-     */
     @NonNull
-    public String getDirectory() {
-        return directory;
+    @Override
+    protected DatabaseConfiguration setDirectory(@NonNull String directory) {
+        super.setDirectory(directory);
+        return this;
     }
 
     //---------------------------------------------
@@ -96,25 +61,8 @@ public final class DatabaseConfiguration {
 
     DatabaseConfiguration readonlyCopy() {
         DatabaseConfiguration config = new DatabaseConfiguration(this);
-        config.readonly = true;
+        config.setReadonly(true);
         return config;
     }
 
-    Context getContext() {
-        return context;
-    }
-
-    String getTempDir() {
-        if (customDir) {
-            File cache = new File(directory, TEMP_DIR_NAME);
-            if (!cache.exists())
-                if (!cache.mkdirs())
-                    return context.getCacheDir().getAbsolutePath();
-                else if (!cache.isDirectory())
-                    return context.getCacheDir().getAbsolutePath();
-            return cache.getAbsolutePath();
-        } else {
-            return context.getCacheDir().getAbsolutePath();
-        }
-    }
 }

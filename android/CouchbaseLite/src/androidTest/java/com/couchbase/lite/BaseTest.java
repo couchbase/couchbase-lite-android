@@ -106,7 +106,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
             fail("Failed to load test.properties");
         }
 
-        setDir(new File(context.getFilesDir(), "CouchbaseLite"));
+        setDir(new File(context.getFilesDir(), "CouchbaseLiteTest"));
 
         // database exist, delete it
         deleteDatabase(kDatabaseName);
