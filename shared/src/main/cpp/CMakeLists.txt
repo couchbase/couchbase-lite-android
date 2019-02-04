@@ -37,6 +37,13 @@ MESSAGE( STATUS "Java_INCLUDE_DIRS: "     ${Java_INCLUDE_DIRS} )
 MESSAGE( STATUS "JAVA_INCLUDE_PATH: "     ${JAVA_INCLUDE_PATH} )
 MESSAGE( STATUS "JAVA_INCLUDE_PATH2: "    ${JAVA_INCLUDE_PATH2} )
 MESSAGE( STATUS "Java_JAVAH_EXECUTABLE: " ${Java_JAVAH_EXECUTABLE} )
+MESSAGE( STATUS "ENTERPRISE: "            ${BUILD_ENTERPRISE} )
+
+if(BUILD_ENTERPRISE)
+    add_definitions(-DCOUCHBASE_ENTERPRISE      # Tells LiteCore it's an EE build
+                    -DSQLITE_HAS_CODEC          # Enables SQLite encryption extension (SEE)
+                    -DSQLITE_TEMP_STORE=2)      # Don't write temp files to disk (for security)
+endif()
 
 #
 # Generate JNI header files
