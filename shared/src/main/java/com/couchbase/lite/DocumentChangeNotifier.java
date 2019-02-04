@@ -18,8 +18,8 @@
 
 package com.couchbase.lite;
 
-import com.couchbase.litecore.C4DocumentObserver;
-import com.couchbase.litecore.C4DocumentObserverListener;
+import com.couchbase.lite.internal.C4DocumentObserver;
+import com.couchbase.lite.internal.C4DocumentObserverListener;
 
 class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
     Database db;

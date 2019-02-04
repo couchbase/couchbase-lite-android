@@ -1,23 +1,23 @@
 #!/bin/bash
 
 javah -d ./jni -classpath ./src \
-	com.couchbase.litecore.Database \
-	com.couchbase.litecore.Document \
-	com.couchbase.litecore.DocumentIterator \
-	com.couchbase.litecore.LiteCoreException \
-	com.couchbase.litecore.Logger \
-	com.couchbase.litecore.C4BlobKey \
-	com.couchbase.litecore.C4BlobStore \
-	com.couchbase.litecore.C4Prediction \
-	com.couchbase.litecore.C4Query \
-	com.couchbase.litecore.C4QueryEnumerator \
-	com.couchbase.litecore.C4BlobReadStream \
-	com.couchbase.litecore.C4BlobWriteStream \
-	com.couchbase.litecore.fleece.FLArray \
-	com.couchbase.litecore.fleece.FLArrayIterator \
-	com.couchbase.litecore.fleece.FLDict \
-	com.couchbase.litecore.fleece.FLDictIterator \
-	com.couchbase.litecore.fleece.FLEncoder \
-	com.couchbase.litecore.fleece.FLSliceResult \
-	com.couchbase.litecore.fleece.FLValue
+	com.couchbase.lite.internal.Database \
+	com.couchbase.lite.internal.Document \
+	com.couchbase.lite.internal.DocumentIterator \
+	com.couchbase.lite.internal.LiteCoreException \
+	com.couchbase.lite.internal.Logger \
+	com.couchbase.lite.internal.C4BlobKey \
+	com.couchbase.lite.internal.C4BlobStore \
+	com.couchbase.lite.internal.C4Prediction \
+	com.couchbase.lite.internal.C4Query \
+	com.couchbase.lite.internal.C4QueryEnumerator \
+	com.couchbase.lite.internal.C4BlobReadStream \
+	com.couchbase.lite.internal.C4BlobWriteStream \
+	com.couchbase.lite.internal.fleece.FLArray \
+	com.couchbase.lite.internal.fleece.FLArrayIterator \
+	com.couchbase.lite.internal.fleece.FLDict \
+	com.couchbase.lite.internal.fleece.FLDictIterator \
+	com.couchbase.lite.internal.fleece.FLEncoder \
+	com.couchbase.lite.internal.fleece.FLSliceResult \
+	com.couchbase.lite.internal.fleece.FLValue
 	

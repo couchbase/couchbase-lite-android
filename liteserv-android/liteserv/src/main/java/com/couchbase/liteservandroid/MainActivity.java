@@ -5,7 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
 
-import com.couchbase.litecore.*;
+import com.couchbase.lite.native.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

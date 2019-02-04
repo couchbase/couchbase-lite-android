@@ -19,7 +19,7 @@ package com.couchbase.lite;
 
 import android.os.Build;
 
-import com.couchbase.litecore.C4;
+import com.couchbase.lite.internal.C4;
 
 import java.util.Locale;
 

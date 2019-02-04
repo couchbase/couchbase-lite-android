@@ -17,9 +17,9 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.litecore.C4Document;
-import com.couchbase.litecore.fleece.AllocSlice;
-import com.couchbase.litecore.fleece.MContext;
+import com.couchbase.lite.internal.C4Document;
+import com.couchbase.lite.internal.fleece.AllocSlice;
+import com.couchbase.lite.internal.fleece.MContext;
 
 /**
  * This DocContext implementation is simplified version of lite-core DocContext implementation

@@ -17,13 +17,13 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.litecore.fleece.Encoder;
-import com.couchbase.litecore.fleece.FLConstants;
-import com.couchbase.litecore.fleece.FLDict;
-import com.couchbase.litecore.fleece.FLSharedKeys;
-import com.couchbase.litecore.fleece.FLValue;
-import com.couchbase.litecore.fleece.MCollection;
-import com.couchbase.litecore.fleece.MValue;
+import com.couchbase.lite.internal.fleece.Encoder;
+import com.couchbase.lite.internal.fleece.FLConstants;
+import com.couchbase.lite.internal.fleece.FLDict;
+import com.couchbase.lite.internal.fleece.FLSharedKeys;
+import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.fleece.MCollection;
+import com.couchbase.lite.internal.fleece.MValue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

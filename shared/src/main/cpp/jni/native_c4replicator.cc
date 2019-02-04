@@ -20,7 +20,7 @@
 #include <c4Base.h>
 #include <c4Socket.h>
 #include "socket_factory.h"
-#include "com_couchbase_litecore_C4Replicator.h"
+#include "com_couchbase_lite_internal_C4Replicator.h"
 #include "native_glue.hh"
 #include "logging.h"
 
@@ -28,7 +28,7 @@ using namespace litecore;
 using namespace litecore::jni;
 
 // ----------------------------------------------------------------------------
-// com_couchbase_litecore_C4Replicator
+// com_couchbase_lite_internal_C4Replicator
 // ----------------------------------------------------------------------------
 
 // C4Replicator
@@ -63,7 +63,7 @@ static jfieldID f_C4DocEnded_errorInternalInfo;
 bool litecore::jni::initC4Replicator(JNIEnv *env) {
     // Find `C4Replicator` class and `statusChangedCallback(long, C4ReplicatorStatus )` static method for callback
     {
-        jclass localClass = env->FindClass("com/couchbase/litecore/C4Replicator");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/C4Replicator");
         if (!localClass)
             return false;
 
@@ -73,13 +73,13 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
 
         m_C4Replicator_statusChangedCallback = env->GetStaticMethodID(cls_C4Replicator,
                                                                       "statusChangedCallback",
-                                                                      "(JLcom/couchbase/litecore/C4ReplicatorStatus;)V");
+                                                                      "(JLcom/couchbase/lite/internal/C4ReplicatorStatus;)V");
         if (!m_C4Replicator_statusChangedCallback)
             return false;
 
         m_C4Replicator_documentEndedCallback = env->GetStaticMethodID(cls_C4Replicator,
                                                                       "documentEndedCallback",
-                                                                      "(JZ[Lcom/couchbase/litecore/C4DocumentEnded;)V");
+                                                                      "(JZ[Lcom/couchbase/lite/internal/C4DocumentEnded;)V");
 
         if (!m_C4Replicator_documentEndedCallback)
             return false;
@@ -93,7 +93,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
 
     // C4ReplicatorStatus, constructor, and fields
     {
-        jclass localClass = env->FindClass("com/couchbase/litecore/C4ReplicatorStatus");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/C4ReplicatorStatus");
         if (!localClass)
             return false;
 
@@ -140,7 +140,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
 
     // C4DocumentEnded, constructor, and fields
     {
-        jclass localClass = env->FindClass("com/couchbase/litecore/C4DocumentEnded");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/C4DocumentEnded");
         if (!localClass)
             return false;
 
@@ -388,11 +388,11 @@ static bool pushFilterFunction(C4String docID, C4RevisionFlags flags, FLDict dic
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    create
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JIILjava/lang/Object;ILjava/lang/Object;Lcom/couchbase/litecore/C4ReplicationFilter;Lcom/couchbase/litecore/C4ReplicationFilter;[B)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JIILjava/lang/Object;ILjava/lang/Object;Lcom/couchbase/lite/internal/C4ReplicationFilter;Lcom/couchbase/lite/internal/C4ReplicationFilter;[B)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_litecore_C4Replicator_create(
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_C4Replicator_create(
         JNIEnv *env,
         jclass clazz,
         jlong jdb,
@@ -453,12 +453,12 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_litecore_C4Replicator_create(
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    createWithSocket
  * Signature: (JJIILjava/lang/Object;[B)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4Replicator_createWithSocket(JNIEnv *env,
+Java_com_couchbase_lite_internal_C4Replicator_createWithSocket(JNIEnv *env,
                                                           jclass clazz,
                                                           jlong jdb,
                                                           jlong jopenSocket,
@@ -487,12 +487,12 @@ Java_com_couchbase_litecore_C4Replicator_createWithSocket(JNIEnv *env,
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    free
  * Signature: (JLjava/lang/Object;Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Replicator_free(JNIEnv *env,
+Java_com_couchbase_lite_internal_C4Replicator_free(JNIEnv *env,
                                               jclass clazz,
                                               jlong repl,
                                               jobject replicatorContext,
@@ -503,57 +503,57 @@ Java_com_couchbase_litecore_C4Replicator_free(JNIEnv *env,
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    stop
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Replicator_stop(JNIEnv *env, jclass clazz, jlong repl) {
+Java_com_couchbase_lite_internal_C4Replicator_stop(JNIEnv *env, jclass clazz, jlong repl) {
     c4repl_stop((C4Replicator *) repl);
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    getStatus
- * Signature: (J)Lcom/couchbase/litecore/C4ReplicatorStatus;
+ * Signature: (J)Lcom/couchbase/lite/internal/C4ReplicatorStatus;
  */
 JNIEXPORT jobject JNICALL
-Java_com_couchbase_litecore_C4Replicator_getStatus(JNIEnv *env, jclass clazz, jlong repl) {
+Java_com_couchbase_lite_internal_C4Replicator_getStatus(JNIEnv *env, jclass clazz, jlong repl) {
     C4ReplicatorStatus status = c4repl_getStatus((C4Replicator *) repl);
     return toJavaObject(env, status);
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    getResponseHeaders
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_litecore_C4Replicator_getResponseHeaders(JNIEnv *env, jclass clazz, jlong repl) {
+Java_com_couchbase_lite_internal_C4Replicator_getResponseHeaders(JNIEnv *env, jclass clazz, jlong repl) {
     C4Slice s = c4repl_getResponseHeaders((C4Replicator *) repl);
     jbyteArray res = toJByteArray(env, s);
     return res;
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    mayBeTransient
  * Signature: (III)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_litecore_C4Replicator_mayBeTransient(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_C4Replicator_mayBeTransient(JNIEnv *env, jclass clazz,
                                                         jint domain, jint code, jint ii) {
     C4Error c4Error = {.domain = (C4ErrorDomain) domain, .code= code, .internal_info = ii};
     return c4error_mayBeTransient(c4Error);
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Replicator
+ * Class:     com_couchbase_lite_internal_C4Replicator
  * Method:    mayBeNetworkDependent
  * Signature: (III)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_litecore_C4Replicator_mayBeNetworkDependent(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_C4Replicator_mayBeNetworkDependent(JNIEnv *env, jclass clazz,
                                                                jint domain, jint code, jint ii) {
     C4Error c4Error = {.domain = (C4ErrorDomain) domain, .code= code, .internal_info = ii};
     return c4error_mayBeNetworkDependent(c4Error);

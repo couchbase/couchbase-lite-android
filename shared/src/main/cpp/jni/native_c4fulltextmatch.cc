@@ -16,71 +16,71 @@
 // limitations under the License.
 //
 #include <c4.h>
-#include "com_couchbase_litecore_C4FullTextMatch.h"
+#include "com_couchbase_lite_internal_C4FullTextMatch.h"
 #include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;
 
 // ----------------------------------------------------------------------------
-// com_couchbase_litecore_C4FullTextMatch
+// com_couchbase_lite_internal_C4FullTextMatch
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_litecore_C4FullTextMatch
+ * Class:     com_couchbase_lite_internal_C4FullTextMatch
  * Method:    dataSource
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4FullTextMatch_dataSource
+Java_com_couchbase_lite_internal_C4FullTextMatch_dataSource
         (JNIEnv *env, jclass clazz, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->dataSource;
 }
 
 /*
- * Class:     com_couchbase_litecore_C4FullTextMatch
+ * Class:     com_couchbase_lite_internal_C4FullTextMatch
  * Method:    property
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4FullTextMatch_property
+Java_com_couchbase_lite_internal_C4FullTextMatch_property
         (JNIEnv *env, jclass clazz, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->property;
 }
 
 /*
- * Class:     com_couchbase_litecore_C4FullTextMatch
+ * Class:     com_couchbase_lite_internal_C4FullTextMatch
  * Method:    term
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4FullTextMatch_term
+Java_com_couchbase_lite_internal_C4FullTextMatch_term
         (JNIEnv *env, jclass clazz, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->term;
 }
 
 /*
- * Class:     com_couchbase_litecore_C4FullTextMatch
+ * Class:     com_couchbase_lite_internal_C4FullTextMatch
  * Method:    start
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4FullTextMatch_start
+Java_com_couchbase_lite_internal_C4FullTextMatch_start
         (JNIEnv *env, jclass clazz, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->start;
 }
 
 /*
- * Class:     com_couchbase_litecore_C4FullTextMatch
+ * Class:     com_couchbase_lite_internal_C4FullTextMatch
  * Method:    length
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4FullTextMatch_length
+Java_com_couchbase_lite_internal_C4FullTextMatch_length
         (JNIEnv *env, jclass clazz, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->length;

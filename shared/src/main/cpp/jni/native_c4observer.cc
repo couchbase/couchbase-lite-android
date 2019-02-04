@@ -16,8 +16,8 @@
 // limitations under the License.
 //
 #include <c4.h>
-#include "com_couchbase_litecore_C4DatabaseObserver.h"
-#include "com_couchbase_litecore_C4DocumentObserver.h"
+#include "com_couchbase_lite_internal_C4DatabaseObserver.h"
+#include "com_couchbase_lite_internal_C4DocumentObserver.h"
 #include "native_glue.hh"
 #include "logging.h"
 
@@ -25,7 +25,7 @@ using namespace litecore;
 using namespace litecore::jni;
 
 // -------------------------------------------------------------------------------------------------
-// com_couchbase_litecore_C4DatabaseObserver and com_couchbase_litecore_C4DocumentObserver
+// com_couchbase_lite_internal_C4DatabaseObserver and com_couchbase_lite_internal_C4DocumentObserver
 // -------------------------------------------------------------------------------------------------
 
 // C4DatabaseObserver
@@ -48,7 +48,7 @@ static jmethodID m_C4DocObs_callback; // callback method
 bool litecore::jni::initC4Observer(JNIEnv *env) {
     // Find `C4DatabaseObserver` class and `callback(long)` static method for callback
     {
-        jclass localClass = env->FindClass("com/couchbase/litecore/C4DatabaseObserver");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/C4DatabaseObserver");
         if (!localClass)
             return false;
 
@@ -63,7 +63,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
 
     // Find `C4DocumentObserver.callback()` method id for callback
     {
-        jclass localClass = env->FindClass("com/couchbase/litecore/C4DocumentObserver");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/C4DocumentObserver");
         if (!localClass)
             return false;
 
@@ -79,7 +79,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
 
     // C4DatabaseChange, constructor, and fields
     {
-        jclass localClass = env->FindClass("com/couchbase/litecore/C4DatabaseChange");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/C4DatabaseChange");
         if (!localClass)
             return false;
 
@@ -114,7 +114,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_litecore_C4DatabaseObserver
+// com_couchbase_lite_internal_C4DatabaseObserver
 // ----------------------------------------------------------------------------
 
 /**
@@ -136,22 +136,22 @@ static void c4DBObsCallback(C4DatabaseObserver *obs, void *ctx) {
 }
 
 /*
- * Class:     com_couchbase_litecore_C4DatabaseObserver
+ * Class:     com_couchbase_lite_internal_C4DatabaseObserver
  * Method:    create
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4DatabaseObserver_create(JNIEnv *, jclass, jlong db) {
+Java_com_couchbase_lite_internal_C4DatabaseObserver_create(JNIEnv *, jclass, jlong db) {
     return (jlong) c4dbobs_create((C4Database *) db, c4DBObsCallback, (void *) NULL);
 }
 
 /*
- * Class:     com_couchbase_litecore_C4DatabaseObserver
+ * Class:     com_couchbase_lite_internal_C4DatabaseObserver
  * Method:    getChanges
- * Signature: (JI)[Lcom/couchbase/litecore/C4DatabaseChange;
+ * Signature: (JI)[Lcom/couchbase/lite/internal/C4DatabaseChange;
  */
 JNIEXPORT jobjectArray JNICALL
-Java_com_couchbase_litecore_C4DatabaseObserver_getChanges(JNIEnv *env,
+Java_com_couchbase_lite_internal_C4DatabaseObserver_getChanges(JNIEnv *env,
                                                           jclass clazz,
                                                           jlong observer,
                                                           jint maxChanges) {
@@ -181,18 +181,18 @@ Java_com_couchbase_litecore_C4DatabaseObserver_getChanges(JNIEnv *env,
 }
 
 /*
- * Class:     com_couchbase_litecore_C4DatabaseObserver
+ * Class:     com_couchbase_lite_internal_C4DatabaseObserver
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4DatabaseObserver_free(JNIEnv *env, jclass clazz, jlong observer) {
+Java_com_couchbase_lite_internal_C4DatabaseObserver_free(JNIEnv *env, jclass clazz, jlong observer) {
     if (observer != 0)
         c4dbobs_free((C4DatabaseObserver *) observer);
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_litecore_C4DocumentObserver
+// com_couchbase_lite_internal_C4DocumentObserver
 // ----------------------------------------------------------------------------
 
 /**
@@ -217,23 +217,23 @@ c4DocObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, v
 }
 
 /*
- * Class:     com_couchbase_litecore_C4DocumentObserver
+ * Class:     com_couchbase_lite_internal_C4DocumentObserver
  * Method:    create
  * Signature: (JLjava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_litecore_C4DocumentObserver_create
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_C4DocumentObserver_create
         (JNIEnv *env, jclass clazz, jlong jdb, jstring jdocID) {
     jstringSlice docID(env, jdocID);
     return (jlong) c4docobs_create((C4Database *) jdb, docID, c4DocObsCallback, NULL);
 }
 
 /*
- * Class:     com_couchbase_litecore_C4DocumentObserver
+ * Class:     com_couchbase_lite_internal_C4DocumentObserver
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4DocumentObserver_free(JNIEnv *env, jclass clazz, jlong obs) {
+Java_com_couchbase_lite_internal_C4DocumentObserver_free(JNIEnv *env, jclass clazz, jlong obs) {
     if (obs != 0)
         c4docobs_free((C4DocumentObserver *) obs);
 }

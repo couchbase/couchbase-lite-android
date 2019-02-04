@@ -66,7 +66,6 @@ If you are using ProGuard you might need to add the following options:
 -keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 
 # CBL2.x
--keep class com.couchbase.litecore.**{ *; }
 -keep class com.couchbase.lite.**{ *; }
 
 ```

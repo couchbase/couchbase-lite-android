@@ -21,11 +21,11 @@ import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.JsonUtils;
-import com.couchbase.litecore.C4Query;
-import com.couchbase.litecore.C4QueryEnumerator;
-import com.couchbase.litecore.C4QueryOptions;
-import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.fleece.AllocSlice;
+import com.couchbase.lite.internal.C4Query;
+import com.couchbase.lite.internal.C4QueryEnumerator;
+import com.couchbase.lite.internal.C4QueryOptions;
+import com.couchbase.lite.internal.LiteCoreException;
+import com.couchbase.lite.internal.fleece.AllocSlice;
 
 import org.json.JSONException;
 

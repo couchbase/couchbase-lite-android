@@ -12,33 +12,33 @@
  * and limitations under the License.
  */
 #include <c4Listener.h>
-#include "com_couchbase_litecore_C4Listener.h"
+#include "com_couchbase_lite_internal_C4Listener.h"
 #include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;
 
 // ----------------------------------------------------------------------------
-// com_couchbase_litecore_C4Listener
+// com_couchbase_lite_internal_C4Listener
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_litecore_C4Listener
+ * Class:     com_couchbase_lite_internal_C4Listener
  * Method:    availableAPIs
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_litecore_C4Listener_availableAPIs(JNIEnv *env, jclass clazz) {
+Java_com_couchbase_lite_internal_C4Listener_availableAPIs(JNIEnv *env, jclass clazz) {
     return (jint) c4listener_availableAPIs();
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Listener
+ * Class:     com_couchbase_lite_internal_C4Listener
  * Method:    start
  * Signature: (IILjava/lang/String;ZZZZ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4Listener_start(JNIEnv *env, jclass clazz, jint port, jint apis,
+Java_com_couchbase_lite_internal_C4Listener_start(JNIEnv *env, jclass clazz, jint port, jint apis,
                                              jstring jdirectory, jboolean allowCreateDBs,
                                              jboolean allowDeleteDBs, jboolean allowPush,
                                              jboolean allowPull) {
@@ -60,24 +60,24 @@ Java_com_couchbase_litecore_C4Listener_start(JNIEnv *env, jclass clazz, jint por
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Listener
+ * Class:     com_couchbase_lite_internal_C4Listener
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Listener_free(JNIEnv *env, jclass clazz, jlong listener) {
+Java_com_couchbase_lite_internal_C4Listener_free(JNIEnv *env, jclass clazz, jlong listener) {
     if (!listener) return;
 
     c4listener_free((C4Listener *) listener);
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Listener
+ * Class:     com_couchbase_lite_internal_C4Listener
  * Method:    shareDB
  * Signature: (JLjava/lang/String;J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_litecore_C4Listener_shareDB(JNIEnv *env, jclass clazz, jlong listener,
+Java_com_couchbase_lite_internal_C4Listener_shareDB(JNIEnv *env, jclass clazz, jlong listener,
                                                jstring jname, jlong db) {
     if (!listener) return false;
 
@@ -86,12 +86,12 @@ Java_com_couchbase_litecore_C4Listener_shareDB(JNIEnv *env, jclass clazz, jlong 
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Listener
+ * Class:     com_couchbase_lite_internal_C4Listener
  * Method:    unshareDB
  * Signature: (JLjava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_litecore_C4Listener_unshareDB(JNIEnv *env, jclass clazz, jlong listener,
+Java_com_couchbase_lite_internal_C4Listener_unshareDB(JNIEnv *env, jclass clazz, jlong listener,
                                                  jstring jname) {
     if (!listener) return false;
 
@@ -100,12 +100,12 @@ Java_com_couchbase_litecore_C4Listener_unshareDB(JNIEnv *env, jclass clazz, jlon
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Listener
+ * Class:     com_couchbase_lite_internal_C4Listener
  * Method:    uriNameFromPath
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_litecore_C4Listener_uriNameFromPath(JNIEnv *env, jclass clazz, jstring jpath) {
+Java_com_couchbase_lite_internal_C4Listener_uriNameFromPath(JNIEnv *env, jclass clazz, jstring jpath) {
     jstringSlice path(env, jpath);
     C4StringResult result = c4db_URINameFromPath(path);
     jstring jstr = toJString(env, result);

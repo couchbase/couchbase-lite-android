@@ -19,8 +19,8 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.litecore.C4Constants;
-import com.couchbase.litecore.C4Document;
+import com.couchbase.lite.internal.C4Constants;
+import com.couchbase.lite.internal.C4Document;
 
 import java.util.Date;
 import java.util.Locale;

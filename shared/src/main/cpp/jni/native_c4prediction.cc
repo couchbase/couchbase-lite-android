@@ -17,7 +17,7 @@
 //
 
 #include "native_glue.hh"
-#include "com_couchbase_litecore_C4Prediction.h"
+#include "com_couchbase_lite_internal_C4Prediction.h"
 
 using namespace litecore;
 using namespace litecore::jni;
@@ -50,7 +50,7 @@ static void unregistered(void* context) {
 
 #endif
 
-JNIEXPORT void JNICALL Java_com_couchbase_litecore_C4Prediction_registerModel
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_C4Prediction_registerModel
         (JNIEnv *env, jclass jclazz, jstring jname, jobject jmodel) {
 #ifdef COUCHBASE_ENTERPRISE
     jstringSlice name(env, jname);
@@ -71,11 +71,11 @@ JNIEXPORT void JNICALL Java_com_couchbase_litecore_C4Prediction_registerModel
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Prediction
+ * Class:     com_couchbase_lite_internal_C4Prediction
  * Method:    unregisterModel
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT void JNICALL Java_com_couchbase_litecore_C4Prediction_unregisterModel
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_C4Prediction_unregisterModel
         (JNIEnv *env, jclass clazz, jstring jname) {
 #ifdef COUCHBASE_ENTERPRISE
     jstringSlice name(env, jname);

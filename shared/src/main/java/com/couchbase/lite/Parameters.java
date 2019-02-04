@@ -20,9 +20,9 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.fleece.AllocSlice;
-import com.couchbase.litecore.fleece.Encoder;
+import com.couchbase.lite.internal.LiteCoreException;
+import com.couchbase.lite.internal.fleece.AllocSlice;
+import com.couchbase.lite.internal.fleece.Encoder;
 
 import java.util.Date;
 import java.util.HashMap;

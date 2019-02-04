@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 
-#include "com_couchbase_litecore_C4Base.h"
+#include "com_couchbase_lite_internal_C4Base.h"
 
 #include "native_glue.hh"
 
@@ -24,16 +24,16 @@ using namespace litecore;
 using namespace litecore::jni;
 
 // ----------------------------------------------------------------------------
-// Java_com_couchbase_litecore_C4Base
+// Java_com_couchbase_lite_internal_C4Base
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_litecore_C4Base
+ * Class:     com_couchbase_lite_internal_C4Base
  * Method:    getMessage
  * Signature: (III)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_litecore_C4Base_getMessage(JNIEnv *env, jclass clazz, jint jdomain, jint jcode,
+Java_com_couchbase_lite_internal_C4Base_getMessage(JNIEnv *env, jclass clazz, jint jdomain, jint jcode,
                                               jint jinfo) {
     C4Error c4err = {(C4ErrorDomain) jdomain, (int32_t) jcode, (int32_t) jinfo};
     C4StringResult msg = c4error_getMessage(c4err);
@@ -43,11 +43,11 @@ Java_com_couchbase_litecore_C4Base_getMessage(JNIEnv *env, jclass clazz, jint jd
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Base
+ * Class:     com_couchbase_lite_internal_C4Base
  * Method:    setTempDir
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_litecore_C4Base_setTempDir
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_C4Base_setTempDir
         (JNIEnv *env, jclass clazz, jstring jtempDir) {
     jstringSlice tempDir(env, jtempDir);
     c4_setTempDir(tempDir);

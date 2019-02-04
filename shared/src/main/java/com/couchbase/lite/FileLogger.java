@@ -20,8 +20,8 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.C4Constants;
-import com.couchbase.litecore.C4Log;
+import com.couchbase.lite.internal.C4Constants;
+import com.couchbase.lite.internal.C4Log;
 
 import java.io.File;
 import java.util.HashMap;

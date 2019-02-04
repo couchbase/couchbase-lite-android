@@ -20,20 +20,20 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.C4Document;
-import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.fleece.FLDict;
-import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.FLSliceResult;
-import com.couchbase.litecore.fleece.MRoot;
+import com.couchbase.lite.internal.C4Document;
+import com.couchbase.lite.internal.LiteCoreException;
+import com.couchbase.lite.internal.fleece.FLDict;
+import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.MRoot;
 
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.couchbase.litecore.C4Constants.C4DocumentFlags.kDocDeleted;
-import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevIsConflict;
+import static com.couchbase.lite.internal.C4Constants.C4DocumentFlags.kDocDeleted;
+import static com.couchbase.lite.internal.C4Constants.C4RevisionFlags.kRevIsConflict;
 
 /**
  * Readonly version of the Document.

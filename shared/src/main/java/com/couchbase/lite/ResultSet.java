@@ -21,8 +21,8 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.C4QueryEnumerator;
-import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.lite.internal.C4QueryEnumerator;
+import com.couchbase.lite.internal.LiteCoreException;
 
 import java.util.ArrayList;
 import java.util.Iterator;

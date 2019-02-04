@@ -51,36 +51,36 @@ endif()
 set(JNI_CLASSPATH  ${PROJECT_SOURCE_DIR}/src)
 set(JNI_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/jni)
 set(JNI_CLASSES
-    com.couchbase.litecore.C4
-    com.couchbase.litecore.C4Base
-    com.couchbase.litecore.C4BlobKey
-    com.couchbase.litecore.C4BlobStore
-    com.couchbase.litecore.C4BlobReadStream
-    com.couchbase.litecore.C4BlobWriteStream
-    com.couchbase.litecore.C4Database
-    com.couchbase.litecore.C4DatabaseObserver
-    com.couchbase.litecore.C4DocEnumerator
-    com.couchbase.litecore.C4Document
-    com.couchbase.litecore.C4DocumentObserver
-    com.couchbase.litecore.C4FullTextMatch
-    com.couchbase.litecore.C4Key
-    com.couchbase.litecore.C4Listener
-    com.couchbase.litecore.C4Log
-    com.couchbase.litecore.C4Prediction
-    com.couchbase.litecore.C4Query
-    com.couchbase.litecore.C4QueryEnumerator
-    com.couchbase.litecore.C4RawDocument
-    com.couchbase.litecore.C4Replicator
-    com.couchbase.litecore.C4Socket
-    com.couchbase.litecore.fleece.AllocSlice
-    com.couchbase.litecore.fleece.Encoder
-    com.couchbase.litecore.fleece.FLArray
-    com.couchbase.litecore.fleece.FLArrayIterator
-    com.couchbase.litecore.fleece.FLDict
-    com.couchbase.litecore.fleece.FLDictIterator
-    com.couchbase.litecore.fleece.FLEncoder
-    com.couchbase.litecore.fleece.FLSliceResult
-    com.couchbase.litecore.fleece.FLValue
+    com.couchbase.lite.internal.C4
+    com.couchbase.lite.internal.C4Base
+    com.couchbase.lite.internal.C4BlobKey
+    com.couchbase.lite.internal.C4BlobStore
+    com.couchbase.lite.internal.C4BlobReadStream
+    com.couchbase.lite.internal.C4BlobWriteStream
+    com.couchbase.lite.internal.C4Database
+    com.couchbase.lite.internal.C4DatabaseObserver
+    com.couchbase.lite.internal.C4DocEnumerator
+    com.couchbase.lite.internal.C4Document
+    com.couchbase.lite.internal.C4DocumentObserver
+    com.couchbase.lite.internal.C4FullTextMatch
+    com.couchbase.lite.internal.C4Key
+    com.couchbase.lite.internal.C4Listener
+    com.couchbase.lite.internal.C4Log
+    com.couchbase.lite.internal.C4Prediction
+    com.couchbase.lite.internal.C4Query
+    com.couchbase.lite.internal.C4QueryEnumerator
+    com.couchbase.lite.internal.C4RawDocument
+    com.couchbase.lite.internal.C4Replicator
+    com.couchbase.lite.internal.C4Socket
+    com.couchbase.lite.internal.fleece.AllocSlice
+    com.couchbase.lite.internal.fleece.Encoder
+    com.couchbase.lite.internal.fleece.FLArray
+    com.couchbase.lite.internal.fleece.FLArrayIterator
+    com.couchbase.lite.internal.fleece.FLDict
+    com.couchbase.lite.internal.fleece.FLDictIterator
+    com.couchbase.lite.internal.fleece.FLEncoder
+    com.couchbase.lite.internal.fleece.FLSliceResult
+    com.couchbase.lite.internal.fleece.FLValue
     )
 
 create_javah(TARGET JNIHeaders
@@ -90,7 +90,7 @@ create_javah(TARGET JNIHeaders
     DEPENDS ${JNI_CLASSPATH})
 
 #
-# JNI for litecore - shared library including litecore static library
+# JNI for com.couchbase.lite.internal - shared library including litecore static library
 #
 
 # jni.h and jni_md.h for non-Android

@@ -18,7 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.fleece.MValue;
+import com.couchbase.lite.internal.fleece.MValue;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicBoolean;

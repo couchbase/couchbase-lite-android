@@ -18,10 +18,10 @@
 package com.couchbase.lite.internal.replicator;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.C4Socket;
-import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.FLValue;
+import com.couchbase.lite.internal.C4Socket;
+import com.couchbase.lite.internal.LiteCoreException;
+import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLValue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,20 +66,20 @@ import okhttp3.internal.tls.CustomHostnameVerifier;
 import okio.Buffer;
 import okio.ByteString;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.NetworkDomain;
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.POSIXDomain;
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
-import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
-import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrUnknownHost;
-import static com.couchbase.litecore.C4Replicator.kC4Replicator2Scheme;
-import static com.couchbase.litecore.C4Replicator.kC4Replicator2TLSScheme;
-import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseNormal;
-import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketClosePolicyError;
-import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseProtocolError;
+import static com.couchbase.lite.internal.C4Constants.C4ErrorDomain.NetworkDomain;
+import static com.couchbase.lite.internal.C4Constants.C4ErrorDomain.POSIXDomain;
+import static com.couchbase.lite.internal.C4Constants.C4ErrorDomain.WebSocketDomain;
+import static com.couchbase.lite.internal.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
+import static com.couchbase.lite.internal.C4Constants.NetworkError.kC4NetErrUnknownHost;
+import static com.couchbase.lite.internal.C4Replicator.kC4Replicator2Scheme;
+import static com.couchbase.lite.internal.C4Replicator.kC4Replicator2TLSScheme;
+import static com.couchbase.lite.internal.C4WebSocketCloseCode.kWebSocketCloseNormal;
+import static com.couchbase.lite.internal.C4WebSocketCloseCode.kWebSocketClosePolicyError;
+import static com.couchbase.lite.internal.C4WebSocketCloseCode.kWebSocketCloseProtocolError;
 
 /**
  * NOTE: CBLWebSocket class should be public as this class is instantiated
- * from com.couchbase.litecore package.
+ * from com.couchbase.lite.internal package.
  */
 public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------

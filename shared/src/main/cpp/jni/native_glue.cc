@@ -264,7 +264,7 @@ namespace litecore {
         void throwError(JNIEnv *env, C4Error error) {
             if (env->ExceptionOccurred())
                 return;
-            jclass xclass = env->FindClass("com/couchbase/litecore/LiteCoreException");
+            jclass xclass = env->FindClass("com/couchbase/lite/internal/LiteCoreException");
             assert(xclass); // if we can't even throw an exception, we're really fuxored
             jmethodID m = env->GetStaticMethodID(xclass, "throwException",
                                                  "(IILjava/lang/String;)V");

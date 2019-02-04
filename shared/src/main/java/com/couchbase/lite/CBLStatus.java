@@ -18,10 +18,10 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.C4Base;
-import com.couchbase.litecore.C4Constants;
-import com.couchbase.litecore.C4Error;
-import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.lite.internal.C4Base;
+import com.couchbase.lite.internal.C4Constants;
+import com.couchbase.lite.internal.C4Error;
+import com.couchbase.lite.internal.LiteCoreException;
 
 class CBLStatus {
     final static String[] kErrorDomains = {

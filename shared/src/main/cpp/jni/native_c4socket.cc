@@ -18,7 +18,7 @@
 
 #include <c4.h>
 #include <c4Socket.h>
-#include "com_couchbase_litecore_C4Socket.h"
+#include "com_couchbase_lite_internal_C4Socket.h"
 #include "socket_factory.h"
 #include "native_glue.hh"
 #include "logging.h"
@@ -41,7 +41,7 @@ static jmethodID m_C4Socket_dispose;          // callback method for C4Socket.di
 bool litecore::jni::initC4Socket(JNIEnv *env) {
     // Find C4Socket class and static methods for callback
     {
-        jclass localClass = env->FindClass("com/couchbase/litecore/C4Socket");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/C4Socket");
         if (!localClass)
             return false;
 
@@ -283,39 +283,39 @@ const C4SocketFactory socket_factory() {
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_litecore_C4Socket
+// com_couchbase_lite_internal_C4Socket
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_litecore_C4Socket
+ * Class:     com_couchbase_lite_internal_C4Socket
  * Method:    gotHTTPResponse
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Socket_gotHTTPResponse(JNIEnv *env, jclass clazz, jlong socket,
+Java_com_couchbase_lite_internal_C4Socket_gotHTTPResponse(JNIEnv *env, jclass clazz, jlong socket,
                                                      jint httpStatus,
                                                      jbyteArray jresponseHeadersFleece) {
     jbyteArraySlice responseHeadersFleece(env, jresponseHeadersFleece, false);
     c4socket_gotHTTPResponse((C4Socket *) socket, httpStatus, responseHeadersFleece);
 }
 /*
- * Class:     com_couchbase_litecore_C4Socket
+ * Class:     com_couchbase_lite_internal_C4Socket
  * Method:    opened
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Socket_opened(JNIEnv *env, jclass clazz, jlong jsocket) {
+Java_com_couchbase_lite_internal_C4Socket_opened(JNIEnv *env, jclass clazz, jlong jsocket) {
     C4Socket *socket = (C4Socket *) jsocket;
     c4socket_opened(socket);
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Socket
+ * Class:     com_couchbase_lite_internal_C4Socket
  * Method:    closed
  * Signature: (JIILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Socket_closed(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_C4Socket_closed(JNIEnv *env, jclass clazz,
                                             jlong jSocket,
                                             jint domain,
                                             jint code,
@@ -327,12 +327,12 @@ Java_com_couchbase_litecore_C4Socket_closed(JNIEnv *env, jclass clazz,
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Socket
+ * Class:     com_couchbase_lite_internal_C4Socket
  * Method:    closeRequested
  * Signature: (JILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Socket_closeRequested(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_C4Socket_closeRequested(JNIEnv *env, jclass clazz,
                                                     jlong jSocket,
                                                     jint status,
                                                     jstring jmessage) {
@@ -342,12 +342,12 @@ Java_com_couchbase_litecore_C4Socket_closeRequested(JNIEnv *env, jclass clazz,
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Socket
+ * Class:     com_couchbase_lite_internal_C4Socket
  * Method:    completedWrite
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Socket_completedWrite(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_C4Socket_completedWrite(JNIEnv *env, jclass clazz,
                                                     jlong jSocket,
                                                     jlong jByteCount) {
     C4Socket *socket = (C4Socket *) jSocket;
@@ -356,12 +356,12 @@ Java_com_couchbase_litecore_C4Socket_completedWrite(JNIEnv *env, jclass clazz,
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Socket
+ * Class:     com_couchbase_lite_internal_C4Socket
  * Method:    received
  * Signature: (J[B)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_litecore_C4Socket_received(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_C4Socket_received(JNIEnv *env, jclass clazz,
                                               jlong jSocket,
                                               jbyteArray jdata) {
     C4Socket *socket = (C4Socket *) jSocket;
@@ -370,12 +370,12 @@ Java_com_couchbase_litecore_C4Socket_received(JNIEnv *env, jclass clazz,
 }
 
 /*
- * Class:     com_couchbase_litecore_C4Socket
+ * Class:     com_couchbase_lite_internal_C4Socket
  * Method:    fromNative
  * Signature: (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;I)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_litecore_C4Socket_fromNative(JNIEnv *env,
+Java_com_couchbase_lite_internal_C4Socket_fromNative(JNIEnv *env,
                                                 jclass clazz,
                                                 jobject jnativeHandle,
                                                 jstring jscheme,

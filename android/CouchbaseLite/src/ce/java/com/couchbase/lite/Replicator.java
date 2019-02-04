@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
-import com.couchbase.litecore.C4Socket;
+import com.couchbase.lite.internal.C4Socket;
 
 public final class Replicator extends AbstractReplicator {
     /**

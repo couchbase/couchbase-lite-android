@@ -21,14 +21,14 @@ import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
-import com.couchbase.litecore.C4BlobKey;
-import com.couchbase.litecore.C4BlobReadStream;
-import com.couchbase.litecore.C4BlobStore;
-import com.couchbase.litecore.C4BlobWriteStream;
-import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.fleece.FLEncodable;
-import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.FLSliceResult;
+import com.couchbase.lite.internal.C4BlobKey;
+import com.couchbase.lite.internal.C4BlobReadStream;
+import com.couchbase.lite.internal.C4BlobStore;
+import com.couchbase.lite.internal.C4BlobWriteStream;
+import com.couchbase.lite.internal.LiteCoreException;
+import com.couchbase.lite.internal.fleece.FLEncodable;
+import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

@@ -20,12 +20,12 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
+import com.couchbase.lite.internal.C4Constants;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
-import com.couchbase.litecore.C4Constants;
 
 import org.json.JSONObject;
 import org.junit.After;

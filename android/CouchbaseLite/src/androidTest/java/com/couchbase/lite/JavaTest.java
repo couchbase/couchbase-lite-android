@@ -17,10 +17,10 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.fleece.AllocSlice;
-import com.couchbase.litecore.fleece.Encoder;
-import com.couchbase.litecore.fleece.FLValue;
+import com.couchbase.lite.internal.LiteCoreException;
+import com.couchbase.lite.internal.fleece.AllocSlice;
+import com.couchbase.lite.internal.fleece.Encoder;
+import com.couchbase.lite.internal.fleece.FLValue;
 
 import org.junit.Test;
 

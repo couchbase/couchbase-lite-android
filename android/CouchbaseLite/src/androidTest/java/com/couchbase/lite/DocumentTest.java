@@ -18,7 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.lite.internal.LiteCoreException;
 
 import org.junit.After;
 import org.junit.Before;

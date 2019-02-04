@@ -20,7 +20,7 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.couchbase.litecore.C4Log;
+import com.couchbase.lite.internal.C4Log;
 
 import java.util.EnumSet;
 

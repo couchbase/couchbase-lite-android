@@ -3,11 +3,11 @@ package com.couchbase.liteservandroid;
 import android.content.Context;
 import android.util.Log;
 
-import com.couchbase.litecore.C4Listener;
-import com.couchbase.litecore.C4ListenerAPIs;
-import com.couchbase.litecore.C4ListenerConfig;
-import com.couchbase.litecore.Database;
-import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.lite.internal.C4Listener;
+import com.couchbase.lite.internal.C4ListenerAPIs;
+import com.couchbase.lite.internal.C4ListenerConfig;
+import com.couchbase.lite.internal.Database;
+import com.couchbase.lite.internal.LiteCoreException;
 
 import java.io.File;
 import java.io.FileFilter;
