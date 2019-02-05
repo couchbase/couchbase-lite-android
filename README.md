@@ -42,6 +42,11 @@ dependencies {
 
 - [Developer Guide](https://developer.couchbase.com/documentation/mobile/2.0/couchbase-lite/java.html)
 
+## API
+Objects in the package `com.couchbase.internal`, or any of its subpackages are for internal use only and are
+not part of the Couchbase public API.  They are **unstable**, undocumented, may change without notice, and their use
+in client code is not supported by Couchbase, Inc.
+
 ## How to build from source
 
 1. `git clone --recursive https://github.com/couchbase/couchbase-lite-android.git` to clone this repo and it's submodules
