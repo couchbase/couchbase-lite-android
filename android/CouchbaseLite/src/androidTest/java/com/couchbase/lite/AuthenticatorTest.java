@@ -1,10 +1,15 @@
 package com.couchbase.lite;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 
 public class AuthenticatorTest extends BaseTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testBasicAuthenticatorInstance() throws CouchbaseLiteException {
@@ -30,5 +35,11 @@ public class AuthenticatorTest extends BaseTest {
         SessionAuthenticator auth = new SessionAuthenticator(sessionID, cookie);
         assertEquals(auth.getSessionID(), sessionID);
         assertEquals(auth.getCookieName(), cookie);
+    }
+
+    @Test
+    public void testSessionAuthenticatorEmptySessionID() throws CouchbaseLiteException {
+        thrown.expect(IllegalArgumentException.class);
+        SessionAuthenticator auth = new SessionAuthenticator(null, null);
     }
 }
