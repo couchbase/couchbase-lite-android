@@ -42,4 +42,12 @@ public class AuthenticatorTest extends BaseTest {
         thrown.expect(IllegalArgumentException.class);
         SessionAuthenticator auth = new SessionAuthenticator(null, null);
     }
+
+    @Test
+    public void testSessionAuthenticatorEmptyCookie() throws CouchbaseLiteException {
+        String sessionID = "someSessionID";
+        SessionAuthenticator auth = new SessionAuthenticator(sessionID, null);
+        assertEquals(auth.getSessionID(), sessionID);
+        assertEquals(auth.getCookieName(), "SyncGatewaySession");
+    }
 }
