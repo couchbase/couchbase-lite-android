@@ -50,7 +50,7 @@ public final class DatabaseConfiguration extends AbstractDatabaseConfiguration {
      */
     @NonNull
     @Override
-    protected DatabaseConfiguration setDirectory(@NonNull String directory) {
+    public DatabaseConfiguration setDirectory(@NonNull String directory) {
         super.setDirectory(directory);
         return this;
     }
