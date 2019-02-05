@@ -24,7 +24,9 @@ import android.os.Looper;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.LiteCoreException;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Date;
 import java.util.ArrayList;
@@ -57,6 +59,9 @@ public class QueryTest extends BaseTest {
     private static SelectResult SR_EXPIRATION = SelectResult.expression(Meta.expiration);
     private static SelectResult SR_ALL = SelectResult.all();
     private static SelectResult SR_NUMBER1 = SelectResult.property("number1");
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases)
             throws Exception {
@@ -1025,6 +1030,23 @@ public class QueryTest extends BaseTest {
             }
         }, true);
         assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testArrayFunctionsEmptyArgs() throws Exception {
+        Expression exprArray = Expression.property("array");
+
+        thrown.expect(IllegalArgumentException.class);
+        Expression expression1 = ArrayFunction.contains(
+                null,
+                Expression.string("650-123-0001")
+        );
+
+        thrown.expect(IllegalArgumentException.class);
+        Expression expression2 = ArrayFunction.contains(exprArray, null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Expression expression3 = ArrayFunction.length(null);
     }
 
     @Test
