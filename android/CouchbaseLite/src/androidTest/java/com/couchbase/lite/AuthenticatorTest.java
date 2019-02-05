@@ -3,7 +3,6 @@ package com.couchbase.lite;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class AuthenticatorTest extends BaseTest {
 
