@@ -34,14 +34,10 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testOfflineStart() throws Exception {
-        Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = new Replicator(makeConfig(
-                true,
-                false,
-                false,
-                endpoint
-        ));
+    public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
+        URLEndpoint target = new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
+        ReplicatorConfiguration config = makeConfig(false, true, true, db, target);
+        Replicator repl = new Replicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
