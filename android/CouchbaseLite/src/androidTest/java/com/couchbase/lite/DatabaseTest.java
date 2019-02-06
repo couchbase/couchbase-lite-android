@@ -23,7 +23,9 @@ import com.couchbase.lite.internal.support.Log;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -42,6 +44,9 @@ import static org.junit.Assert.fail;
 
 public class DatabaseTest extends BaseTest {
     final static String kDatabaseTestBlob = "i'm blob";
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     //---------------------------------------------
     //  Helper methods
@@ -1388,6 +1393,15 @@ public class DatabaseTest extends BaseTest {
         assertEquals(4, db.getIndexes().size());
 
         Log.i(TAG, "db.getIndexes() -> " + db.getIndexes());
+    }
+
+    @Test
+    public void testIndexBuilderEmptyArgs() {
+        thrown.expect(IllegalArgumentException.class);
+        IndexBuilder.fullTextIndex(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        IndexBuilder.valueIndex(null);
     }
 
     @Test
