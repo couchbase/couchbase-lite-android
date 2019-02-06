@@ -2921,4 +2921,49 @@ public class QueryTest extends BaseTest {
         results = rs.allResults();
         assertEquals(0, results.size());
     }
+
+    @Test
+    public void testFunctionEmptyArgs() {
+        thrown.expect(IllegalArgumentException.class);
+        Function.avg(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.count(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.min(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.max(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.sum(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.abs(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.acos(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.asin(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.atan(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.atan2(null, Expression.doubleValue(0.7));
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.atan2(Expression.doubleValue(0.7), null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.ceil(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.cos(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.degrees(null);
+    }
 }
