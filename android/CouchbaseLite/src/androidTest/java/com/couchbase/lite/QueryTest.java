@@ -1637,6 +1637,29 @@ public class QueryTest extends BaseTest {
             Log.e(TAG, "RESULT: " + r.toMap());
     }
 
+    @Test
+    public void testJoinWithEmptyArgs() {
+        DataSource mainDS = DataSource.database(this.db).as("main");
+
+        thrown.expect(IllegalArgumentException.class);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).join(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).where(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).groupBy(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).orderBy(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).limit(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).limit(null, null);
+    }
+
     //https://github.com/couchbase/couchbase-lite-android/issues/1785
     @Test
     public void testResultToMapWithBoolean() throws Exception {
