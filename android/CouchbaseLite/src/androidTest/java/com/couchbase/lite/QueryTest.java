@@ -3110,7 +3110,7 @@ public class QueryTest extends BaseTest {
         selections[5] = (SelectResult.expression(Function.stringToMillis(Expression.property("UTC"))));
 
         ArrayList<Number> expectedJST = new ArrayList<>();
-        expectedJST.add(0L);
+        expectedJST.add(null);
         expectedJST.add(499105260000L);
         expectedJST.add(499105290000L);
         expectedJST.add(499105290500L);
@@ -3118,7 +3118,7 @@ public class QueryTest extends BaseTest {
         expectedJST.add(499105290555L);
 
         ArrayList<Number> expectedPST = new ArrayList<>();
-        expectedPST.add(0L);
+        expectedPST.add(null);
         expectedPST.add(499166460000L);
         expectedPST.add(499166490000L);
         expectedPST.add(499166490500L);
@@ -3126,7 +3126,7 @@ public class QueryTest extends BaseTest {
         expectedPST.add(499166490555L);
 
         ArrayList<Number> expectedUTC = new ArrayList<>();
-        expectedUTC.add(0L);
+        expectedUTC.add(null);
         expectedUTC.add(499137660000L);
         expectedUTC.add(499137690000L);
         expectedUTC.add(499137690500L);
