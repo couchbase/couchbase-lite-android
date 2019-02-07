@@ -208,7 +208,7 @@ public class BlobTest extends BaseTest {
         InputStream is = getAsset("attachment.png");
 
         try {
-            byte[] bytes = IOUtils.toByteArray(is);;
+            byte[] bytes = IOUtils.toByteArray(is);
             FileOutputStream fos = new FileOutputStream(path);
             fos.write(bytes);
             fos.close();
