@@ -405,6 +405,41 @@ public class LogTest extends BaseTest {
         assertTrue(found);
     }
 
+    @Test
+    public void testWriteLogWithError() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testLogWithError"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        LogFileConfiguration config = new LogFileConfiguration(logDirectory)
+                .setUsePlaintext(true);
+        testWithConfiguration(LogLevel.DEBUG, config, new Runnable() {
+            @Override
+            public void run() {
+                String uuid = UUID.randomUUID().toString();
+                String message = "test message";
+                CouchbaseLiteException error = new CouchbaseLiteException(uuid);
+                Log.v(LogDomain.DATABASE.toString(), message, error);
+                Log.i(LogDomain.DATABASE.toString(), message, error);
+                Log.w(LogDomain.DATABASE.toString(), message, error);
+                Log.e(LogDomain.DATABASE.toString(), message, error);
+                Log.d(LogDomain.DATABASE.toString(), message, error);
+                try {
+                    for (File log : path.listFiles()) {
+                        byte[] b = new byte[(int) log.length()];
+                        FileInputStream fileInputStream = new FileInputStream(log);
+                        fileInputStream.read(b);
+                        String contents = new String(b, StandardCharsets.US_ASCII);
+                        assertTrue(contents.contains(uuid));
+                    }
+                } catch(Exception e) {
+                    fail("Exception during test callback " + e.toString());
+                }
+            }
+        });
+    }
+
     //region Helper methods
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
         LogFileConfiguration old = Database.log.getFile().getConfig();
