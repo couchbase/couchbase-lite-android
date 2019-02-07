@@ -35,7 +35,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test
     public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
-        URLEndpoint target = new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
+        Endpoint target = getRemoteTargetEndpoint();
         ReplicatorConfiguration config = makeConfig(false, true, true, db, target);
         Replicator repl = new Replicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
@@ -60,6 +60,30 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     @Test
+    public void testStartSingleShotReplicatorInOffline() throws URISyntaxException, InterruptedException {
+        Endpoint endpoint = getRemoteTargetEndpoint();
+        Replicator repl = new Replicator(makeConfig(
+                true,
+                false,
+                false,
+                endpoint
+        ));
+        final CountDownLatch stopped = new CountDownLatch(1);
+        ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                    stopped.countDown();
+                }
+            }
+        });
+        repl.start();
+        assertTrue(stopped.await(10, TimeUnit.SECONDS));
+        repl.removeChangeListener(token);
+    }
+
+    @Test
     public void testChangeListenerEmptyArg() throws Exception {
         Endpoint endpoint = getRemoteTargetEndpoint();
         Replicator repl = new Replicator(makeConfig(
@@ -77,7 +101,6 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     private URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
-        URI uri = new URI("ws://10.0.2.2:4984/this_is_only_for_test");
-        return new URLEndpoint(uri);
+        return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
     }
 }

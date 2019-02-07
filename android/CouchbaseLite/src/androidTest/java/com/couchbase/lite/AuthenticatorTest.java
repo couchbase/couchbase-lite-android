@@ -21,6 +21,18 @@ public class AuthenticatorTest extends BaseTest {
     }
 
     @Test
+    public void testBasicAuthenticatorWithEmptyArgs() {
+        String username = "someUsername";
+        String password = "somePassword";
+
+        thrown.expect(IllegalArgumentException.class);
+        BasicAuthenticator auth = new BasicAuthenticator(null, password);
+
+        thrown.expect(IllegalArgumentException.class);
+        auth = new BasicAuthenticator(username, null);
+    }
+
+    @Test
     public void testSessionAuthenticatorWithSessionID() throws CouchbaseLiteException {
         String sessionID = "someSessionID";
         SessionAuthenticator auth = new SessionAuthenticator(sessionID);
