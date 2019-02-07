@@ -65,36 +65,6 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
-        if (!config.replicatorTestsEnabled())
-            return;
-
-        timeout = 200;
-        URLEndpoint target = new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
-        ReplicatorConfiguration config = makeConfig(false, true, true, db, target);
-        Replicator repl = new Replicator(config);
-        final CountDownLatch offline = new CountDownLatch(1);
-        final CountDownLatch stopped = new CountDownLatch(1);
-        ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
-            @Override
-            public void changed(ReplicatorChange change) {
-                Replicator.Status status = change.getStatus();
-                if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
-                    change.getReplicator().stop();
-                    offline.countDown();
-                }
-                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
-                    stopped.countDown();
-                }
-            }
-        });
-        repl.start();
-        assertTrue(offline.await(10, TimeUnit.SECONDS));
-        assertTrue(stopped.await(10, TimeUnit.SECONDS));
-        repl.removeChangeListener(token);
-    }
-
-    @Test
     public void testEmptyPullFromRemoteDB() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
 
