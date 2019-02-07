@@ -288,6 +288,7 @@ public final class Log {
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
+        sendToLoggers(LogLevel.WARNING, tag, msg);
     }
 
     /**
