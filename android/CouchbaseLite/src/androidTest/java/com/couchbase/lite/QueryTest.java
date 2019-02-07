@@ -2923,7 +2923,7 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testFunctionEmptyArgs() {
+    public void testAggregateFunctionEmptyArgs() {
         thrown.expect(IllegalArgumentException.class);
         Function.avg(null);
 
@@ -2938,7 +2938,10 @@ public class QueryTest extends BaseTest {
 
         thrown.expect(IllegalArgumentException.class);
         Function.sum(null);
+    }
 
+    @Test
+    public void testMathFunctionEmptyArgs() {
         thrown.expect(IllegalArgumentException.class);
         Function.abs(null);
 
@@ -2965,5 +2968,83 @@ public class QueryTest extends BaseTest {
 
         thrown.expect(IllegalArgumentException.class);
         Function.degrees(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.exp(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.floor(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.ln(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.log(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.power(null, Expression.intValue(2));
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.power(Expression.intValue(2), null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.radians(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.round(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.round(null, Expression.intValue(2));
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.round(Expression.doubleValue(0.567), null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.sign(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.sin(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.sqrt(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.tan(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.trunc(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.trunc(null,  Expression.intValue(1));
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.trunc(Expression.doubleValue(79.15), null);
+    }
+
+    @Test
+    public void testStringFunctionEmptyArgs() {
+        thrown.expect(IllegalArgumentException.class);
+        Function.contains(null, Expression.string("someSubString"));
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.contains(Expression.string("somestring"), null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.length(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.lower(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.ltrim(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.rtrim(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.trim(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        Function.upper(null);
     }
 }
