@@ -372,7 +372,7 @@ public final class Log {
      * @param tr  An exception to log
      */
     public static void d(String tag, String msg, Throwable tr) {
-        v(tag, "Exception: %s", tr.toString());
+        d(tag, "Exception: %s", tr.toString());
     }
 
     /**
