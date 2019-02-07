@@ -450,19 +450,30 @@ public class LogTest extends BaseTest {
     }
 
     @Test
-    public void testFileLogConfiguration() {
+    public void testLogFileConfigurationConstructors() {
         int rotateCount = 4;
         long maxSize = 2048;
         boolean usePlainText = true;
+        LogFileConfiguration config;
+
+        thrown.expect(IllegalArgumentException.class);
+        config = new LogFileConfiguration((String)null);
+
+        thrown.expect(IllegalArgumentException.class);
+        config = new LogFileConfiguration((LogFileConfiguration) null);
+
         final File path1 = new File(
                 context.getCacheDir().getAbsolutePath(),
                 "testFileLogConfiguration"
         );
-        LogFileConfiguration config = new LogFileConfiguration(path1.getAbsolutePath())
+        config = new LogFileConfiguration(path1.getAbsolutePath())
                 .setMaxRotateCount(rotateCount)
                 .setMaxSize(maxSize)
                 .setUsePlaintext(usePlainText);
         assertEquals(config.getMaxRotateCount(), rotateCount);
+        assertEquals(config.getMaxSize(), maxSize);
+        assertEquals(config.usesPlaintext(), usePlainText);
+        assertEquals(config.getDirectory(), path1.getAbsolutePath());
 
         // validate with LogFileConfiguration(String, config) constructor
         final File path2 = new File(
@@ -477,14 +488,23 @@ public class LogTest extends BaseTest {
     }
 
     @Test
-    public void testLogFileConfigWithEmptyArgs() {
-        LogFileConfiguration config;
+    public void testEditReadOnlyLogFileConfiguration() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testEditReadOnlyLogFileConfiguration"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        LogFileConfiguration config = new LogFileConfiguration(logDirectory);
+        Database.log.getFile().setConfig(config);
 
-        thrown.expect(IllegalArgumentException.class);
-        config = new LogFileConfiguration((String)null);
+        thrown.expect(IllegalStateException.class);
+        Database.log.getFile().getConfig().setMaxSize(1024);
 
-        thrown.expect(IllegalArgumentException.class);
-        config = new LogFileConfiguration((LogFileConfiguration) null);
+        thrown.expect(IllegalStateException.class);
+        Database.log.getFile().getConfig().setMaxRotateCount(3);
+
+        thrown.expect(IllegalStateException.class);
+        Database.log.getFile().getConfig().setUsePlaintext(true);
     }
 
     //endregion
