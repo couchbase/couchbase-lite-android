@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -10,7 +12,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
@@ -45,6 +49,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
             public void changed(ReplicatorChange change) {
                 Replicator.Status status = change.getStatus();
                 if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
+                    change.getReplicator().resetCheckpoint();
                     change.getReplicator().stop();
                     offline.countDown();
                 }
@@ -84,6 +89,28 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     @Test
+    public void testDocumentChangeListenerToken() throws Exception {
+        Endpoint endpoint = getRemoteTargetEndpoint();
+        Replicator repl = new Replicator(makeConfig(
+                true,
+                false,
+                false,
+                endpoint
+        ));
+        ListenerToken token = repl.addDocumentReplicationListener(new DocumentReplicationListener() {
+            @Override
+            public void replication(@NonNull DocumentReplication replication) { }
+        });
+        assertNotNull(token);
+
+        thrown.expect(IllegalArgumentException.class);
+        repl.addDocumentReplicationListener(null);
+
+        thrown.expect(IllegalArgumentException.class);
+        repl.addDocumentReplicationListener(executor, null);
+    }
+
+    @Test
     public void testChangeListenerEmptyArg() throws Exception {
         Endpoint endpoint = getRemoteTargetEndpoint();
         Replicator repl = new Replicator(makeConfig(
@@ -98,6 +125,36 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
         thrown.expect(IllegalArgumentException.class);
         repl.addChangeListener(executor, null);
+    }
+
+    @Test
+    public void testNetworkRetry() throws URISyntaxException, InterruptedException {
+        Endpoint target = getRemoteTargetEndpoint();
+        ReplicatorConfiguration config = makeConfig(false, true, true, db, target);
+        Replicator repl = new Replicator(config);
+        final CountDownLatch offline = new CountDownLatch(2);
+        final CountDownLatch stopped = new CountDownLatch(1);
+        ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
+                    offline.countDown();
+                        if (offline.getCount() == 0) {
+                            change.getReplicator().stop();
+                        } else {
+                            change.getReplicator().networkReachable();
+                        }
+                }
+                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                    stopped.countDown();
+                }
+            }
+        });
+        repl.start();
+        assertTrue(offline.await(10, TimeUnit.SECONDS));
+        assertTrue(stopped.await(10, TimeUnit.SECONDS));
+        repl.removeChangeListener(token);
     }
 
     private URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
