@@ -411,6 +411,43 @@ public class LogTest extends BaseTest {
             }
         });
     }
+
+    @Test
+    public void testWriteLogWithErrorAndArgs() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testWriteLogWithErrorAndArgs"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        LogFileConfiguration config = new LogFileConfiguration(logDirectory)
+                .setUsePlaintext(true);
+        testWithConfiguration(LogLevel.DEBUG, config, new Runnable() {
+            @Override
+            public void run() {
+                String uuid1 = UUID.randomUUID().toString();
+                String uuid2 = UUID.randomUUID().toString();
+                String message = "test message %s";
+                CouchbaseLiteException error = new CouchbaseLiteException(uuid1);
+                Log.v(LogDomain.DATABASE.toString(), message, error, uuid2);
+                Log.i(LogDomain.DATABASE.toString(), message, error, uuid2);
+                Log.w(LogDomain.DATABASE.toString(), message, error, uuid2);
+                Log.e(LogDomain.DATABASE.toString(), message, error, uuid2);
+                Log.d(LogDomain.DATABASE.toString(), message, error, uuid2);
+                try {
+                    for (File log : path.listFiles()) {
+                        byte[] b = new byte[(int) log.length()];
+                        FileInputStream fileInputStream = new FileInputStream(log);
+                        fileInputStream.read(b);
+                        String contents = new String(b, StandardCharsets.US_ASCII);
+                        assertTrue(contents.contains(uuid1));
+                        assertTrue(contents.contains(uuid2));
+                    }
+                } catch(Exception e) {
+                    fail("Exception during test callback " + e.toString());
+                }
+            }
+        });
+    }
     //endregion
 
     @Test
