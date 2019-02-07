@@ -448,6 +448,45 @@ public class LogTest extends BaseTest {
             }
         });
     }
+
+    @Test
+    public void testFileLogConfiguration() {
+        int rotateCount = 4;
+        long maxSize = 2048;
+        boolean usePlainText = true;
+        final File path1 = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLogConfiguration"
+        );
+        LogFileConfiguration config = new LogFileConfiguration(path1.getAbsolutePath())
+                .setMaxRotateCount(rotateCount)
+                .setMaxSize(maxSize)
+                .setUsePlaintext(usePlainText);
+        assertEquals(config.getMaxRotateCount(), rotateCount);
+
+        // validate with LogFileConfiguration(String, config) constructor
+        final File path2 = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLogConfigurationNew"
+        );
+        LogFileConfiguration newConfig = new LogFileConfiguration(path2.getAbsolutePath(), config);
+        assertEquals(newConfig.getMaxRotateCount(), rotateCount);
+        assertEquals(newConfig.getMaxSize(), maxSize);
+        assertEquals(newConfig.usesPlaintext(), usePlainText);
+        assertEquals(newConfig.getDirectory(), path2.getAbsolutePath());
+    }
+
+    @Test
+    public void testLogFileConfigWithEmptyArgs() {
+        LogFileConfiguration config;
+
+        thrown.expect(IllegalArgumentException.class);
+        config = new LogFileConfiguration((String)null);
+
+        thrown.expect(IllegalArgumentException.class);
+        config = new LogFileConfiguration((LogFileConfiguration) null);
+    }
+
     //endregion
 
     @Test
@@ -480,6 +519,7 @@ public class LogTest extends BaseTest {
     //region Helper methods
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
         LogFileConfiguration old = Database.log.getFile().getConfig();
+        EnumSet<LogDomain> domains = Database.log.getConsole().getDomains();
         Database.log.getFile().setConfig(config);
         Database.log.getFile().setLevel(level);
         try {
@@ -487,6 +527,8 @@ public class LogTest extends BaseTest {
         } finally {
             Database.log.getFile().setLevel(LogLevel.INFO);
             Database.log.getFile().setConfig(old);
+            Database.log.getConsole().setDomains(domains);
+            Database.log.getConsole().setLevel(LogLevel.INFO);
         }
     }
 

@@ -1,15 +1,10 @@
 package com.couchbase.lite;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 
 public class AuthenticatorTest extends BaseTest {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testBasicAuthenticatorInstance() throws CouchbaseLiteException {

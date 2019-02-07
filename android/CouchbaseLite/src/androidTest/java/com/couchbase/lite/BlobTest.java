@@ -19,9 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.utils.IOUtils;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,9 +35,6 @@ import static org.junit.Assert.assertTrue;
 public class BlobTest extends BaseTest {
     final static String kBlobTestBlob1 = "i'm blob";
     final static String kBlobTestBlob2 = "i'm blob2";
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testEquals() throws CouchbaseLiteException {

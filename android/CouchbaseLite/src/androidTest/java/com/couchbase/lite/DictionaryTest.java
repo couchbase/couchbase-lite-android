@@ -19,9 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
@@ -39,9 +37,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DictionaryTest extends BaseTest {
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
     @Test
     public void testCreateDictionary() throws CouchbaseLiteException {
         MutableDictionary address = new MutableDictionary();
