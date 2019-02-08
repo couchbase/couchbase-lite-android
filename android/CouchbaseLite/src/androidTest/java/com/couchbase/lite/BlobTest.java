@@ -45,7 +45,7 @@ public class BlobTest extends BaseTest {
     public ExpectedException thrown = ExpectedException.none();
 
     @Rule
-    public TemporaryFolder folder= new TemporaryFolder();
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void testEquals() throws CouchbaseLiteException {
@@ -204,7 +204,7 @@ public class BlobTest extends BaseTest {
         String contentType = "image/png";
         Blob blob = null;
         URL url = null;
-        File path = folder.newFile("attachment.png");
+        File path = tempFolder.newFile("attachment.png");
         InputStream is = getAsset("attachment.png");
 
         try {
@@ -215,7 +215,7 @@ public class BlobTest extends BaseTest {
 
             blob = new Blob(contentType, path.toURI().toURL());
         } catch(Exception e) {
-            fail(" failed at " + e);
+            fail("Failed when writing to tempFile " + e);
         } finally {
             is.close();
         }
@@ -261,7 +261,7 @@ public class BlobTest extends BaseTest {
             iStream.skip(2);
             assertEquals(iStream.read(), bytes[2]);
         } catch(Exception e) {
-            fail("failed when reading the blobs " + e);
+            fail("Failed when reading the blobs " + e);
         }
     }
 
