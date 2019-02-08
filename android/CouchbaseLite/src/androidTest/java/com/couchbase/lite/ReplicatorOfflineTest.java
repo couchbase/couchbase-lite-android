@@ -49,7 +49,6 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
             public void changed(ReplicatorChange change) {
                 Replicator.Status status = change.getStatus();
                 if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
-                    change.getReplicator().resetCheckpoint();
                     change.getReplicator().stop();
                     offline.countDown();
                 }
