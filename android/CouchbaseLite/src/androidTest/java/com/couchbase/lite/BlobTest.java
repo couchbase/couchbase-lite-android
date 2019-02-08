@@ -19,9 +19,12 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.utils.IOUtils;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -31,10 +34,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class BlobTest extends BaseTest {
     final static String kBlobTestBlob1 = "i'm blob";
     final static String kBlobTestBlob2 = "i'm blob2";
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void testEquals() throws CouchbaseLiteException {
@@ -190,42 +197,95 @@ public class BlobTest extends BaseTest {
 
     @Test
     public void testBlobFromFileURL() throws Exception {
-        String contentType = "application/json";
-
+        String contentType = "image/png";
         Blob blob = null;
         URL url = null;
+        File path = tempFolder.newFile("attachment.png");
+        InputStream is = getAsset("attachment.png");
+
+        try {
+            byte[] bytes = IOUtils.toByteArray(is);
+            FileOutputStream fos = new FileOutputStream(path);
+            fos.write(bytes);
+            fos.close();
+
+            blob = new Blob(contentType, path.toURI().toURL());
+        } catch(Exception e) {
+            fail("Failed when writing to tempFile " + e);
+        } finally {
+            is.close();
+        }
+
+        byte[] bytes = IOUtils.toByteArray(path);
+        byte[] content = blob.getContent();
+        assertTrue(Arrays.equals(content, bytes));
 
         thrown.expect(IllegalArgumentException.class);
-        blob = new Blob(contentType, url);
-
-        String assetName = "iTunesMusicLibrary.json";
-        final File path = new File(
-                context.getFilesDir(),
-                "/assets/" + assetName
-        );
+        blob = new Blob(null, url);
 
         thrown.expect(IllegalArgumentException.class);
-        blob = new Blob(null, path.toURI().toURL());
+        blob = new Blob(contentType, (URL) null);
 
+        thrown.expect(IllegalArgumentException.class);
+        blob = new Blob(contentType, new URL("http://java.sun.com"));
+    }
+
+    @Test
+    public void testBlobReadFunctions() throws Exception {
         byte[] bytes;
-        InputStream is = getAsset(assetName);
+
+        InputStream is = getAsset("iTunesMusicLibrary.json");
         try {
             bytes = IOUtils.toByteArray(is);
         } finally {
             is.close();
         }
 
-        blob = new Blob(contentType, path.toURI().toURL());
-        assertEquals(blob.getContent(), bytes);
-        assertEquals(blob.getContent().hashCode(), bytes.hashCode());
-        assertEquals(blob.getContentStream().read(), bytes[0]);
+        Blob blob = new Blob("application/json", bytes);
+        try {
+            String blobToString = "Blob[application/json; 6560 KB]";
+            assertEquals(blob.toString(), blobToString);
+            assertEquals(blob.getContentStream().read(), bytes[0]);
 
-        byte[] bytesReadFromBlob = new byte[bytes.length];
-        blob.getContentStream().read(bytesReadFromBlob, 0, bytes.length);
-        assertEquals(bytesReadFromBlob, bytes);
+            blob = new Blob("application/json", bytes);
+            byte[] bytesReadFromBlob = new byte[bytes.length];
+            blob.getContentStream().read(bytesReadFromBlob, 0, bytes.length);
+            assertTrue(Arrays.equals(bytesReadFromBlob, bytes));
 
-        InputStream iStream = blob.getContentStream();
-        iStream.skip(2);
-        assertEquals(iStream.read(), bytes[2]);
+            blob = new Blob("application/json", bytes);
+            InputStream iStream = blob.getContentStream();
+            iStream.skip(2);
+            assertEquals(iStream.read(), bytes[2]);
+        } catch(Exception e) {
+            fail("Failed when reading the blobs " + e);
+        }
+    }
+
+    @Test
+    public void testBlobConstructorsWithEmptyArgs() throws Exception {
+        byte[] bytes;
+        String contentType = "image/png";
+
+        InputStream is = getAsset("attachment.png");
+        try {
+            bytes = IOUtils.toByteArray(is);
+        } finally {
+            is.close();
+        }
+
+        thrown.expect(IllegalArgumentException.class);
+        Blob blob = new Blob(null, bytes);
+
+        thrown.expect(IllegalArgumentException.class);
+        blob = new Blob(contentType, (byte[]) null);
+
+        thrown.expect(IllegalArgumentException.class);
+        blob = new Blob(null, is);
+
+        thrown.expect(IllegalArgumentException.class);
+        blob = new Blob(contentType, (InputStream) null);
+
+        thrown.expect(IllegalArgumentException.class);
+        blob = new Blob(contentType, (InputStream) null);
     }
 }
