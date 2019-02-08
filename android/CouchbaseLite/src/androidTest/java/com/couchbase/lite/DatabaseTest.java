@@ -1393,10 +1393,10 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testIndexBuilderEmptyArgs() {
         thrown.expect(IllegalArgumentException.class);
-        IndexBuilder.fullTextIndex(null);
+        IndexBuilder.fullTextIndex((FullTextIndexItem[])null);
 
         thrown.expect(IllegalArgumentException.class);
-        IndexBuilder.valueIndex(null);
+        IndexBuilder.valueIndex((ValueIndexItem[])null);
     }
 
     @Test

@@ -565,4 +565,88 @@ abstract class AbstractFunction {
         }
         return new Expression.FunctionExpression("UPPER()", Arrays.asList(expression));
     }
+
+    /**
+     * Creates a MILLIS_TO_STR(expr) function that will convert a numeric input representing
+     *  milliseconds since the Unix epoch into a full ISO8601 date and time
+     *  string in the device local time zone.
+     *
+     * @param expression The string expression.
+     * @return The MILLIS_TO_STR(expr) function.
+     */
+    @NonNull
+    public static Expression millisToString(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
+        return new Expression.FunctionExpression("MILLIS_TO_STR()", Arrays.asList(expression));
+    }
+
+    /**
+     * Creates a MILLIS_TO_UTC(expr) function that will convert a numeric input representing
+     *  milliseconds since the Unix epoch into a full ISO8601 date and time
+     *  string in UTC time.
+     *
+     * @param expression The string expression.
+     * @return The MILLIS_TO_UTC(expr) function.
+     */
+    @NonNull
+    public static Expression millisToUTC(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
+        return new Expression.FunctionExpression("MILLIS_TO_UTC()", Arrays.asList(expression));
+    }
+
+    /**
+     * Creates a STR_TO_MILLIS(expr) that will convert an ISO8601 datetime string
+     * into the number of milliseconds since the unix epoch.
+     * Valid date strings must start with a date in the form YYYY-MM-DD (time
+     * only strings are not supported).
+     *
+     * Times can be of the form HH:MM, HH:MM:SS, or HH:MM:SS.FFF.  Leading zero is
+     * not optional (i.e. 02 is ok, 2 is not).  Hours are in 24-hour format.  FFF
+     * represents milliseconds, and *trailing* zeros are optional (i.e. 5 == 500).
+     *
+     * Time zones can be in one of three forms:
+     * (+/-)HH:MM
+     * (+/-)HHMM
+     * Z (which represents UTC)
+     *
+     * @param expression The string expression.
+     * @return The STR_TO_MILLIS(expr) function.
+     */
+    @NonNull
+    public static Expression stringToMillis(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
+        return new Expression.FunctionExpression("STR_TO_MILLIS()", Arrays.asList(expression));
+    }
+
+    /**
+     * Creates a STR_TO_UTC(expr) that will convert an ISO8601 datetime string
+     * into a full ISO8601 UTC datetime string.
+     * Valid date strings must start with a date in the form YYYY-MM-DD (time
+     * only strings are not supported).
+     *
+     * Times can be of the form HH:MM, HH:MM:SS, or HH:MM:SS.FFF.  Leading zero is
+     * not optional (i.e. 02 is ok, 2 is not).  Hours are in 24-hour format.  FFF
+     * represents milliseconds, and *trailing* zeros are optional (i.e. 5 == 500).
+     *
+     * Time zones can be in one of three forms:
+     * (+/-)HH:MM
+     * (+/-)HHMM
+     * Z (which represents UTC)
+     *
+     * @param expression The string expression.
+     * @return The STR_TO_UTC(expr) function.
+     */
+    @NonNull
+    public static Expression stringToUTC(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
+        return new Expression.FunctionExpression("STR_TO_UTC()", Arrays.asList(expression));
+    }
 }
