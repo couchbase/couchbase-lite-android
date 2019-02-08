@@ -19,9 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,9 +42,6 @@ public class ArrayTest extends BaseTest {
 
     static final String kArrayTestDate = "2007-06-30T08:34:09.001Z";
     static final String kArrayTestBlob = "i'm blob";
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     private List<Object> arrayOfAllTypes() {
         List<Object> list = new ArrayList<>();

@@ -30,6 +30,8 @@ import com.couchbase.litecore.C4Constants;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -60,6 +62,9 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     private File dir = null;
     protected Database db = null;
     ExecutorService executor = null;
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     protected File getDir() {
         return dir;

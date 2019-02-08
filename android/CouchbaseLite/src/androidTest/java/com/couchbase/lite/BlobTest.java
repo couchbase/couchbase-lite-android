@@ -21,7 +21,6 @@ import com.couchbase.lite.utils.IOUtils;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -40,9 +39,6 @@ import static org.junit.Assert.fail;
 public class BlobTest extends BaseTest {
     final static String kBlobTestBlob1 = "i'm blob";
     final static String kBlobTestBlob2 = "i'm blob2";
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
