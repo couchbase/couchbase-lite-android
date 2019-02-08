@@ -17,10 +17,6 @@
 //
 package com.couchbase.lite;
 
-import android.icu.text.SimpleDateFormat;
-import android.icu.util.Calendar;
-import android.icu.util.GregorianCalendar;
-import android.icu.util.TimeZone;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -33,17 +29,20 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.text.ParseException;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1691,16 +1690,16 @@ public class QueryTest extends BaseTest {
         DataSource mainDS = DataSource.database(this.db).as("main");
 
         thrown.expect(IllegalArgumentException.class);
-        QueryBuilder.select(SelectResult.all()).from(mainDS).join(null);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).join((Join[])null);
 
         thrown.expect(IllegalArgumentException.class);
         QueryBuilder.select(SelectResult.all()).from(mainDS).where(null);
 
         thrown.expect(IllegalArgumentException.class);
-        QueryBuilder.select(SelectResult.all()).from(mainDS).groupBy(null);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).groupBy((Expression[])null);
 
         thrown.expect(IllegalArgumentException.class);
-        QueryBuilder.select(SelectResult.all()).from(mainDS).orderBy(null);
+        QueryBuilder.select(SelectResult.all()).from(mainDS).orderBy((Ordering[])null);
 
         thrown.expect(IllegalArgumentException.class);
         QueryBuilder.select(SelectResult.all()).from(mainDS).limit(null);
