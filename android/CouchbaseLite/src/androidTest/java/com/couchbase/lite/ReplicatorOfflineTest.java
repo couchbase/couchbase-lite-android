@@ -139,11 +139,11 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
                 Replicator.Status status = change.getStatus();
                 if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
                     offline.countDown();
-                        if (offline.getCount() == 0) {
-                            change.getReplicator().stop();
-                        } else {
-                            change.getReplicator().networkReachable();
-                        }
+                    if (offline.getCount() == 0) {
+                        change.getReplicator().stop();
+                    } else {
+                        change.getReplicator().networkReachable();
+                    }
                 }
                 if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
                     stopped.countDown();
