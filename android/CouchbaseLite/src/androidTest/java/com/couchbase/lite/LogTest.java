@@ -548,7 +548,7 @@ public class LogTest extends BaseTest {
             Database.log.getFile().setLevel(LogLevel.INFO);
             Database.log.getFile().setConfig(old);
             Database.log.getConsole().setDomains(domains);
-            Database.log.getConsole().setLevel(LogLevel.INFO);
+            Database.log.getConsole().setLevel(LogLevel.WARNING);
         }
     }
 
