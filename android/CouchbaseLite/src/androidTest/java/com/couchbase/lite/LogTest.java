@@ -448,6 +448,65 @@ public class LogTest extends BaseTest {
             }
         });
     }
+
+    @Test
+    public void testLogFileConfigurationConstructors() {
+        int rotateCount = 4;
+        long maxSize = 2048;
+        boolean usePlainText = true;
+        LogFileConfiguration config;
+
+        thrown.expect(IllegalArgumentException.class);
+        config = new LogFileConfiguration((String)null);
+
+        thrown.expect(IllegalArgumentException.class);
+        config = new LogFileConfiguration((LogFileConfiguration) null);
+
+        final File path1 = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLogConfiguration"
+        );
+        config = new LogFileConfiguration(path1.getAbsolutePath())
+                .setMaxRotateCount(rotateCount)
+                .setMaxSize(maxSize)
+                .setUsePlaintext(usePlainText);
+        assertEquals(config.getMaxRotateCount(), rotateCount);
+        assertEquals(config.getMaxSize(), maxSize);
+        assertEquals(config.usesPlaintext(), usePlainText);
+        assertEquals(config.getDirectory(), path1.getAbsolutePath());
+
+        // validate with LogFileConfiguration(String, config) constructor
+        final File path2 = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testFileLogConfigurationNew"
+        );
+        LogFileConfiguration newConfig = new LogFileConfiguration(path2.getAbsolutePath(), config);
+        assertEquals(newConfig.getMaxRotateCount(), rotateCount);
+        assertEquals(newConfig.getMaxSize(), maxSize);
+        assertEquals(newConfig.usesPlaintext(), usePlainText);
+        assertEquals(newConfig.getDirectory(), path2.getAbsolutePath());
+    }
+
+    @Test
+    public void testEditReadOnlyLogFileConfiguration() {
+        final File path = new File(
+                context.getCacheDir().getAbsolutePath(),
+                "testEditReadOnlyLogFileConfiguration"
+        );
+        final String logDirectory = emptyDirectory(path.getAbsolutePath());
+        LogFileConfiguration config = new LogFileConfiguration(logDirectory);
+        Database.log.getFile().setConfig(config);
+
+        thrown.expect(IllegalStateException.class);
+        Database.log.getFile().getConfig().setMaxSize(1024);
+
+        thrown.expect(IllegalStateException.class);
+        Database.log.getFile().getConfig().setMaxRotateCount(3);
+
+        thrown.expect(IllegalStateException.class);
+        Database.log.getFile().getConfig().setUsePlaintext(true);
+    }
+
     //endregion
 
     @Test
@@ -480,6 +539,7 @@ public class LogTest extends BaseTest {
     //region Helper methods
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
         LogFileConfiguration old = Database.log.getFile().getConfig();
+        EnumSet<LogDomain> domains = Database.log.getConsole().getDomains();
         Database.log.getFile().setConfig(config);
         Database.log.getFile().setLevel(level);
         try {
@@ -487,6 +547,8 @@ public class LogTest extends BaseTest {
         } finally {
             Database.log.getFile().setLevel(LogLevel.INFO);
             Database.log.getFile().setConfig(old);
+            Database.log.getConsole().setDomains(domains);
+            Database.log.getConsole().setLevel(LogLevel.WARNING);
         }
     }
 

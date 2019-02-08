@@ -19,9 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,9 +53,6 @@ public class ResultTest extends BaseTest {
     final static SelectResult SR_ARRAY = SelectResult.property("array");
     final static SelectResult SR_BLOB = SelectResult.property("blob");
     final static SelectResult SR_NO_KEY = SelectResult.property("non_existing_key");
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     private static Query generateQuery(Database db, String docID) {
         Expression exDocID = Expression.string(docID);
