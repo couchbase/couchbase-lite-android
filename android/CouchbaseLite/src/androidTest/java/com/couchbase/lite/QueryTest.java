@@ -24,9 +24,7 @@ import android.os.Looper;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.LiteCoreException;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -64,9 +62,6 @@ public class QueryTest extends BaseTest {
     private static SelectResult SR_EXPIRATION = SelectResult.expression(Meta.expiration);
     private static SelectResult SR_ALL = SelectResult.all();
     private static SelectResult SR_NUMBER1 = SelectResult.property("number1");
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases)
             throws Exception {
