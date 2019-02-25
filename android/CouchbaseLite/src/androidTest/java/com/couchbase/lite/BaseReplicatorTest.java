@@ -19,7 +19,6 @@ package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
 
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.Config;
 
 import org.junit.After;
@@ -39,7 +38,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class BaseReplicatorTest extends BaseTest {
-    protected final static String kOtherDatabaseName = "otherdb";
+    private static final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
+    protected static final String kOtherDatabaseName = "otherdb";
+
     Database otherDB;
     Replicator repl;
     long timeout;  // seconds
@@ -87,11 +88,11 @@ public class BaseReplicatorTest extends BaseTest {
             public void changed(ReplicatorChange change) {
                 Replicator.Status status = change.getStatus();
                 CouchbaseLiteException error = status.getError();
-                final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
-                Log.i(TAG, "ReplicatorChangeListener.changed() status: %s (%d / %d), lastError = %s",
-                        kActivityNames[status.getActivityLevel().getValue()],
-                        status.getProgress().getCompleted(), status.getProgress().getTotal(),
-                        error);
+                String activity = kActivityNames[status.getActivityLevel().getValue()];
+                long completed = status.getProgress().getCompleted();
+                long total = status.getProgress().getTotal();
+                log(LogLevel.INFO, "ReplicatorChangeListener.changed() status: " + activity +
+                        "(" + completed + "/" + total + "), lastError: " + error);
                 if (r.getConfig().isContinuous()) {
                     if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE &&
                             status.getProgress().getCompleted() == status.getProgress().getTotal()) {
@@ -146,12 +147,6 @@ public class BaseReplicatorTest extends BaseTest {
             @Override
             public void changed(ReplicatorChange change) {
                 Replicator.Status status = change.getStatus();
-                CouchbaseLiteException error = status.getError();
-                final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
-                Log.i(TAG, "--- ReplicatorChangeListener.changed() -> status: %s (%d / %d), lastError = %s",
-                        kActivityNames[status.getActivityLevel().getValue()],
-                        status.getProgress().getCompleted(), status.getProgress().getTotal(),
-                        error);
                 if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
                     latch.countDown();
                 }

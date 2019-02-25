@@ -17,8 +17,6 @@
 //
 package com.couchbase.lite;
 
-import java.util.EnumSet;
-
 /**
  * Log domain
  */

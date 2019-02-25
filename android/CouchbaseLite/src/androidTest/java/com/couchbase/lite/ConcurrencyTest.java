@@ -94,12 +94,9 @@ public class ConcurrencyTest extends BaseTest {
                 phones.setValue(0, phone);
 
                 doc.setValue("updated", new Date());
-
-                Log.i(TAG, "[%s] rounds: %d updating %s", tag, i, doc.getId());
                 try {
                     db.save(doc);
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in Database.save()", e);
                     return false;
                 }
             }
@@ -126,7 +123,6 @@ public class ConcurrencyTest extends BaseTest {
         SelectResult DOCID = SelectResult.expression(Meta.id);
         DataSource ds = DataSource.database(db);
         Query q = QueryBuilder.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
-        Log.e(TAG, "query - > %s", q.explain());
         ResultSet rs = q.execute();
         Result result;
         int n = 0;
@@ -175,7 +171,6 @@ public class ConcurrencyTest extends BaseTest {
             try {
                 assertTrue(latchs[i].await(waitSec, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
-                Log.e(TAG, "InterruptedException", e);
                 fail();
             }
         }
@@ -198,7 +193,6 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag);
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in createDocs()", e);
                     fail();
                 }
             }
@@ -230,13 +224,11 @@ public class ConcurrencyTest extends BaseTest {
                             try {
                                 createDocs(kNDocs, tag);
                             } catch (CouchbaseLiteException e) {
-                                Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag);
                                 fail();
                             }
                         }
                     });
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in inBatch()", e);
                     fail();
                 }
             }
@@ -333,7 +325,6 @@ public class ConcurrencyTest extends BaseTest {
                         }
                     });
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in inBatch()", e);
                     fail();
                 }
             }
@@ -400,7 +391,6 @@ public class ConcurrencyTest extends BaseTest {
                         if (doc != null)
                             db.delete(doc);
                     } catch (CouchbaseLiteException e) {
-                        Log.e(TAG, "Error in Database.delete(Document)", e);
                         fail();
                     }
                 }
@@ -418,7 +408,6 @@ public class ConcurrencyTest extends BaseTest {
                         if (doc != null)
                             db.delete(doc);
                     } catch (CouchbaseLiteException e) {
-                        Log.e(TAG, "Error in Database.delete(Document)", e);
                         fail();
                     }
                 }
@@ -502,7 +491,6 @@ public class ConcurrencyTest extends BaseTest {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (IllegalStateException ise) {
@@ -519,7 +507,6 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     db.close();
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in Database.close()", e);
                     fail();
                 }
                 latch2.countDown();
@@ -546,7 +533,6 @@ public class ConcurrencyTest extends BaseTest {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (IllegalStateException ise) {
@@ -563,7 +549,6 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     db.delete();
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in Database.delete()", e);
                     fail();
                 }
                 latch2.countDown();
@@ -590,7 +575,6 @@ public class ConcurrencyTest extends BaseTest {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 }
@@ -605,7 +589,6 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     db.compact();
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in Database.compact()", e);
                     fail();
                 }
                 latch2.countDown();
@@ -634,7 +617,6 @@ public class ConcurrencyTest extends BaseTest {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 }
@@ -650,7 +632,6 @@ public class ConcurrencyTest extends BaseTest {
                     Index index = IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence"));
                     db.createIndex("sentence", index);
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in Database.createIndex()", e);
                     fail();
                 }
                 latch2.countDown();
@@ -672,7 +653,6 @@ public class ConcurrencyTest extends BaseTest {
         db.addChangeListener(executor, new DatabaseChangeListener() {
             @Override
             public void changed(DatabaseChange change) {
-                Log.e(TAG, "changed() change -> %s", change);
                 latch2.countDown();
             }
         });
@@ -714,7 +694,6 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     db.save(new MutableDocument("doc1"));
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in save()", e);
                     fail();
                 }
                 latch1.countDown();
@@ -744,7 +723,7 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     rs = query.execute();
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in Query.execute()", e);
+                    fail();
                 }
                 List<Result> results = rs.allResults();
                 assertEquals(100, results.size());

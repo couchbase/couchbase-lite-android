@@ -24,7 +24,6 @@ import com.couchbase.lite.internal.support.Run;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
-import com.couchbase.litecore.C4;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Constants.C4DatabaseFlags;
@@ -83,7 +82,7 @@ abstract class AbstractDatabase {
     // Static variables
     //---------------------------------------------
 
-    protected static final String TAG = Log.DATABASE;
+    protected static final LogDomain DOMAIN = LogDomain.DATABASE;
     protected static final String DB_EXTENSION = "cblite2";
     protected static final int MAX_CHANGES = 100;
     // How long to wait after a database opens before expiring docs
@@ -132,11 +131,11 @@ abstract class AbstractDatabase {
             @Override
             public void run() {
                 // Logging version number of CBL
-                Log.info(TAG, CBLVersion.getUserAgent());
+                Log.info(DOMAIN, CBLVersion.getUserAgent());
 
                 // Check file logging
                 if(Database.log.getFile().getConfig() == null) {
-                    Log.w(TAG, "Database.log.getFile().getConfig() is null, meaning file " +
+                    Log.w(DOMAIN, "Database.log.getFile().getConfig() is null, meaning file " +
                             "logging is disabled. Log files required for product support are " +
                             "not being generated.");
                 }
@@ -586,7 +585,7 @@ abstract class AbstractDatabase {
             if (c4db == null)
                 return;
 
-            Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
+            Log.i(DOMAIN, "Closing %s at path %s", this, getC4Database().getPath());
 
             if (activeReplications.size() > 0) {
                 throw new CouchbaseLiteException(
@@ -625,7 +624,7 @@ abstract class AbstractDatabase {
         synchronized (lock) {
             mustBeOpen();
 
-            Log.i(TAG, "Deleting %s at path %s", this, getC4Database().getPath());
+            Log.i(DOMAIN, "Deleting %s at path %s", this, getC4Database().getPath());
 
             if (activeReplications.size() > 0) {
                 throw new CouchbaseLiteException(
@@ -724,7 +723,7 @@ abstract class AbstractDatabase {
 
         File path = getDatabasePath(directory, name);
         try {
-            Log.i(TAG, "delete(): path=%s", path.toString());
+            Log.i(DOMAIN, "delete(): path=%s", path.toString());
             C4Database.deleteAtPath(path.getPath());
         } catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
@@ -927,7 +926,7 @@ abstract class AbstractDatabase {
                 Document remoteDoc = new Document((Database) this, docID, true);
                 try {
                     if (!remoteDoc.selectConflictingRevision()) {
-                        Log.w(TAG, "Unable to select conflicting revision for '%s', skipping...", docID);
+                        Log.w(DOMAIN, "Unable to select conflicting revision for '%s', skipping...", docID);
                         return;
                     }
                 } catch (LiteCoreException e) {
@@ -935,7 +934,7 @@ abstract class AbstractDatabase {
                 }
 
                 // Resolve conflict:
-                Log.v(TAG, "Resolving doc '%s' (local=%s and remote=%s)", docID,
+                Log.v(DOMAIN, "Resolving doc '%s' (local=%s and remote=%s)", docID,
                         localDoc.getRevID(), remoteDoc.getRevID());
                 Document resolvedDoc = resolveConflict(localDoc, remoteDoc);
 
@@ -996,7 +995,7 @@ abstract class AbstractDatabase {
         File dbFile = getDatabasePath(dir, this.name);
         int databaseFlags = getDatabaseFlags();
 
-        Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
+        Log.i(DOMAIN, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
             c4db = new C4Database(
@@ -1334,7 +1333,7 @@ abstract class AbstractDatabase {
                 C4Document rawDoc = localDoc.getC4doc();
                 rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody, mergedFlags);
                 rawDoc.save(0);
-                Log.i(TAG, "Conflict resolved as doc '%s' rev %s",
+                Log.i(DOMAIN, "Conflict resolved as doc '%s' rev %s",
                         rawDoc.getDocID(), rawDoc.getRevID());
 
                 commit = true;
@@ -1366,7 +1365,7 @@ abstract class AbstractDatabase {
         if (nextExpiration > 0) {
             long expTime = nextExpiration - System.currentTimeMillis();
             long delay = Math.max(expTime, minimumDelay);
-            Log.v(TAG, "Scheduling next doc expiration in %d sec", delay);
+            Log.v(DOMAIN, "Scheduling next doc expiration in %d sec", delay);
             synchronized (lock) {
                 cancelPurgeTimer();
                 purgeTimer = new Timer();
@@ -1379,7 +1378,7 @@ abstract class AbstractDatabase {
                 }, delay);
             }
         } else
-            Log.v(TAG, "No pending doc expirations");
+            Log.v(DOMAIN, "No pending doc expirations");
     }
 
     private void purgeExpiredDocuments() {
@@ -1390,7 +1389,7 @@ abstract class AbstractDatabase {
             @Override
             public void run() {
                 int nPurged = getC4Database().purgeExpiredDocs();
-                Log.v(TAG, "Purged %d expired documents", nPurged);
+                Log.v(DOMAIN, "Purged %d expired documents", nPurged);
                 scheduleDocumentExpiration(1000);
             }
         }, 0);

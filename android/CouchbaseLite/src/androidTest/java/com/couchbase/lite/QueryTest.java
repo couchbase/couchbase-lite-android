@@ -406,7 +406,6 @@ public class QueryTest extends BaseTest {
             public void check(int n, Result result) throws Exception {
                 String name = result.getString(0);
                 assertEquals(expected[n - 1].asJSON(), name);
-                Log.e(TAG, "n -> %d name -> %s", n, name);
             }
         });
         assertEquals(expected.length, numRows);
@@ -457,7 +456,6 @@ public class QueryTest extends BaseTest {
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Log.v(TAG, "check() n -> " + n);
                 String docID = result.getString(0);
                 Document doc = db.getDocument(docID);
                 Map<String, Object> name = doc.getDictionary("name").toMap();
@@ -465,7 +463,6 @@ public class QueryTest extends BaseTest {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
                         firstNames.add(firstName);
-                        Log.v(TAG, "firstName -> " + firstName);
                     }
                 }
             }
@@ -691,7 +688,6 @@ public class QueryTest extends BaseTest {
                 String state = (String) result.getValue(0);
                 long count = (long) result.getValue(1);
                 String maxZip = (String) result.getValue(2);
-                Log.v(TAG, "state=%s, count=%d, maxZip=%s", state, count, maxZip);
                 if (n - 1 < expectedStates.size()) {
                     assertEquals(expectedStates.get(n - 1), state);
                     assertEquals((int) expectedCounts.get(n - 1), count);
@@ -1152,7 +1148,6 @@ public class QueryTest extends BaseTest {
         );
         final AtomicInteger index = new AtomicInteger(0);
         for (Expression f : functions) {
-            Log.v(TAG, "index -> " + index.intValue());
             Query q = QueryBuilder.select(SelectResult.expression(f))
                     .from(DataSource.database(db));
             int numRows = verifyQuery(q, new QueryResult() {
@@ -1676,8 +1671,9 @@ public class QueryTest extends BaseTest {
         SelectResult srSecondaryAll = SelectResult.all().from("secondary");
         Query q = QueryBuilder.select(srMainAll, srSecondaryAll).from(mainDS).join(join).where(typeExpr.equalTo(Expression.string("bookmark")));
         ResultSet rs = q.execute();
-        for (Result r : rs)
-            Log.e(TAG, "RESULT: " + r.toMap());
+        for (Result r : rs) {
+            log(LogLevel.INFO, "RESULT: " + r.toMap());
+        }
     }
 
     @Test
@@ -1754,7 +1750,6 @@ public class QueryTest extends BaseTest {
         // Test: ResultSet.next()
         int counter = 0;
         while ((r = rs.next()) != null) {
-            Log.i(TAG, "Round 1: [next] Result -> " + r.toMap());
             counter++;
         }
         assertEquals(2, counter);
@@ -1763,7 +1758,6 @@ public class QueryTest extends BaseTest {
         rs = q.execute();
         counter = 0;
         for (Result result : rs) {
-            Log.i(TAG, "Round 1: [Iterator] Result -> " + result.toMap());
             counter++;
         }
         assertEquals(2, counter);
@@ -1780,7 +1774,6 @@ public class QueryTest extends BaseTest {
         counter = 0;
         while ((r = rs.next()) != null) {
             assertEquals(task2.getId(), r.getString(0));
-            Log.i(TAG, "Round 2: [next()] Result -> " + r.toMap());
             counter++;
         }
         assertEquals(1, counter);
@@ -1790,7 +1783,6 @@ public class QueryTest extends BaseTest {
         counter = 0;
         for (Result result : rs) {
             assertEquals(task2.getId(), result.getString(0));
-            Log.i(TAG, "Round 2: [Iterator] Result -> " + result.toMap());
             counter++;
         }
         assertEquals(1, counter);
@@ -1824,7 +1816,6 @@ public class QueryTest extends BaseTest {
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Log.i(TAG, "res -> " + result.toMap());
                 Dictionary dict = result.getDictionary(db.getName());
                 assertTrue(dict.getBoolean("complete"));
                 assertEquals("task", dict.getString("type"));
@@ -1840,7 +1831,6 @@ public class QueryTest extends BaseTest {
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Log.i(TAG, "res -> " + result.toMap());
                 Dictionary dict = result.getDictionary(db.getName());
                 assertFalse(dict.getBoolean("complete"));
                 assertEquals("task", dict.getString("type"));
@@ -1856,7 +1846,6 @@ public class QueryTest extends BaseTest {
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Log.i(TAG, "res -> " + result.toMap());
                 assertEquals(2, result.getInt(0));
             }
         }, false);
@@ -1869,7 +1858,6 @@ public class QueryTest extends BaseTest {
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Log.i(TAG, "res -> " + result.toMap());
                 assertEquals(1, result.getInt(0));
             }
         }, false);
@@ -1907,10 +1895,6 @@ public class QueryTest extends BaseTest {
                 Dictionary mainAll2 = result.getDictionary("main");
                 Dictionary secondAll1 = result.getDictionary(1);
                 Dictionary secondAll2 = result.getDictionary("secondary");
-                Log.e(TAG, "mainAll1 -> " + mainAll1.toMap());
-                Log.e(TAG, "mainAll2 -> " + mainAll2.toMap());
-                Log.e(TAG, "secondAll1 -> " + secondAll1.toMap());
-                Log.e(TAG, "secondAll2 -> " + secondAll2.toMap());
                 assertEquals(42, mainAll1.getInt("number1"));
                 assertEquals(42, mainAll2.getInt("number1"));
                 assertEquals(58, mainAll1.getInt("number2"));
@@ -2058,7 +2042,6 @@ public class QueryTest extends BaseTest {
 
         Expression property = Expression.property("hey");
         for (List<Object> data : testData) {
-            Log.i(TAG, (String) data.get(0));
             Query q = QueryBuilder.select(SelectResult.property("hey"))
                     .from(DataSource.database(db))
                     .orderBy(Ordering.expression(property.collate((Collation) data.get(1))));
@@ -2087,7 +2070,6 @@ public class QueryTest extends BaseTest {
             closeDB();
             fail();
         } catch (CouchbaseLiteException e) {
-            Log.e(TAG, "5");
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorBusy, e.getCode());
         }
@@ -2409,7 +2391,6 @@ public class QueryTest extends BaseTest {
         ResultSet rs = q.execute();
         int count = 0;
         for (Result r : rs.allResults()) {
-            Log.i(TAG, "result -> " + r.toMap());
             count++;
         }
         assertEquals(N, count);
@@ -2451,7 +2432,6 @@ public class QueryTest extends BaseTest {
         ResultSet rs = ftsQuery.execute();
         int count = 0;
         for (Result r : rs) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs[count], r.getString("id"));
             assertEquals(expectedContents[count], r.getString("content"));
             count++;
@@ -2531,7 +2511,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs = {"doc3"};
         int count = 0;
         for (Result r : rs) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs[count], r.getString("id"));
             count++;
         }
@@ -2546,7 +2525,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs2 = {"doc3"};
         int count2 = 0;
         for (Result r : rs2) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs2[count2], r.getString("id"));
             count2++;
         }
@@ -2561,7 +2539,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs3 = {"doc1", "doc2", "doc3"};
         int count3 = 0;
         for (Result r : rs3) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs3[count3], r.getString("id"));
             count3++;
         }
@@ -2577,7 +2554,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs4 = {"doc1"};
         int count4 = 0;
         for (Result r : rs4) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs4[count4], r.getString("id"));
             count4++;
         }
@@ -2655,7 +2631,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs = {"doc2"};
         int count = 0;
         for (Result r : rs) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs[count], r.getString("id"));
             count++;
         }
@@ -2671,7 +2646,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs2 = {"doc1", "doc2", "doc3"};
         int count2 = 0;
         for (Result r : rs2) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs2[count2], r.getString("id"));
             count2++;
         }
@@ -2685,7 +2659,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs3 = {"doc1", "doc2"};
         int count3 = 0;
         for (Result r : rs3) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs3[count3], r.getString("id"));
             count3++;
         }
@@ -2700,7 +2673,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs4 = {"doc1", "doc3"};
         int count4 = 0;
         for (Result r : rs4) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs4[count4], r.getString("id"));
             count4++;
         }
@@ -2714,7 +2686,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs5 = {"doc1", "doc2"};
         int count5 = 0;
         for (Result r : rs5) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs5[count5], r.getString("id"));
             count5++;
         }
@@ -2729,7 +2700,6 @@ public class QueryTest extends BaseTest {
         String[] expectedIDs6 = {"doc1", "doc2", "doc3"};
         int count6 = 0;
         for (Result r : rs6) {
-            Log.e(TAG, r.toMap().toString());
             assertEquals(expectedIDs6[count6], r.getString("id"));
             count6++;
         }
@@ -2801,12 +2771,9 @@ public class QueryTest extends BaseTest {
             public void changed(QueryChange change) {
                 int matchs = 0;
                 ResultSet rs = change.getResults();
-                Log.v(TAG, "----------");
                 for (Result r : rs) {
-                    Log.v(TAG, r.toMap().toString());
                     matchs++;
                 }
-                Log.v(TAG, "----------");
 
                 if (matchs == 1) // match doc1 with number1 -> 5 which is less than 10
                     latch1.countDown();
@@ -2932,12 +2899,10 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(int n, Result result) throws Exception {
                 if (n == 41) {
-                    Log.e(TAG, "41: " + result.toMap().toString());
                     assertEquals(59, result.getDictionary("main").getInt("number2"));
                     assertNull(result.getDictionary("secondary"));
                 }
                 if (n == 42) {
-                    Log.e(TAG, "42: " + result.toMap().toString());
                     assertEquals(58, result.getDictionary("main").getInt("number2"));
                     assertEquals(42, result.getDictionary("secondary").getInt("theone"));
                 }

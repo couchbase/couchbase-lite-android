@@ -99,9 +99,6 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
 
     @Before
     public void setUp() throws Exception {
-        Database.setLogLevel(LogDomain.ALL, LogLevel.INFO);
-        Log.enableLogging(TAG, Log.INFO); // NOTE: Without loading Database, this fails.
-
         executor = Executors.newSingleThreadExecutor();
 
         context = InstrumentationRegistry.getTargetContext();
@@ -343,6 +340,26 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
         } catch (CouchbaseLiteException e) {
             assertEquals(domain, e.getDomain());
             assertEquals(code, e.getCode());
+        }
+    }
+
+    protected static void log(LogLevel level, String message) {
+        switch(level) {
+            case DEBUG:
+                android.util.Log.d("CouchbaseLite/" + TAG, message);
+                break;
+            case VERBOSE:
+                android.util.Log.v("CouchbaseLite/" + TAG, message);
+                break;
+            case INFO:
+                android.util.Log.i("CouchbaseLite/" + TAG, message);
+                break;
+            case WARNING:
+                android.util.Log.w("CouchbaseLite/" + TAG, message);
+                break;
+            case ERROR:
+                android.util.Log.e("CouchbaseLite/" + TAG, message);
+                break;
         }
     }
 }

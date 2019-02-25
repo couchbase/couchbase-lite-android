@@ -34,7 +34,7 @@ import java.util.Map;
  * a separate file.
  */
 public final class FileLogger implements Logger {
-    private static final String TAG = "FileLogger";
+    private static final LogDomain DOMAIN = LogDomain.DATABASE;
 
     private LogLevel _level = LogLevel.INFO;
     private LogFileConfiguration _config;
@@ -68,7 +68,7 @@ public final class FileLogger implements Logger {
     public void setConfig(LogFileConfiguration config) {
         _config = config == null ? null : config.readOnlyCopy();
         if(config == null) {
-            Log.w(TAG, "Database.log.getFile().getConfig() is now null, meaning file logging is disabled.  Log files required for product support are not being generated.");
+            Log.w(DOMAIN, "Database.log.getFile().getConfig() is now null, meaning file logging is disabled.  Log files required for product support are not being generated.");
         }
 
         updateConfig();

@@ -1,7 +1,7 @@
 //
-// LiveQuery.java
+// LogLevel.java
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import com.couchbase.lite.internal.support.Log;
  * The log levels here are tentative and subject to change.
  */
 public enum LogLevel {
-    DEBUG(Log.DEBUG),
-    VERBOSE(Log.VERBOSE),
-    INFO(Log.INFO),
-    WARNING(Log.WARN),
-    ERROR(Log.ERROR),
-    NONE(Log.NONE);
+    DEBUG(Log.C4LOG_DEBUG),
+    VERBOSE(Log.C4LOG_VERBOSE),
+    INFO(Log.C4LOG_INFO),
+    WARNING(Log.C4LOG_WARN),
+    ERROR(Log.C4LOG_ERROR),
+    NONE(Log.C4LOG_NONE);
 
     private final int value;
 

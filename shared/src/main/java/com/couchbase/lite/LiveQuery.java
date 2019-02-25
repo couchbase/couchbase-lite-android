@@ -23,8 +23,6 @@ import com.couchbase.lite.internal.support.Log;
 
 import java.util.Locale;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A Query subclass that automatically refreshes the result rows every time the database changes.
@@ -33,7 +31,7 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private final static String TAG = Log.QUERY;
+    private final static LogDomain DOMAIN = LogDomain.QUERY;
     private final static long kDefaultLiveQueryUpdateInterval = 200; // 0.2sec (200ms)
 
     //---------------------------------------------
@@ -206,7 +204,7 @@ final class LiveQuery implements DatabaseChangeListener {
                 return;
 
             try {
-                Log.i(TAG, "%s: Querying...", this);
+                Log.i(DOMAIN, "%s: Querying...", this);
                 ResultSet oldResultSet = resultSet;
                 ResultSet newResultSet;
                 if (oldResultSet == null)
@@ -219,11 +217,11 @@ final class LiveQuery implements DatabaseChangeListener {
 
                 if (newResultSet != null) {
                     if (oldResultSet != null)
-                        Log.i(TAG, "%s: Changed!", this);
+                        Log.i(DOMAIN, "%s: Changed!", this);
                     resultSet = newResultSet;
                     changeNotifier.postChange(new QueryChange(this.query, resultSet, null));
                 } else {
-                    Log.i(TAG, "%s: ...no change", this);
+                    Log.i(DOMAIN, "%s: ...no change", this);
                 }
             } catch (CouchbaseLiteException e) {
                 changeNotifier.postChange(new QueryChange(this.query, null, e));

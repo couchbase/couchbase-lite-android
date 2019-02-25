@@ -37,7 +37,7 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private static final String TAG = Log.QUERY;
+    private static final LogDomain DOMAIN = LogDomain.QUERY;
 
     //---------------------------------------------
     // member variables
@@ -82,16 +82,16 @@ public class ResultSet implements Iterable<Result> {
                 if (c4enum == null)
                     return null;
                 else if (isAllEnumerated) {
-                    Log.w(TAG, "All query results have already been enumerated.");
+                    Log.w(DOMAIN, "All query results have already been enumerated.");
                     return  null;
                 }  else if (!c4enum.next()) {
-                    Log.i(TAG, "End of query enumeration");
+                    Log.i(DOMAIN, "End of query enumeration");
                     isAllEnumerated = true;
                     return null;
                 } else
                     return currentObject();
             } catch (LiteCoreException e) {
-                Log.w(TAG, "Query enumeration error: %s", e.toString());
+                Log.w(DOMAIN, "Query enumeration error: %s", e.toString());
                 return null;
             }
         }

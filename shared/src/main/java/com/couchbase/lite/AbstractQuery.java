@@ -49,7 +49,7 @@ abstract class AbstractQuery implements Query {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private static final String TAG = Log.QUERY;
+    private static final LogDomain DOMAIN = LogDomain.QUERY;
 
     //---------------------------------------------
     // member variables
@@ -301,7 +301,7 @@ abstract class AbstractQuery implements Query {
 
             database = (Database) from.getSource();
             String json = encodeAsJSON();
-            Log.v(TAG, "Query encoded as %s", json);
+            Log.v(DOMAIN, "Query encoded as %s", json);
             if (json == null)
                 throw new CouchbaseLiteException("Failed to generate JSON query.");
 
@@ -343,7 +343,7 @@ abstract class AbstractQuery implements Query {
         try {
             return JsonUtils.toJson(_asJSON()).toString();
         } catch (JSONException e) {
-            Log.w(TAG, "Error when encoding the query as a json string", e);
+            Log.w(DOMAIN, "Error when encoding the query as a json string", e);
         }
         return null;
     }

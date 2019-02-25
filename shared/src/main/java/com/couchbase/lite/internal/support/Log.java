@@ -1,7 +1,7 @@
 //
 // Log.java
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.couchbase.litecore.C4Constants.C4LogDomain;
 import com.couchbase.litecore.C4Log;
 
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogDebug;
 import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogError;
@@ -35,111 +34,83 @@ import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogVerbose;
 import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogWarning;
 
 /**
- * Couchbase Lite Logging API.
+ * Couchbase Lite Internal Log Utility.
  */
 public final class Log {
 
-    /**
-     * Logging Tag for Database related operations
-     */
-    public static final String DATABASE = C4LogDomain.Database;
+    private static final String DATABASE = C4LogDomain.Database;
+
+    private static final String QUERY = C4LogDomain.Query;
+
+    private static final String SYNC = C4LogDomain.Sync;
+
+    private static final String WEB_SOCKET = C4LogDomain.WebSocket;
+
+    public static final int C4LOG_DEBUG = kC4LogDebug;
+
+    public static final int C4LOG_VERBOSE = kC4LogVerbose;
+
+    public static final int C4LOG_INFO = kC4LogInfo;
+
+    public static final int C4LOG_WARN = kC4LogWarning;
+
+    public static final int C4LOG_ERROR = kC4LogError;
+
+    public static final int C4LOG_NONE = kC4LogNone;
 
     /**
-     * Logging Tag for Query related operations
+     * private constructor.
      */
-    public static final String QUERY = C4LogDomain.Query;
-
-    /**
-     * Logging Tag for Sync related operations
-     */
-    public static final String SYNC = C4LogDomain.Sync;
-
-    /**
-     * Logging Tag for Sync related operations
-     */
-    public static final String WEB_SOCKET = C4LogDomain.WebSocket;
-
-    /**
-     * Priority constant for the println method; use Log.d.
-     */
-    public static final int DEBUG = kC4LogDebug; // 2
-    /**
-     * Priority constant for the println method; use Log.v.
-     */
-    public static final int VERBOSE = kC4LogVerbose; // 3
-    /**
-     * Priority constant for the println method; use Log.i.
-     */
-    public static final int INFO = kC4LogInfo; // 3
-    /**
-     * Priority constant for the println method; use Log.w.
-     */
-    public static final int WARN = kC4LogWarning; // 3
-    /**
-     * Priority constant for the println method; use Log.e.
-     */
-    public static final int ERROR = kC4LogError; // 4
-
-    public static final int NONE = kC4LogNone; // 5
-
-    /**
-     * private constructor: not allow to instanticate.
-     */
-    private Log() {
-    }
+    private Log() { }
 
 
     /**
      * Send a VERBOSE message.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
      */
-    public static void v(String tag, String msg) {
-        sendToLoggers(LogLevel.VERBOSE, tag, msg);
+    public static void v(LogDomain domain, String msg) {
+        sendToLoggers(LogLevel.VERBOSE, domain, msg);
     }
 
     /**
      * Send a VERBOSE message and log the exception.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
-     * @param tr  An exception to log
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
+     * @param tr        An exception to log
      */
-    public static void v(String tag, String msg, Throwable tr) {
-        v(tag, "Exception: %s", tr.toString());
+    public static void v(LogDomain domain, String msg, Throwable tr) {
+        v(domain, "Exception: %s", tr.toString());
     }
 
     /**
      * Send a VERBOSE message.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void v(String tag, String formatString, Object... args) {
+    public static void v(LogDomain domain, String formatString, Object... args) {
         String msg;
         try {
             msg = String.format(Locale.ENGLISH, formatString, args);
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.VERBOSE, tag, msg);
+        sendToLoggers(LogLevel.VERBOSE, domain, msg);
     }
 
     /**
      * Send a VERBOSE message and log the exception.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param tr           An exception to log
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param tr            An exception to log
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void v(String tag, String formatString, Throwable tr, Object... args) {
+    public static void v(LogDomain domain, String formatString, Throwable tr, Object... args) {
         String msg;
         try {
             msg = String.format(formatString, args);
@@ -147,68 +118,64 @@ public final class Log {
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.VERBOSE, tag, msg);
+        sendToLoggers(LogLevel.VERBOSE, domain, msg);
     }
 
     /**
      * Send an INFO message.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
      */
-    public static void i(String tag, String msg) {
-        sendToLoggers(LogLevel.INFO, tag, msg);
+    public static void i(LogDomain domain, String msg) {
+        sendToLoggers(LogLevel.INFO, domain, msg);
     }
 
     /**
      * Send a INFO message and log the exception.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
-     * @param tr  An exception to log
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
+     * @param tr        An exception to log
      */
-    public static void i(String tag, String msg, Throwable tr) {
-        i(tag, "Exception: %s", tr.toString());
+    public static void i(LogDomain domain, String msg, Throwable tr) {
+        i(domain, "Exception: %s", tr.toString());
     }
 
-    public static void info(String tag, String msg) {
-        i(tag, msg);
+    public static void info(LogDomain domain, String msg) {
+        i(domain, msg);
     }
 
-    public static void info(String tag, String msg, Throwable tr) {
-        i(tag, msg, tr);
+    public static void info(LogDomain domain, String msg, Throwable tr) {
+        i(domain, msg, tr);
     }
 
     /**
      * Send an INFO message.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
+     * @param domain       The log domain.
      * @param formatString The string you would like logged plus format specifiers.
      * @param args         Variable number of Object args to be used as params to formatString.
      */
-    public static void i(String tag, String formatString, Object... args) {
+    public static void i(LogDomain domain, String formatString, Object... args) {
         String msg;
         try {
             msg = String.format(Locale.ENGLISH, formatString, args);
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.INFO, tag, msg);
+        sendToLoggers(LogLevel.INFO, domain, msg);
     }
 
     /**
      * Send a INFO message and log the exception.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
+     * @param domain       The log domain.
      * @param formatString The string you would like logged plus format specifiers.
      * @param tr           An exception to log
      * @param args         Variable number of Object args to be used as params to formatString.
      */
-    public static void i(String tag, String formatString, Throwable tr, Object... args) {
+    public static void i(LogDomain domain, String formatString, Throwable tr, Object... args) {
         String msg;
         try {
             msg = String.format(formatString, args);
@@ -216,71 +183,66 @@ public final class Log {
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.INFO, tag, msg);
+        sendToLoggers(LogLevel.INFO, domain, msg);
     }
 
     /**
      * Send a WARN message.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
      */
-    public static void w(String tag, String msg) {
-        sendToLoggers(LogLevel.WARNING, tag, msg);
+    public static void w(LogDomain domain, String msg) {
+        sendToLoggers(LogLevel.WARNING, domain, msg);
     }
 
     /**
      * Send a WARN message and log the exception.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param tr  An exception to log
+     * @param domain    The log domain.
+     * @param tr        An exception to log
      */
-    public static void w(String tag, Throwable tr) {
-        w(tag, "Exception: %s", tr.toString());
+    public static void w(LogDomain domain, Throwable tr) {
+        w(domain, "Exception: %s", tr.toString());
     }
 
     /**
      * Send a WARN message and log the exception.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
-     * @param tr  An exception to log
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
+     * @param tr        An exception to log
      */
-    public static void w(String tag, String msg, Throwable tr) {
-        w(tag, "%s: %s", msg, tr.toString());
+    public static void w(LogDomain domain, String msg, Throwable tr) {
+        w(domain, "%s: %s", msg, tr.toString());
     }
 
     /**
      * Send a WARN message.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void w(String tag, String formatString, Object... args) {
+    public static void w(LogDomain domain, String formatString, Object... args) {
         String msg;
         try {
             msg = String.format(Locale.ENGLISH, formatString, args);
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.WARNING, tag, msg);
+        sendToLoggers(LogLevel.WARNING, domain, msg);
     }
 
     /**
      * Send a WARN message and log the exception.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param tr           An exception to log
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param tr            An exception to log
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void w(String tag, String formatString, Throwable tr, Object... args) {
+    public static void w(LogDomain domain, String formatString, Throwable tr, Object... args) {
         String msg;
         try {
             msg = String.format(formatString, args);
@@ -288,42 +250,39 @@ public final class Log {
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.WARNING, tag, msg);
+        sendToLoggers(LogLevel.WARNING, domain, msg);
     }
 
     /**
      * Send an ERROR message.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
      */
-    public static void e(String tag, String msg) {
-        sendToLoggers(LogLevel.ERROR, tag, msg);
+    public static void e(LogDomain domain, String msg) {
+        sendToLoggers(LogLevel.ERROR, domain, msg);
     }
 
     /**
      * Send a ERROR message and log the exception.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
-     * @param tr  An exception to log
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
+     * @param tr        An exception to log
      */
-    public static void e(String tag, String msg, Throwable tr) {
-        e(tag, "%s: %s", msg, tr.toString());
+    public static void e(LogDomain domain, String msg, Throwable tr) {
+        e(domain, "%s: %s", msg, tr.toString());
     }
 
     /**
      * Send a ERROR message and log the exception.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param tr           An exception to log
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param tr            An exception to log
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void e(String tag, String formatString, Throwable tr, Object... args) {
+    public static void e(LogDomain domain, String formatString, Throwable tr, Object... args) {
         String msg;
         try {
             msg = String.format(formatString, args);
@@ -331,78 +290,73 @@ public final class Log {
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.ERROR, tag, msg);
+        sendToLoggers(LogLevel.ERROR, domain, msg);
     }
 
     /**
      * Send a ERROR message.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void e(String tag, String formatString, Object... args) {
+    public static void e(LogDomain domain, String formatString, Object... args) {
         String msg;
         try {
             msg = String.format(Locale.ENGLISH, formatString, args);
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.ERROR, tag, msg);
+        sendToLoggers(LogLevel.ERROR, domain, msg);
     }
 
     /**
      * Send a DEBUG message.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
      */
-    public static void d(String tag, String msg) {
-        sendToLoggers(LogLevel.DEBUG, tag, msg);
+    public static void d(LogDomain domain, String msg) {
+        sendToLoggers(LogLevel.DEBUG, domain, msg);
     }
 
     /**
      * Send a DEBUG message and log the exception.
      *
-     * @param tag Used to identify the source of a log message.  It usually identifies
-     *            the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
-     * @param tr  An exception to log
+     * @param domain    The log domain.
+     * @param msg       The message you would like logged.
+     * @param tr        An exception to log
      */
-    public static void d(String tag, String msg, Throwable tr) {
-        d(tag, "Exception: %s", tr.toString());
+    public static void d(LogDomain domain, String msg, Throwable tr) {
+        d(domain, "Exception: %s", tr.toString());
     }
 
     /**
      * Send a DEBUG message.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void d(String tag, String formatString, Object... args) {
+    public static void d(LogDomain domain, String formatString, Object... args) {
         String msg;
         try {
             msg = String.format(Locale.ENGLISH, formatString, args);
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.DEBUG, tag, msg);
+        sendToLoggers(LogLevel.DEBUG, domain, msg);
     }
 
     /**
      * Send a DEBUG message and log the exception.
      *
-     * @param tag          Used to identify the source of a log message.  It usually identifies
-     *                     the class or activity where the log call occurs.
-     * @param formatString The string you would like logged plus format specifiers.
-     * @param tr           An exception to log
-     * @param args         Variable number of Object args to be used as params to formatString.
+     * @param domain        The log domain.
+     * @param formatString  The string you would like logged plus format specifiers.
+     * @param tr            An exception to log
+     * @param args          Variable number of Object args to be used as params to formatString.
      */
-    public static void d(String tag, String formatString, Throwable tr, Object... args) {
+    public static void d(LogDomain domain, String formatString, Throwable tr, Object... args) {
         String msg;
         try {
             msg = String.format(formatString, args);
@@ -410,11 +364,11 @@ public final class Log {
         } catch (Exception e) {
             msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
         }
-        sendToLoggers(LogLevel.DEBUG, tag, msg);
+        sendToLoggers(LogLevel.DEBUG, domain, msg);
     }
 
     public static void setLogLevel(LogDomain domain, LogLevel level) {
-        int actualLevel = level.equals(LogLevel.NONE) ? Log.NONE : Log.DEBUG;
+        int actualLevel = level.equals(LogLevel.NONE) ? C4LOG_NONE : C4LOG_DEBUG;
         switch (domain) {
             case ALL:
                 enableLogging(DATABASE, actualLevel);
@@ -449,15 +403,19 @@ public final class Log {
         C4Log.setLevel(tag, logLevel);
     }
 
-    private static void sendToLoggers(LogLevel level, String tag, String msg) {
+    private static void sendToLoggers(LogLevel level, LogDomain domain, String msg) {
         boolean fileSucceeded = false;
         boolean consoleSucceeded = false;
         try {
-            LogDomain domain = LogDomain.valueOf(tag);
+            // File logging:
             Database.log.getFile().log(level, domain, msg);
             fileSucceeded = true;
+
+            // Console logging:
             Database.log.getConsole().log(level, domain, msg);
             consoleSucceeded = true;
+
+            // Custom logging:
             Logger custom = Database.log.getCustom();
             if(custom != null) {
                 custom.log(level, domain, msg);

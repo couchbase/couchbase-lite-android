@@ -42,7 +42,7 @@ class CBLStatus {
             code += CBLError.Code.CBLErrorHTTPBase;
 
         if (domain == null) {
-            Log.w(Log.DATABASE, "Unable to map C4Error(%d,%d) to an CouchbaseLiteException", domainCode, statusCode);
+            Log.w(LogDomain.DATABASE, "Unable to map C4Error(%d,%d) to an CouchbaseLiteException", domainCode, statusCode);
             domain = CBLError.Domain.CBLErrorDomain;
             code = CBLError.Code.CBLErrorUnexpectedError;
         }

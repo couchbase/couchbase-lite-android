@@ -329,7 +329,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         repl.addChangeListener(executor, new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
-                Log.w(TAG, "changed() change -> " + change);
+                log(LogLevel.INFO,"changed() change -> " + change);
             }
         });
 
@@ -428,8 +428,6 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         db.addChangeListener(new DatabaseChangeListener() {
             @Override
             public void changed(DatabaseChange change) {
-                Log.e(TAG, "DatabaseChangeListener.changed() %s", change);
-
                 // check getDocumentIDs values
                 if (change.getDocumentIDs() != null)
                     assertEquals(N, change.getDocumentIDs().size());
@@ -444,7 +442,6 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                     List<Result> results = rs.allResults();
                     assertEquals(N, results.size());
                 } catch (CouchbaseLiteException e) {
-                    Log.e(TAG, "Error in Query.execute()", e);
                     fail("Error in Query.execute(): " + e.getMessage());
                 }
             }
@@ -483,21 +480,21 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         // Get doc form SG:
         JSONObject json = sendRequestToEndpoint(target, "GET", doc1.getId(), null, null);
-        Log.i(TAG, "----> Common ancestor revision is %s", json.get("_rev"));
+        log(LogLevel.INFO, "----> Common ancestor revision is " + json.get("_rev"));
 
         // Update doc on SG:
         JSONObject copy = new JSONObject(json.toString());
         copy.put("species", "Cat");
         json = sendRequestToEndpoint(target, "PUT", doc1.getId(), "application/json", copy.toString().getBytes());
-        Log.e(TAG, "json -> " + json.toString());
-        Log.i(TAG, "----> Conflicting server revision is %s", json.get("rev"));
+        log(LogLevel.INFO, "json -> " + json.toString());
+        log(LogLevel.INFO, "----> Conflicting server revision is " + json.get("rev"));
 
         // Delete local doc:
         db.delete(doc1);
         assertNull(db.getDocument(doc1.getId()));
 
         // Start pull replicator:
-        Log.i(TAG, "-------- Starting pull replication to pick up conflict --------");
+        log(LogLevel.INFO, "-------- Starting pull replication to pick up conflict --------");
         config = makeConfig(false, true, false, target);
         run(config, 0, null);
 
@@ -525,11 +522,10 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         okhttp3.Request request = builder.build();
         Response response = client.newCall(request).execute();
         if (response.isSuccessful()) {
-            Log.i(TAG, "Send request succeeded; URL=<%s>, Method=<%s>, Status=%d", uri, method, response.code());
+            log(LogLevel.INFO, "Send request succeeded; URL=" + uri + " Method=" + method + " Status=" + response.code());
             return new JSONObject(response.body().string());
         } else {
-            // error
-            Log.e(TAG, "Failed to send request; URL=<%s>, Method=<%s>, Status=%d, Error=%s", uri, method, response.code(), response.message());
+            log(LogLevel.ERROR, "Failed to send request; URL=" + uri + " Method=" + method + " Status=" + response.code());
             return null;
         }
     }

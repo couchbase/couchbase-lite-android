@@ -110,8 +110,6 @@ public class LiveQueryTest extends BaseTest {
                 if (list.size() <= 0)
                     return;
 
-                Log.e(TAG, "%d matched. update query", list.size());
-
                 // remove current listener
                 query.removeChangeListener(token);
                 listener = null;

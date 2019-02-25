@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 public class LoadTest extends BaseTest {
 
     protected void logPerformanceStats(String name, long time) {
-        Log.e(TAG, "PerformanceStats: " + name + " -> " + time + " ms");
+        log(LogLevel.INFO, "PerformanceStats: " + name + " -> " + time + " ms");
     }
 
     MutableDocument createDocumentWithTag(String id, String tag) {
@@ -119,7 +119,6 @@ public class LoadTest extends BaseTest {
         SelectResult DOCID = SelectResult.expression(Meta.id);
         DataSource ds = DataSource.database(db);
         Query q = QueryBuilder.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
-        Log.v(TAG, "query - > %s", q.explain());
         ResultSet rs = q.execute();
         Result row;
         int n = 0;
@@ -273,7 +272,7 @@ public class LoadTest extends BaseTest {
             try {
                 db.save(doc);
             } catch (CouchbaseLiteException e) {
-                Log.e(TAG, "Failed to save: %s", e, doc.getId());
+                log(LogLevel.ERROR, "Failed to save: " + e);
             }
         }
 
@@ -317,8 +316,7 @@ public class LoadTest extends BaseTest {
         try {
             db.save(newDoc);
         } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
-            Log.e(TAG, "DB is not responding");
+            log(LogLevel.ERROR, "DB is not responding: " + e);
             return false;
         }
         return true;

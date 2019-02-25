@@ -109,8 +109,6 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
 
         // Obtain Sync-Gateway Session ID
         SessionAuthenticator auth = getSessionAuthenticatorFromSG();
-        Log.e(TAG, "auth -> " + auth);
-
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         config.setAuthenticator(auth);
@@ -129,7 +127,6 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
                 .build();
         Response response = client.newCall(request).execute();
         String respBody = response.body().string();
-        Log.e(TAG, "json string -> " + respBody);
         JSONObject json = new JSONObject(respBody);
         return new SessionAuthenticator(
                 json.getString("session_id"),

@@ -389,9 +389,6 @@ public class DictionaryTest extends BaseTest {
         doc.setValue("num2", num2);
         doc.setValue("num3", num3);
         doc = save(doc).toMutable();
-        Log.i(TAG, "num1 long -> " + doc.getLong("num1"));
-        Log.i(TAG, "num2 long -> " + doc.getLong("num2"));
-        Log.i(TAG, "num3 long -> " + doc.getLong("num3"));
         assertEquals(num1, doc.getLong("num1"));
         assertEquals(num2, doc.getLong("num2"));
         assertEquals(num3, doc.getLong("num3"));
@@ -406,8 +403,6 @@ public class DictionaryTest extends BaseTest {
         doc.setValue("num1", num1);
         doc.setValue("num2", num2);
         doc = save(doc).toMutable();
-        Log.i(TAG, "num1 long -> " + doc.getLong("num1"));
-        Log.i(TAG, "num2 long -> " + doc.getLong("num2"));
         assertEquals(num1, doc.getLong("num1"));
         assertEquals(num2, doc.getLong("num2"));
     }

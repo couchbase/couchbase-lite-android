@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite.internal.replicator;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
@@ -85,8 +86,7 @@ public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
-    private static final String TAG = Log.WEB_SOCKET;
-
+    private static final LogDomain TAG = LogDomain.NETWORK;
     // Posix errno values with Android.
     // from sysroot/usr/include/asm-generic/errno.h
     private final static int ECONNRESET = 104;    // java.net.SocketException

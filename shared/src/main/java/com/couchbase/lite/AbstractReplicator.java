@@ -15,13 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
-import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4DocumentEnded;
 import com.couchbase.litecore.C4Error;
@@ -79,7 +79,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         NativeLibraryLoader.load();
     }
 
-    protected static final String TAG = Log.SYNC;
+    protected static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
     /**
      * Activity level of a replicator.
@@ -336,12 +336,13 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      */
     public void start() {
         synchronized (lock) {
+            Log.i(DOMAIN, "Replicator is starting .....");
             if (c4repl != null) {
-                Log.i(TAG, "%s has already started", this);
+                Log.i(DOMAIN, "%s has already started", this);
                 return;
             }
 
-            Log.i(TAG, "%s: Starting", this);
+            Log.i(DOMAIN, "%s: Starting", this);
             retryCount = 0;
             _start();
         }
@@ -354,10 +355,15 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      */
     public void stop() {
         synchronized (lock) {
-            if (c4repl != null)
+            Log.i(DOMAIN, "%s: Replicator is stopping ...", this);
+            if (c4repl != null) {
                 c4repl.stop(); // this is async; status will change when repl actually stops
+            } else
+                Log.i(DOMAIN, "%s: Replicator has been stopped or offlined ...", this);
 
             if (c4ReplStatus.getActivityLevel() == kC4Offline) {
+                Log.i(DOMAIN, "%s: Replicator has been offlined; " +
+                        "make the replicator into the stopped state now.", this);
                 C4ReplicatorStatus c4replStatus = new C4ReplicatorStatus();
                 c4replStatus.setActivityLevel(kC4Stopped);
                 this.c4StatusChanged(c4replStatus);
@@ -365,7 +371,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
             if (reachabilityManager != null)
                 reachabilityManager.removeNetworkReachabilityListener(this);
-
         }
     }
 
@@ -494,7 +499,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     void networkReachable() {
         synchronized (lock) {
             if (c4repl == null) {
-                Log.i(TAG, "%s: Server may now be reachable; retrying...", this);
+                Log.i(DOMAIN, "%s: Server may now be reachable; retrying...", this);
                 retryCount = 0;
                 retry();
             }
@@ -503,7 +508,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
     @Override
     void networkUnreachable() {
-        Log.v(TAG, "%s: Server may NOT be reachable now.", this);
+        Log.v(DOMAIN, "%s: Server may NOT be reachable now.", this);
     }
 
     //---------------------------------------------
@@ -577,7 +582,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             try {
                 optionsFleece = enc.finish();
             } catch (LiteCoreException e) {
-                Log.e(TAG, "Failed to encode", e);
+                Log.e(DOMAIN, "Failed to encode", e);
             } finally {
                 enc.free();
             }
@@ -627,7 +632,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener = new C4ReplicatorListener() {
             @Override
             public void statusChanged(final C4Replicator repl, final C4ReplicatorStatus status, final Object context) {
-                Log.i(TAG, "C4ReplicatorListener.statusChanged() status -> " + status);
+                Log.i(DOMAIN, "C4ReplicatorListener.statusChanged() status -> " + status);
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
@@ -687,12 +692,12 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             C4Error error = docEnd.getC4Error();
             if (!pushing && docEnd.getErrorDomain() == LiteCoreDomain && docEnd.getErrorCode() == kC4ErrorConflict) {
                 // Conflict pulling a document -- the revision was added but app needs to resolve it:
-                Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
+                Log.i(DOMAIN, "%s: pulled conflicting version of '%s'", this, docID);
                 try {
                     this.config.getDatabase().resolveConflictInDocument(docID);
                     error = new C4Error();
                 } catch (CouchbaseLiteException ex) {
-                    Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
+                    Log.e(DOMAIN, "Failed to resolveConflict: docID -> %s", ex, docID);
                 }
             }
             ReplicatedDocument doc = new ReplicatedDocument(docID, docEnd.getFlags(), error,
@@ -709,7 +714,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             for (DocumentReplicationListenerToken token : docEndedListenerTokens)
                 token.notify(update);
         }
-        Log.i(TAG, "C4ReplicatorListener.documentEnded() " + update.toString());
+        Log.i(DOMAIN, "C4ReplicatorListener.documentEnded() " + update.toString());
     }
 
     private EnumSet<DocumentFlag> documentFlags(int flags){
@@ -733,7 +738,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         synchronized (lock) {
             if (c4repl != null || this.c4ReplStatus.getActivityLevel() != kC4Offline)
                 return;
-            Log.i(TAG, "%s: Retrying...", this);
+            Log.i(DOMAIN, "%s: Retrying...", this);
             _start();
         }
     }
@@ -746,7 +751,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     responseHeaders = FLValue.fromData(h).asDict();
             }
 
-            Log.i(TAG, "statusChanged() c4Status -> " + c4Status);
+            Log.i(DOMAIN, "statusChanged() c4Status -> " + c4Status);
             if (c4Status.getActivityLevel() == kC4Stopped) {
                 if (handleError(c4Status.getC4Error())) {
                     // Change c4Status to offline, so my state will reflect that, and proceed:
@@ -794,12 +799,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
         clearRepl();
 
-        // TODO: convert error????
-
         if (bTransient) {
             // On transient error, retry periodically, with exponential backoff:
             int delay = retryDelay(++retryCount);
-            Log.i(TAG, "%s: Transient error (%s); will retry in %d sec...", this, c4err, delay);
+            Log.i(DOMAIN, "%s: Transient error (%s); will retry in %d sec...", this, c4err, delay);
             handler.schedule(new Runnable() {
                 @Override
                 public void run() {
@@ -807,7 +810,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 }
             }, delay, TimeUnit.SECONDS);
         } else {
-            Log.i(TAG, "%s: Network error (%s); will retry when network changes...", this, c4err);
+            Log.i(DOMAIN, "%s: Network error (%s); will retry when network changes...", this, c4err);
         }
 
         // Also retry when the network changes:
@@ -836,7 +839,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 (int) status.getProgressUnitsTotal());
         this.status = new Status(level, progress, error);
 
-        Log.i(TAG, "%s is %s, progress %d/%d, error: %s",
+        Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
                 this,
                 kC4ReplicatorActivityLevelNames[status.getActivityLevel()],
                 status.getProgressUnitsCompleted(),

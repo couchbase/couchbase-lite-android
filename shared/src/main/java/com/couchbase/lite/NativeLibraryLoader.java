@@ -24,7 +24,7 @@ import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class NativeLibraryLoader {
-    private static final String TAG = Log.DATABASE;
+    private static final LogDomain DOMAIN = LogDomain.DATABASE;
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
@@ -35,9 +35,9 @@ final class NativeLibraryLoader {
     static void load() {
         if (!loaded.getAndSet(true)) {
             if (load(LITECORE_JNI_LIBRARY))
-                Log.v(TAG, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
+                Log.v(DOMAIN, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
             else
-                Log.e(TAG, "Cannot load native library");
+                Log.e(DOMAIN, "Cannot load native library");
             initMValue();
         }
     }

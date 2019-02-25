@@ -90,7 +90,6 @@ public final class ConsoleLogger implements Logger {
                 callbackLevel = custom.getLevel();
             }
         }
-
         C4Log.setCallbackLevel(callbackLevel.getValue());
     }
 

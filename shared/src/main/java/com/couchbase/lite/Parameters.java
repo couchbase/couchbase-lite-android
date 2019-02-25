@@ -19,7 +19,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.AllocSlice;
 import com.couchbase.litecore.fleece.Encoder;
@@ -32,12 +31,6 @@ import java.util.Map;
  * A Parameters object used for setting values to the query parameters defined in the query.
  */
 public final class Parameters {
-
-    //---------------------------------------------
-    // Constants
-    //---------------------------------------------
-
-    private final static String TAG = Log.QUERY;
 
     //---------------------------------------------
     // member variables

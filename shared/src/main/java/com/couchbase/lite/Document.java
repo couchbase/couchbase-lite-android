@@ -46,8 +46,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         NativeLibraryLoader.load();
     }
 
-    private static final String TAG = Log.DATABASE;
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------

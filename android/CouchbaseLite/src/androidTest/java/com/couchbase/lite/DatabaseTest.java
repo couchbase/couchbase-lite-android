@@ -133,12 +133,10 @@ public class DatabaseTest extends BaseTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        Log.i(TAG, "setUp");
     }
 
     @After
     public void tearDown() throws Exception {
-        Log.i(TAG, "tearDown");
         super.tearDown();
     }
 
@@ -1296,11 +1294,9 @@ public class DatabaseTest extends BaseTest {
         if (android.os.Build.VERSION.SDK_INT == android.os.Build.VERSION_CODES.JELLY_BEAN
                 && Build.FINGERPRINT.startsWith("generic")
                 && "armv7l".equals(System.getProperty("os.arch"))) {
-            Log.w(TAG, "testCopy() is skipped.");
             return;
         }
 
-        // TODO: crash with 2048
         final int NUM_DOCS = 10;
 
         for (int i = 0; i < NUM_DOCS; i++) {
@@ -1386,8 +1382,6 @@ public class DatabaseTest extends BaseTest {
         Index index4 = IndexBuilder.valueIndex(fNameItem2, lNameItem2);
         db.createIndex("index4", index4);
         assertEquals(4, db.getIndexes().size());
-
-        Log.i(TAG, "db.getIndexes() -> " + db.getIndexes());
     }
 
     @Test
@@ -1503,7 +1497,6 @@ public class DatabaseTest extends BaseTest {
                     try {
                         database2.save(doc);
                     } catch (CouchbaseLiteException e) {
-                        Log.e(TAG, "Failed in storing document " + e.getMessage(), e);
                         fail();
                     }
                 }

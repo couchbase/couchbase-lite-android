@@ -60,7 +60,7 @@ public final class Blob implements FLEncodable {
     // static constant variables
     //---------------------------------------------
 
-    static final String TAG = Log.DATABASE;
+    static final LogDomain DOMAIN = LogDomain.DATABASE;
 
     /**
      * The sub-document property that identifies it as a special type of object.
@@ -192,7 +192,7 @@ public final class Blob implements FLEncodable {
             this.content = (byte[]) data;
 
         if (this.digest == null && this.content == null)
-            Log.w(TAG, "Blob read from database has neither digest nor data.");
+            Log.w(DOMAIN, "Blob read from database has neither digest nor data.");
     }
 
     //---------------------------------------------
@@ -232,7 +232,7 @@ public final class Blob implements FLEncodable {
                         res.free();
                     }
                 } catch (LiteCoreException e) {
-                    Log.e(TAG, "Failed to obtain content from BlobStore. digest=" + digest, e);
+                    Log.e(DOMAIN, "Failed to obtain content from BlobStore. digest=" + digest, e);
                     throw new IllegalStateException("Failed to obtain content from BlobStore. digest=" + digest, e);
                 } finally {
                     key.free();
@@ -261,7 +261,7 @@ public final class Blob implements FLEncodable {
                         content = contentResult;  // cache for later re-use
                     }
                 } catch (IOException e) {
-                    Log.w(TAG, "I/O Error with the given stream.", e);
+                    Log.w(DOMAIN, "I/O Error with the given stream.", e);
                     throw new IllegalStateException(e);
                 } finally {
                     try {
@@ -471,7 +471,7 @@ public final class Blob implements FLEncodable {
     //---------------------------------------------
     private C4BlobStore getBlobStore() {
         if (database == null) {
-            Log.w(TAG, "database instance is null.");
+            Log.w(DOMAIN, "database instance is null.");
             return null;
         }
         try {
@@ -485,7 +485,7 @@ public final class Blob implements FLEncodable {
         try {
             return new C4BlobKey(digest);
         } catch (LiteCoreException e) {
-            Log.w(TAG, "Invalid digest: " + digest, e);
+            Log.w(DOMAIN, "Invalid digest: " + digest, e);
             return null;
         }
     }

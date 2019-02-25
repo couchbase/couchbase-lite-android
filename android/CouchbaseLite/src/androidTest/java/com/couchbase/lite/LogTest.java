@@ -38,16 +38,15 @@ public class LogTest extends BaseTest {
     @Test
     public void testCustomLoggingLevels() {
         LogTestLogger customLogger = new LogTestLogger();
-        Log.i("IGNORE", "IGNORE");
         Database.log.setCustom(customLogger);
 
         for(int i = 5; i >= 1; i--) {
             customLogger.getLines().clear();
             customLogger.setLevel(LogLevel.values()[i]);
-            Log.v(LogDomain.DATABASE.toString(), "TEST VERBOSE");
-            Log.i(LogDomain.DATABASE.toString(), "TEST INFO");
-            Log.w(LogDomain.DATABASE.toString(), "TEST WARNING");
-            Log.e(LogDomain.DATABASE.toString(), "TEST ERROR");
+            Log.v(LogDomain.DATABASE, "TEST VERBOSE");
+            Log.i(LogDomain.DATABASE, "TEST INFO");
+            Log.w(LogDomain.DATABASE, "TEST WARNING");
+            Log.e(LogDomain.DATABASE, "TEST ERROR");
             assertEquals(5 - i, customLogger.getLines().size());
         }
     }
@@ -55,21 +54,20 @@ public class LogTest extends BaseTest {
     @Test
     public void testEnableAndDisableCustomLogging() {
         LogTestLogger customLogger = new LogTestLogger();
-        Log.i("IGNORE", "IGNORE");
         Database.log.setCustom(customLogger);
 
         customLogger.setLevel(LogLevel.NONE);
-        Log.v(LogDomain.DATABASE.toString(), "TEST VERBOSE");
-        Log.i(LogDomain.DATABASE.toString(), "TEST INFO");
-        Log.w(LogDomain.DATABASE.toString(), "TEST WARNING");
-        Log.e(LogDomain.DATABASE.toString(), "TEST ERROR");
+        Log.v(LogDomain.DATABASE, "TEST VERBOSE");
+        Log.i(LogDomain.DATABASE, "TEST INFO");
+        Log.w(LogDomain.DATABASE, "TEST WARNING");
+        Log.e(LogDomain.DATABASE, "TEST ERROR");
         assertEquals(0, customLogger.getLines().size());
 
         customLogger.setLevel(LogLevel.VERBOSE);
-        Log.v(LogDomain.DATABASE.toString(), "TEST VERBOSE");
-        Log.i(LogDomain.DATABASE.toString(), "TEST INFO");
-        Log.w(LogDomain.DATABASE.toString(), "TEST WARNING");
-        Log.e(LogDomain.DATABASE.toString(), "TEST ERROR");
+        Log.v(LogDomain.DATABASE, "TEST VERBOSE");
+        Log.i(LogDomain.DATABASE, "TEST INFO");
+        Log.w(LogDomain.DATABASE, "TEST WARNING");
+        Log.e(LogDomain.DATABASE, "TEST ERROR");
         assertEquals(4, customLogger.getLines().size());
     }
     //endregion
@@ -98,10 +96,10 @@ public class LogTest extends BaseTest {
                 };
                 for (LogLevel level : levels) {
                     Database.log.getFile().setLevel(level);
-                    Log.v("DATABASE", "TEST VERBOSE");
-                    Log.i("DATABASE", "TEST INFO");
-                    Log.w("DATABASE", "TEST WARNING");
-                    Log.e("DATABASE", "TEST ERROR");
+                    Log.v(LogDomain.DATABASE, "TEST VERBOSE");
+                    Log.i(LogDomain.DATABASE, "TEST INFO");
+                    Log.w(LogDomain.DATABASE, "TEST WARNING");
+                    Log.e(LogDomain.DATABASE, "TEST ERROR");
                 }
 
                 try {
@@ -142,7 +140,7 @@ public class LogTest extends BaseTest {
         testWithConfiguration(LogLevel.INFO, config, new Runnable() {
             @Override
             public void run() {
-                Log.i("DATABASE", "TEST INFO");
+                Log.i(LogDomain.DATABASE, "TEST INFO");
 
                 File[] files = path.listFiles();
                 assertTrue(files != null);
@@ -182,7 +180,7 @@ public class LogTest extends BaseTest {
             @Override
             public void run() {
                 String uuidString = UUID.randomUUID().toString();
-                Log.i(LogDomain.DATABASE.toString(), uuidString);
+                Log.i(LogDomain.DATABASE, uuidString);
 
                 File[] files = path.listFiles(new FilenameFilter() {
                     @Override
@@ -226,7 +224,7 @@ public class LogTest extends BaseTest {
         testWithConfiguration(LogLevel.DEBUG, config, new Runnable() {
             @Override
             public void run() {
-                Log.i(LogDomain.DATABASE.toString(), "TEST MESSAGE");
+                Log.i(LogDomain.DATABASE, "TEST MESSAGE");
                 File[] files = path.listFiles();
                 assertTrue(files != null);
                 assertTrue(files.length > 0);
@@ -392,11 +390,11 @@ public class LogTest extends BaseTest {
                 String uuid = UUID.randomUUID().toString();
                 String message = "test message";
                 CouchbaseLiteException error = new CouchbaseLiteException(uuid);
-                Log.v(LogDomain.DATABASE.toString(), message, error);
-                Log.i(LogDomain.DATABASE.toString(), message, error);
-                Log.w(LogDomain.DATABASE.toString(), message, error);
-                Log.e(LogDomain.DATABASE.toString(), message, error);
-                Log.d(LogDomain.DATABASE.toString(), message, error);
+                Log.v(LogDomain.DATABASE, message, error);
+                Log.i(LogDomain.DATABASE, message, error);
+                Log.w(LogDomain.DATABASE, message, error);
+                Log.e(LogDomain.DATABASE, message, error);
+                Log.d(LogDomain.DATABASE, message, error);
                 try {
                     for (File log : path.listFiles()) {
                         byte[] b = new byte[(int) log.length()];
@@ -428,11 +426,11 @@ public class LogTest extends BaseTest {
                 String uuid2 = UUID.randomUUID().toString();
                 String message = "test message %s";
                 CouchbaseLiteException error = new CouchbaseLiteException(uuid1);
-                Log.v(LogDomain.DATABASE.toString(), message, error, uuid2);
-                Log.i(LogDomain.DATABASE.toString(), message, error, uuid2);
-                Log.w(LogDomain.DATABASE.toString(), message, error, uuid2);
-                Log.e(LogDomain.DATABASE.toString(), message, error, uuid2);
-                Log.d(LogDomain.DATABASE.toString(), message, error, uuid2);
+                Log.v(LogDomain.DATABASE, message, error, uuid2);
+                Log.i(LogDomain.DATABASE, message, error, uuid2);
+                Log.w(LogDomain.DATABASE, message, error, uuid2);
+                Log.e(LogDomain.DATABASE, message, error, uuid2);
+                Log.d(LogDomain.DATABASE, message, error, uuid2);
                 try {
                     for (File log : path.listFiles()) {
                         byte[] b = new byte[(int) log.length()];
@@ -570,11 +568,11 @@ public class LogTest extends BaseTest {
     }
 
     private static void writeAllLogs(String message) {
-        Log.v(LogDomain.DATABASE.toString(), message);
-        Log.i(LogDomain.DATABASE.toString(), message);
-        Log.w(LogDomain.DATABASE.toString(), message);
-        Log.e(LogDomain.DATABASE.toString(), message);
-        Log.d(LogDomain.DATABASE.toString(), message);
+        Log.v(LogDomain.DATABASE, message);
+        Log.i(LogDomain.DATABASE, message);
+        Log.w(LogDomain.DATABASE, message);
+        Log.e(LogDomain.DATABASE, message);
+        Log.d(LogDomain.DATABASE, message);
     }
     //endregion
 }

@@ -31,7 +31,7 @@ import com.couchbase.lite.internal.support.Log;
  */
 final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
 
-    private static final String TAG = Log.SYNC;
+    private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
     private boolean listening;
     private Context context;
@@ -52,7 +52,7 @@ final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager
         if (!listening) {
             IntentFilter filter = new IntentFilter();
             filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-            Log.v(TAG, "%s: startListening() registering %s with context %s", this, receiver, context);
+            Log.v(DOMAIN, "%s: startListening() registering %s with context %s", this, receiver, context);
             context.registerReceiver(receiver, filter);
             listening = true;
         }
@@ -66,10 +66,10 @@ final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager
     void stopListening() {
         if (listening) {
             try {
-                Log.v(TAG, "%s: stopListening() unregistering %s with context %s", this, receiver, context);
+                Log.v(DOMAIN, "%s: stopListening() unregistering %s with context %s", this, receiver, context);
                 context.unregisterReceiver(receiver);
             } catch (Exception e) {
-                Log.e(TAG, "%s: stopListening() exception unregistering %s with context %s", e, this, receiver, context);
+                Log.e(DOMAIN, "%s: stopListening() exception unregistering %s with context %s", e, this, receiver, context);
             }
             listening = false;
         }
@@ -88,7 +88,7 @@ final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager
             if (!action.equals(ConnectivityManager.CONNECTIVITY_ACTION) || listening == false)
                 return;
             boolean bOnline = isOnline(context);
-            Log.v(TAG, "NetworkReceiver.onReceive() Online -> " + bOnline);
+            Log.v(DOMAIN, "NetworkReceiver.onReceive() Online -> " + bOnline);
             if (bOnline)
                 notifyListenersNetworkReachable();
             else
