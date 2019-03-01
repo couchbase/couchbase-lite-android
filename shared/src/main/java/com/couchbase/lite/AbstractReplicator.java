@@ -751,7 +751,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     responseHeaders = FLValue.fromData(h).asDict();
             }
 
-            Log.i(DOMAIN, "statusChanged() c4Status -> " + c4Status);
+            Log.i(DOMAIN, "%s: status changed: " + c4Status, this);
             if (c4Status.getActivityLevel() == kC4Stopped) {
                 if (handleError(c4Status.getC4Error())) {
                     // Change c4Status to offline, so my state will reflect that, and proceed:
