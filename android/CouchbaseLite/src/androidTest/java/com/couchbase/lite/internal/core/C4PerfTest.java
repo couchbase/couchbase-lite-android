@@ -1,5 +1,5 @@
 //
-// URIUtilsTest.java
+// C4PerfTest.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -15,20 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.utils;
+package com.couchbase.lite.internal.core;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-
-
-public class URIUtilsTest {
-    @Test
-    public void testGetPort() throws URISyntaxException {
-        URI uri = new URI("ws://foo.couchbase.com/db");
-        assertEquals(-1, uri.getPort());
-    }
+/**
+ * Ported from c4PerfTest.cc
+ */
+public class C4PerfTest extends C4BaseTest {
+    // TODO: DB00x
 }

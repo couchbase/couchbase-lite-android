@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.utils;
+package com.couchbase.lite.internal.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +26,9 @@ public class Config extends java.util.Properties {
     public static final String TEST_PROPERTIES_FILE = "test.properties";
     public static final String EE_TEST_PROPERTIES_FILE = "ee_test.properties";
 
+    public Config() {
+    }
+
     public Config(InputStream in) throws IOException {
         try {
             load(new InputStreamReader(in, "UTF-8"));
@@ -33,10 +36,6 @@ public class Config extends java.util.Properties {
         finally {
             in.close();
         }
-    }
-
-    public boolean deleteDatabaseInTearDown() {
-        return Boolean.parseBoolean(getProperty("deleteDatabaseInTearDown"));
     }
 
     public boolean eeFeaturesTestsEnabled() {
@@ -47,14 +46,6 @@ public class Config extends java.util.Properties {
         return Boolean.parseBoolean(getProperty("replicatorTestsEnabled"));
     }
 
-    public boolean concurrentTestsEnabled() {
-        return Boolean.parseBoolean(getProperty("concurrentTestsEnabled"));
-    }
-
-    public boolean loadTestsEnabled() {
-        return Boolean.parseBoolean(getProperty("loadTestsEnabled"));
-    }
-
     public String remoteHost() {
         return getProperty("remoteHost");
     }
@@ -63,7 +54,7 @@ public class Config extends java.util.Properties {
         return Integer.parseInt(getProperty("remotePort"));
     }
 
-    public int secureRemotePort() {
-        return Integer.parseInt(getProperty("secureRemotePort"));
+    public String remoteDB() {
+        return getProperty("remoteDB");
     }
 }

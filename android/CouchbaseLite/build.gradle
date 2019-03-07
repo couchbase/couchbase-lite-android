@@ -36,11 +36,16 @@ buildscript {
     }
 }
 
+def baseDir = "${rootDir}/.."
+def libsDir = "${baseDir}/libs"
+def sharedDir = "${baseDir}/shared"
+def liteCore = "${libsDir}/couchbase-lite-core"
+
 /**
  * group and version
  */
 group = 'com.couchbase.lite'
-version = file("${rootDir}/../version.txt").text.trim()
+version = file("${baseDir}/version.txt").text.trim()
 
 // -PbuildNumber=123
 def buildNo = "0"
@@ -57,9 +62,6 @@ def getGitHash = { ->
     }
     return stdout.toString().trim()
 }
-
-def sharedSrc = "${rootDir}/../shared"
-def liteCore = "${rootDir}/../libs/couchbase-lite-core"
 
 /**
  * The android block is where you configure all your Android-specific
@@ -102,26 +104,26 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path "${sharedSrc}/CMakeLists.txt"
+            path "${sharedDir}/CMakeLists.txt"
         }
     }
     sourceSets {
         main {
             java.srcDirs = [
-                "src/ce/java",                            // CE android specific codes
-                "src/main/java",                          // android specific codes
-                "${sharedSrc}/src/main/java",             // shared java codes
+                "src/ce/java",                                // CE android specific codes
+                "src/main/java",                              // android specific codes
+                "${sharedDir}/src/main/java",                 // shared java codes
             ]
         }
         androidTest {
             java.srcDirs = [
-                "src/androidTest/java",                   // android specific codes
-                "${sharedSrc}/src/androidTest/java"       // lite-core java codes
+                "src/androidTest/java",                       // android specific codes
+                "${sharedDir}/src/androidTest/java"           // lite-core java codes
             ]
             assets.srcDirs = [
                 "src/main/assets",
                 "src/androidTest/assets",
-                "${liteCore}/C/tests/data"                // lite-core test assets
+                "${liteCore}/C/tests/data"                    // lite-core test assets
             ]
         }
     }

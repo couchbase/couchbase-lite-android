@@ -63,7 +63,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
 
     // Find `C4DocumentObserver.callback()` method id for callback
     {
-        jclass localClass = env->FindClass("com/couchbase/lite/C4DocumentObserver");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DocumentObserver");
         if (!localClass)
             return false;
 

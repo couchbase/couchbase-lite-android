@@ -22,7 +22,6 @@ import android.support.annotation.NonNull;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.support.Run;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
-import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -41,6 +40,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.SharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.utils.FileUtils;
 
 import org.json.JSONException;
 
