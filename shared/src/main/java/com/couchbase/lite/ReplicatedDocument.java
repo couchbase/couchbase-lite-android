@@ -20,12 +20,12 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.litecore.C4Error;
+import com.couchbase.lite.internal.core.C4Error;
 
 import java.util.EnumSet;
 
-import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevDeleted;
-import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevPurged;
+import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevDeleted;
+import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevPurged;
 
 public final class ReplicatedDocument {
 

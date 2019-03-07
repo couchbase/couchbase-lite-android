@@ -20,9 +20,9 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.litecore.fleece.MArray;
-import com.couchbase.litecore.fleece.MCollection;
-import com.couchbase.litecore.fleece.MValue;
+import com.couchbase.lite.internal.fleece.MArray;
+import com.couchbase.lite.internal.fleece.MCollection;
+import com.couchbase.lite.internal.fleece.MValue;
 
 import java.util.Date;
 import java.util.List;

@@ -21,17 +21,17 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Logger;
-import com.couchbase.litecore.C4Constants.C4LogDomain;
-import com.couchbase.litecore.C4Log;
+import com.couchbase.lite.internal.core.C4Constants.C4LogDomain;
+import com.couchbase.lite.internal.core.C4Log;
 
 import java.util.Locale;
 
-import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogDebug;
-import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogError;
-import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogInfo;
-import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogNone;
-import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogVerbose;
-import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogWarning;
+import static com.couchbase.lite.internal.core.C4Constants.C4LogLevel.kC4LogDebug;
+import static com.couchbase.lite.internal.core.C4Constants.C4LogLevel.kC4LogError;
+import static com.couchbase.lite.internal.core.C4Constants.C4LogLevel.kC4LogInfo;
+import static com.couchbase.lite.internal.core.C4Constants.C4LogLevel.kC4LogNone;
+import static com.couchbase.lite.internal.core.C4Constants.C4LogLevel.kC4LogVerbose;
+import static com.couchbase.lite.internal.core.C4Constants.C4LogLevel.kC4LogWarning;
 
 /**
  * Couchbase Lite Internal Log Utility.

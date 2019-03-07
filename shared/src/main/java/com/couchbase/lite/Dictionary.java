@@ -20,13 +20,13 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.litecore.fleece.Encoder;
-import com.couchbase.litecore.fleece.FLEncodable;
-import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.MCollection;
-import com.couchbase.litecore.fleece.MContext;
-import com.couchbase.litecore.fleece.MDict;
-import com.couchbase.litecore.fleece.MValue;
+import com.couchbase.lite.internal.fleece.Encoder;
+import com.couchbase.lite.internal.fleece.FLEncodable;
+import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.MCollection;
+import com.couchbase.lite.internal.fleece.MContext;
+import com.couchbase.lite.internal.fleece.MDict;
+import com.couchbase.lite.internal.fleece.MValue;
 
 import java.util.Date;
 import java.util.HashMap;

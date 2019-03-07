@@ -21,12 +21,12 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.litecore.C4QueryEnumerator;
-import com.couchbase.litecore.SharedKeys;
-import com.couchbase.litecore.fleece.FLArrayIterator;
-import com.couchbase.litecore.fleece.FLValue;
-import com.couchbase.litecore.fleece.MContext;
-import com.couchbase.litecore.fleece.MRoot;
+import com.couchbase.lite.internal.core.C4QueryEnumerator;
+import com.couchbase.lite.internal.core.SharedKeys;
+import com.couchbase.lite.internal.fleece.FLArrayIterator;
+import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.fleece.MContext;
+import com.couchbase.lite.internal.fleece.MRoot;
 
 import java.util.ArrayList;
 import java.util.Date;

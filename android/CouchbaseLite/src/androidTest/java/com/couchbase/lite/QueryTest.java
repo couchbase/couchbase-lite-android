@@ -22,7 +22,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.lite.LiteCoreException;
 
 import org.junit.Test;
 

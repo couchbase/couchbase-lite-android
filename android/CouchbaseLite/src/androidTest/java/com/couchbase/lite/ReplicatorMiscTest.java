@@ -1,7 +1,7 @@
 package com.couchbase.lite;
 
-import com.couchbase.litecore.C4Error;
-import com.couchbase.litecore.C4ReplicatorStatus;
+import com.couchbase.lite.internal.core.C4Error;
+import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 
 import org.junit.Test;
 

@@ -19,7 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.litecore.C4Log;
+import com.couchbase.lite.internal.core.C4Log;
 
 /**
  * Gets the log controller for Couchbase Lite, which stores the
