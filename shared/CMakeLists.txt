@@ -112,6 +112,11 @@ include_directories(
     ${LITE_CORE_ROOT}/vendor/civetweb/include
     ${LITE_CORE_ROOT}/vendor/mbedtls/include)
 
+if(BUILD_ENTERPRISE)
+    add_definitions(-DCOUCHBASE_ENTERPRISE      # Tells LiteCore it's an EE build
+                    -DSQLITE_HAS_CODEC)         # Enables SQLite encryption extension (SEE)
+endif()
+
 aux_source_directory(./src/main/cpp  JNI_SRC)
 if (NOT REST)
     list(REMOVE_ITEM JNI_SRC "./src/main/cpp/native_c4listener.cc")
