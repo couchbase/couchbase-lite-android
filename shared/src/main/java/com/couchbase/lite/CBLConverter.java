@@ -17,8 +17,8 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.litecore.fleece.MCollection;
-import com.couchbase.litecore.fleece.MValue;
+import com.couchbase.lite.internal.fleece.MCollection;
+import com.couchbase.lite.internal.fleece.MValue;
 
 import static com.couchbase.lite.internal.utils.ClassUtils.cast;
 

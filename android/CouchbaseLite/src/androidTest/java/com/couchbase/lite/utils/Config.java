@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+
 public class Config extends java.util.Properties {
     public static final String TEST_PROPERTIES_FILE = "test.properties";
     public static final String EE_TEST_PROPERTIES_FILE = "ee_test.properties";
@@ -28,7 +29,8 @@ public class Config extends java.util.Properties {
     public Config(InputStream in) throws IOException {
         try {
             load(new InputStreamReader(in, "UTF-8"));
-        } finally {
+        }
+        finally {
             in.close();
         }
     }

@@ -1,5 +1,5 @@
 //
-// FileUtils.java
+// Encodable.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -15,24 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.utils;
+package com.couchbase.lite.internal.fleece;
 
-import java.io.File;
-
-public final class FileUtils {
-    private FileUtils() {
-    }
-
-    public static boolean deleteRecursive(String fileOrDirectory) {
-        return deleteRecursive(new File(fileOrDirectory));
-    }
-
-    public static boolean deleteRecursive(File fileOrDirectory) {
-        if (fileOrDirectory.isDirectory()) {
-            for (File child : fileOrDirectory.listFiles()) {
-                deleteRecursive(child);
-            }
-        }
-        return fileOrDirectory.delete() || !fileOrDirectory.exists();
-    }
+public interface Encodable {
+    void encodeTo(Encoder enc);
 }

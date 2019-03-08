@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+
 public class ZipUtils {
     public static void unzip(InputStream in, File destination) throws IOException {
         byte[] buffer = new byte[1024];
@@ -34,7 +35,8 @@ public class ZipUtils {
             File newFile = new File(destination, fileName);
             if (ze.isDirectory()) {
                 newFile.mkdirs();
-            } else {
+            }
+            else {
                 new File(newFile.getParent()).mkdirs();
                 FileOutputStream fos = new FileOutputStream(newFile);
                 int len;

@@ -17,12 +17,13 @@
 //
 package com.couchbase.lite.internal.utils;
 
-import org.junit.Test;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
+
 
 public class URIUtilsTest {
     @Test

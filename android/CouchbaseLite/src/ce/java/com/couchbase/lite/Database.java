@@ -19,7 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.litecore.C4Constants;
+import com.couchbase.lite.internal.core.C4Constants;
 
 /**
  * A Couchbase Lite database.

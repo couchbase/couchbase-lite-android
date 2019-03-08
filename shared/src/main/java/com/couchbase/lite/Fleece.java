@@ -19,9 +19,9 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.litecore.fleece.FLConstants;
-import com.couchbase.litecore.fleece.MCollection;
-import com.couchbase.litecore.fleece.MValue;
+import com.couchbase.lite.internal.fleece.FLConstants;
+import com.couchbase.lite.internal.fleece.MCollection;
+import com.couchbase.lite.internal.fleece.MValue;
 
 import java.util.Date;
 import java.util.List;

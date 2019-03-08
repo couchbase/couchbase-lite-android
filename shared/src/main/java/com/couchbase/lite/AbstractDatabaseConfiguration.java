@@ -19,7 +19,7 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.couchbase.litecore.C4Base;
+import com.couchbase.lite.internal.core.C4Base;
 
 import java.io.File;
 

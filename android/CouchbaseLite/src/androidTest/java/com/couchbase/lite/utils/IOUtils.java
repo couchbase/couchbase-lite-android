@@ -37,7 +37,8 @@ public class IOUtils {
         FileInputStream fis = new FileInputStream(file);
         try {
             return toByteArray(fis);
-        } finally {
+        }
+        finally {
             fis.close();
         }
     }
@@ -57,7 +58,7 @@ public class IOUtils {
     }
 
     public static long copyLarge(InputStream input, OutputStream output)
-            throws IOException {
+        throws IOException {
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         long count = 0;
         int n = 0;
