@@ -21,13 +21,11 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+
 /**
  * Function provies array functions.
  */
 public final class ArrayFunction {
-    private ArrayFunction() {
-    }
-
     /**
      * Creates an ARRAY_CONTAINS(expr, value) function that checks whether the given array
      * expression contains the given value or not.
@@ -57,5 +55,8 @@ public final class ArrayFunction {
             throw new IllegalArgumentException("expression cannot be null.");
         }
         return new Expression.FunctionExpression("ARRAY_LENGTH()", Arrays.asList(expression));
+    }
+
+    private ArrayFunction() {
     }
 }

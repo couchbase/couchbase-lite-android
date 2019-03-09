@@ -18,9 +18,11 @@
 package com.couchbase.lite.internal.core;
 
 public interface C4ReplicatorListener {
-    void statusChanged(final C4Replicator replicator,
-                       final C4ReplicatorStatus status, final Object context);
+    void statusChanged(
+        final C4Replicator replicator,
+        final C4ReplicatorStatus status, final Object context);
 
-    void documentEnded(final C4Replicator replicator, final boolean pushing,
-                       final C4DocumentEnded[] documents, final Object context);
+    void documentEnded(
+        final C4Replicator replicator, final boolean pushing,
+        final C4DocumentEnded[] documents, final Object context);
 }

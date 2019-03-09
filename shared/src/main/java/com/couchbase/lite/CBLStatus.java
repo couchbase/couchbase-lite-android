@@ -17,53 +17,61 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.core.C4Base;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Error;
-import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.support.Log;
+
 
 class CBLStatus {
-    final static String[] kErrorDomains = {
-            null,
-            CBLError.Domain.CBLErrorDomain,     // LiteCoreDomain
-            "POSIXErrorDomain",                 // POSIXDomain
-            CBLError.Domain.SQLiteErrorDomain,  // SQLiteDomain
-            CBLError.Domain.FleeceErrorDomain,  // FleeceDomain
-            CBLError.Domain.CBLErrorDomain,     // Network error
-            CBLError.Domain.CBLErrorDomain};    // WebSocketDomain
+    private static final String[] kErrorDomains = {
+        null,
+        CBLError.Domain.CBLErrorDomain,     // LiteCoreDomain
+        "POSIXErrorDomain",                 // POSIXDomain
+        CBLError.Domain.SQLiteErrorDomain,  // SQLiteDomain
+        CBLError.Domain.FleeceErrorDomain,  // FleeceDomain
+        CBLError.Domain.CBLErrorDomain,     // Network error
+        CBLError.Domain.CBLErrorDomain};    // WebSocketDomain
 
-    static CouchbaseLiteException convertException(int domainCode, int statusCode, String message, LiteCoreException e) {
+    static CouchbaseLiteException convertException(LiteCoreException e) {
+        return convertException(e.domain, e.code, null, e);
+    }
+
+    static CouchbaseLiteException convertException(int domainCode, int statusCode, int internalInfo) {
+        if (domainCode != 0 && statusCode != 0) {
+            return convertException(new LiteCoreException(
+                domainCode,
+                statusCode,
+                C4Base.getMessage(domainCode, statusCode, internalInfo)));
+        }
+        else { return convertException(domainCode, statusCode, null, null); }
+    }
+
+    static CouchbaseLiteException convertError(C4Error c4err) {
+        return convertException(c4err.getDomain(), c4err.getCode(), c4err.getInternalInfo());
+    }
+
+    static CouchbaseLiteException convertException(
+        int domainCode,
+        int statusCode,
+        String message,
+        LiteCoreException e) {
         String domain = kErrorDomains[domainCode];
         int code = statusCode;
-        if (domainCode == C4Constants.C4ErrorDomain.NetworkDomain)
-            code += CBLError.Code.CBLErrorNetworkBase;
-        else if (domainCode == C4Constants.C4ErrorDomain.WebSocketDomain)
-            code += CBLError.Code.CBLErrorHTTPBase;
+        if (domainCode == C4Constants.C4ErrorDomain.NetworkDomain) { code += CBLError.Code.CBLErrorNetworkBase; }
+        else if (domainCode == C4Constants.C4ErrorDomain.WebSocketDomain) { code += CBLError.Code.CBLErrorHTTPBase; }
 
         if (domain == null) {
-            Log.w(LogDomain.DATABASE, "Unable to map C4Error(%d,%d) to an CouchbaseLiteException", domainCode, statusCode);
+            Log.w(
+                LogDomain.DATABASE,
+                "Unable to map C4Error(%d,%d) to an CouchbaseLiteException",
+                domainCode,
+                statusCode);
             domain = CBLError.Domain.CBLErrorDomain;
             code = CBLError.Code.CBLErrorUnexpectedError;
         }
 
         message = message != null ? message : (e != null ? e.getMessage() : null);
         return new CouchbaseLiteException(message, e, domain, code);
-    }
-
-    static CouchbaseLiteException convertException(LiteCoreException e) {
-        return convertException(e.domain, e.code, null, e);
-    }
-
-    static CouchbaseLiteException convertException(int domainCode, int statusCode, int _internalInfo) {
-        if (domainCode != 0 && statusCode != 0) {
-            String errMsg = C4Base.getMessage(domainCode, statusCode, _internalInfo);
-            return convertException(new LiteCoreException(domainCode, statusCode, errMsg));
-        } else
-            return convertException(domainCode, statusCode, null, null);
-    }
-
-    static CouchbaseLiteException convertError(C4Error c4err) {
-        return convertException(c4err.getDomain(), c4err.getCode(), c4err.getInternalInfo());
     }
 }

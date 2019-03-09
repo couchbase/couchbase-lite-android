@@ -20,6 +20,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Note: WhereRouter is an internal interface. This should not be public.
  */

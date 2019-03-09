@@ -22,10 +22,12 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public final class From extends AbstractQuery implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
+public final class From extends AbstractQuery
+    implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
@@ -105,7 +107,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
     @NonNull
     @Override
     public OrderBy orderBy(@NonNull Ordering... orderings) {
-        if(orderings == null) {
+        if (orderings == null) {
             throw new IllegalArgumentException("orderings cannot be null.");
         }
         return new OrderBy(this, Arrays.asList(orderings));
@@ -141,7 +143,7 @@ public final class From extends AbstractQuery implements JoinRouter, WhereRouter
     @NonNull
     @Override
     public Limit limit(@NonNull Expression limit, Expression offset) {
-        if(limit == null) {
+        if (limit == null) {
             throw new IllegalArgumentException("limit cannot be null.");
         }
         return new Limit(this, limit, offset);

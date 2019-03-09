@@ -19,8 +19,9 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
- * SelectResult represents a signle return value of the query statement.
+ * SelectResult represents a single return value of the query statement.
  */
 public class SelectResult {
 
@@ -31,7 +32,7 @@ public class SelectResult {
     /**
      * SelectResult.From is a SelectResult that you can specify the data source alias name.
      */
-    public final static class From extends SelectResult {
+    public static final class From extends SelectResult {
         private From(Expression expression) {
             super(expression);
         }
@@ -47,7 +48,7 @@ public class SelectResult {
             if (alias == null) {
                 throw new IllegalArgumentException("alias cannot be null.");
             }
-            this.expression = PropertyExpression.allFrom(alias);
+            this.selectExpression = PropertyExpression.allFrom(alias);
             this.alias = alias;
             return this;
         }
@@ -58,7 +59,7 @@ public class SelectResult {
      * alias name can be used as the key for accessing the result value from the query Result
      * object.
      */
-    public final static class As extends SelectResult {
+    public static final class As extends SelectResult {
         private As(Expression expression) {
             super(expression);
         }
@@ -78,23 +79,6 @@ public class SelectResult {
             return this;
         }
     }
-
-    //---------------------------------------------
-    // member variables
-    //---------------------------------------------
-    Expression expression = null;
-    String alias;
-
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-    private SelectResult(Expression expression) {
-        this.expression = expression;
-    }
-
-    //---------------------------------------------
-    // API - public static methods
-    //---------------------------------------------
 
     /**
      * Creates a SelectResult object with the given property name.
@@ -132,8 +116,23 @@ public class SelectResult {
      */
     @NonNull
     public static SelectResult.From all() {
-        PropertyExpression expr = PropertyExpression.allFrom(null);
-        return new SelectResult.From(expr);
+        return new SelectResult.From(PropertyExpression.allFrom(null));
+    }
+
+    //---------------------------------------------
+    // API - public static methods
+    //---------------------------------------------
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+    Expression selectExpression;
+    String alias;
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    private SelectResult(Expression expression) {
+        this.selectExpression = expression;
     }
 
     //---------------------------------------------
@@ -141,18 +140,19 @@ public class SelectResult {
     //---------------------------------------------
 
     String getColumnName() {
-        if (alias != null)
-            return alias;
+        if (alias != null) { return alias; }
 
-        if (expression instanceof PropertyExpression)
-            return ((PropertyExpression) expression).getColumnName();
-        if (expression instanceof MetaExpression)
-            return ((MetaExpression) expression).getColumnName();
+        if (selectExpression instanceof PropertyExpression) {
+            return ((PropertyExpression) selectExpression).getColumnName();
+        }
+        if (selectExpression instanceof MetaExpression) {
+            return ((MetaExpression) selectExpression).getColumnName();
+        }
 
         return null;
     }
 
     Object asJSON() {
-        return expression.asJSON();
+        return selectExpression.asJSON();
     }
 }

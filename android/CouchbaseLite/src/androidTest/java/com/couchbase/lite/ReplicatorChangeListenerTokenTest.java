@@ -55,6 +55,6 @@ public class ReplicatorChangeListenerTokenTest {
 
         // UI thread Executor
         token = new ReplicatorChangeListenerToken(null, listener);
-        assertEquals(DefaultExecutor.instance(), token.getExecutor());
+        assertEquals(DefaultExecutor.getInstance(), token.getExecutor());
     }
 }

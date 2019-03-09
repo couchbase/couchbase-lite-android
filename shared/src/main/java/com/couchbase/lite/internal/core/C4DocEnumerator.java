@@ -21,13 +21,31 @@ import com.couchbase.lite.LiteCoreException;
 
 
 public class C4DocEnumerator implements C4Constants {
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
-    private long handle = 0L; // hold pointer to C4DocEnumerator
+    static native void close(long e);
 
     //-------------------------------------------------------------------------
     // Constructor
+    //-------------------------------------------------------------------------
+
+    static native void free(long e);
+
+    static native long enumerateChanges(long db, long since, int flags)
+        throws LiteCoreException;
+
+    static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
+
+    static native boolean next(long e) throws LiteCoreException;
+
+    static native long getDocument(long e) throws LiteCoreException;
+
+    static native void getDocumentInfo(long e, Object[] outIDs, long[] outNumbers);
+    //-------------------------------------------------------------------------
+    // Member Variables
+    //-------------------------------------------------------------------------
+    private long handle; // hold pointer to C4DocEnumerator
+
+    //-------------------------------------------------------------------------
+    // native methods
     //-------------------------------------------------------------------------
 
     C4DocEnumerator(long db, long since, int flags) throws LiteCoreException {
@@ -57,35 +75,17 @@ public class C4DocEnumerator implements C4Constants {
     }
 
     public C4Document getDocument() throws LiteCoreException {
-        long doc = getDocument(handle);
+        final long doc = getDocument(handle);
         return doc != 0 ? new C4Document(doc) : null;
     }
 
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         free();
         super.finalize();
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    static native void close(long e);
-
-    static native void free(long e);
-
-    static native long enumerateChanges(long db, long since, int flags)
-            throws LiteCoreException;
-
-    static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
-
-    static native boolean next(long e) throws LiteCoreException;
-
-    static native long getDocument(long e) throws LiteCoreException;
-
-    static native void getDocumentInfo(long e, Object[] outIDs, long[] outNumbers);
 }

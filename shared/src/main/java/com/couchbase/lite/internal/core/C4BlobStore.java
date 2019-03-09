@@ -17,36 +17,16 @@
 //
 package com.couchbase.lite.internal.core;
 
-import com.couchbase.lite.LiteCoreException;
+import java.io.File;
 
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
-import java.io.File;
 
 /**
  * Blob Store API
  */
 public class C4BlobStore {
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
-    private long handle = 0L; // hold pointer to C4BlobStore
-    private boolean managedByDatabase = false;
-    //-------------------------------------------------------------------------
-    // Constructor
-    //-------------------------------------------------------------------------
-
-    C4BlobStore(long handle, boolean managedByDatabase) {
-        if (handle == 0)
-            throw new IllegalArgumentException("handle is 0");
-        this.handle = handle;
-        this.managedByDatabase = managedByDatabase;
-    }
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-
     /**
      * Opens a BlobStore in a directory. If the flags allow creating, the directory will be
      * created if necessary.
@@ -59,9 +39,51 @@ public class C4BlobStore {
      * @throws LiteCoreException for any error
      */
     public static C4BlobStore open(String dirPath, long flags) throws LiteCoreException {
-        if (!dirPath.endsWith(File.separator))
-            dirPath = dirPath + File.separator;
+        if (!dirPath.endsWith(File.separator)) { dirPath = dirPath + File.separator; }
         return new C4BlobStore(openStore(dirPath, flags), false);
+    }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+    static native long getBlobStore(long db) throws LiteCoreException;
+    //-------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------
+
+    static native long openStore(String dirPath, long flags) throws LiteCoreException;
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+
+    static native void deleteStore(long blobStore) throws LiteCoreException;
+
+    static native void freeStore(long blobStore);
+
+    static native long getSize(long blobStore, long blobKey);
+
+    static native long getContents(long blobStore, long blobKey) throws LiteCoreException;
+
+    static native String getFilePath(long blobStore, long blobKey) throws LiteCoreException;
+
+    static native long create(long blobStore, byte[] contents) throws LiteCoreException;
+
+    static native void delete(long blobStore, long blobKey) throws LiteCoreException;
+
+    static native long openReadStream(long blobStore, long blobKey) throws LiteCoreException;
+
+    static native long openWriteStream(long blobStore) throws LiteCoreException;
+    //-------------------------------------------------------------------------
+    // Member Variables
+    //-------------------------------------------------------------------------
+    private long handle; // hold pointer to C4BlobStore
+    private boolean managedByDatabase;
+
+    C4BlobStore(long handle, boolean managedByDatabase) {
+        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
+        this.handle = handle;
+        this.managedByDatabase = managedByDatabase;
     }
 
     /**
@@ -145,34 +167,10 @@ public class C4BlobStore {
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         free();
         super.finalize();
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-    static native long getBlobStore(long db) throws LiteCoreException;
-
-    static native long openStore(String dirPath, long flags) throws LiteCoreException;
-
-    static native void deleteStore(long blobStore) throws LiteCoreException;
-
-    static native void freeStore(long blobStore);
-
-    static native long getSize(long blobStore, long blobKey);
-
-    static native long getContents(long blobStore, long blobKey) throws LiteCoreException;
-
-    static native String getFilePath(long blobStore, long blobKey) throws LiteCoreException;
-
-    static native long create(long blobStore, byte[] contents) throws LiteCoreException;
-
-    static native void delete(long blobStore, long blobKey) throws LiteCoreException;
-
-    static native long openReadStream(long blobStore, long blobKey) throws LiteCoreException;
-
-    static native long openWriteStream(long blobStore) throws LiteCoreException;
 }

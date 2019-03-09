@@ -17,6 +17,9 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
+
 /**
  * The listener interface for receiving Document change events.
  */
@@ -27,5 +30,5 @@ public interface DocumentChangeListener extends ChangeListener<DocumentChange> {
      * @param change
      */
     @Override
-    void changed(DocumentChange change);
+    void changed(@NonNull DocumentChange change);
 }

@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+
 /**
  * Based class for Query Functions.
  */
@@ -567,8 +568,8 @@ abstract class AbstractFunction {
 
     /**
      * Creates a MILLIS_TO_STR(expr) function that will convert a numeric input representing
-     *  milliseconds since the Unix epoch into a full ISO8601 date and time
-     *  string in the device local time zone.
+     * milliseconds since the Unix epoch into a full ISO8601 date and time
+     * string in the device local time zone.
      *
      * @param expression The string expression.
      * @return The MILLIS_TO_STR(expr) function.
@@ -583,8 +584,8 @@ abstract class AbstractFunction {
 
     /**
      * Creates a MILLIS_TO_UTC(expr) function that will convert a numeric input representing
-     *  milliseconds since the Unix epoch into a full ISO8601 date and time
-     *  string in UTC time.
+     * milliseconds since the Unix epoch into a full ISO8601 date and time
+     * string in UTC time.
      *
      * @param expression The string expression.
      * @return The MILLIS_TO_UTC(expr) function.
@@ -602,11 +603,11 @@ abstract class AbstractFunction {
      * into the number of milliseconds since the unix epoch.
      * Valid date strings must start with a date in the form YYYY-MM-DD (time
      * only strings are not supported).
-     *
+     * <p>
      * Times can be of the form HH:MM, HH:MM:SS, or HH:MM:SS.FFF.  Leading zero is
      * not optional (i.e. 02 is ok, 2 is not).  Hours are in 24-hour format.  FFF
      * represents milliseconds, and *trailing* zeros are optional (i.e. 5 == 500).
-     *
+     * <p>
      * Time zones can be in one of three forms:
      * (+/-)HH:MM
      * (+/-)HHMM
@@ -628,11 +629,11 @@ abstract class AbstractFunction {
      * into a full ISO8601 UTC datetime string.
      * Valid date strings must start with a date in the form YYYY-MM-DD (time
      * only strings are not supported).
-     *
+     * <p>
      * Times can be of the form HH:MM, HH:MM:SS, or HH:MM:SS.FFF.  Leading zero is
      * not optional (i.e. 02 is ok, 2 is not).  Hours are in 24-hour format.  FFF
      * represents milliseconds, and *trailing* zeros are optional (i.e. 5 == 500).
-     *
+     * <p>
      * Time zones can be in one of three forms:
      * (+/-)HH:MM
      * (+/-)HHMM

@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import java.util.List;
 
+
 abstract class AbstractIndex implements Index {
     abstract IndexType type();
 

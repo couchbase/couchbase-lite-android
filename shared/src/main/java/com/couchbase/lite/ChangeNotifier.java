@@ -21,28 +21,28 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
-class ChangeNotifier<ChangeType> {
-    Object lock = new Object();
-    Set<ChangeListenerToken> listenerTokens;
+
+class ChangeNotifier<T> {
+    private final Object lock = new Object();
+    private final Set<ChangeListenerToken<T>> listenerTokens;
 
     ChangeNotifier() {
         listenerTokens = new HashSet<>();
     }
 
-    ChangeListenerToken addChangeListener(Executor executor, ChangeListener<ChangeType> listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("listener is null");
+    ChangeListenerToken addChangeListener(Executor executor, ChangeListener<T> listener) {
+        if (listener == null) { throw new IllegalArgumentException("listener is null"); }
 
         synchronized (lock) {
-            ChangeListenerToken token = new ChangeListenerToken(executor, listener);
+            final ChangeListenerToken<T> token = new ChangeListenerToken<>(executor, listener);
             listenerTokens.add(token);
             return token;
         }
     }
 
+    @SuppressWarnings("SuspiciousMethodCalls")
     int removeChangeListener(ListenerToken token) {
-        if (token == null)
-            throw new IllegalArgumentException("token is null");
+        if (token == null) { throw new IllegalArgumentException("token is null"); }
 
         synchronized (lock) {
             listenerTokens.remove(token);
@@ -50,12 +50,11 @@ class ChangeNotifier<ChangeType> {
         }
     }
 
-    void postChange(ChangeType change) {
-        if (change == null)
-            throw new IllegalArgumentException("change is null");
+    void postChange(T change) {
+        if (change == null) { throw new IllegalArgumentException("change is null"); }
 
         synchronized (lock) {
-            for (ChangeListenerToken token : listenerTokens) {
+            for (ChangeListenerToken<T> token : listenerTokens) {
                 token.postChange(change);
             }
         }

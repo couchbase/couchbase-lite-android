@@ -18,13 +18,11 @@
 package com.couchbase.lite.internal.utils;
 
 public final class ClassUtils {
-    private ClassUtils() {
+    private ClassUtils() { }
 
-    }
-
+    @SuppressWarnings("unchecked")
     public static <T> T cast(Object obj, Class<T> clazz) {
-        if (obj != null && !clazz.isInstance(obj))
-            return null;
+        if (obj != null && !clazz.isInstance(obj)) { return null; }
         return (T) obj;
     }
 }

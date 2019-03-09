@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.core.C4Constants;
 
+
 /**
  * A Couchbase Lite database.
  */

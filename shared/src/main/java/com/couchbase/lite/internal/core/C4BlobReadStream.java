@@ -25,23 +25,32 @@ import com.couchbase.lite.LiteCoreException;
  */
 public class C4BlobReadStream {
     //-------------------------------------------------------------------------
-    // Member Variables
+    // native methods
     //-------------------------------------------------------------------------
-    private long handle = 0L; // hold pointer to C4BlobReadStream
+    static native byte[] read(long readStream, long maxBytesToRead) throws LiteCoreException;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4BlobReadStream(long handle) {
-        if (handle == 0)
-            throw new IllegalArgumentException("handle is 0");
-        this.handle = handle;
-    }
+    static native long getLength(long readStream) throws LiteCoreException;
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
+
+    static native void seek(long readStream, long position) throws LiteCoreException;
+
+    static native void close(long readStream);
+    //-------------------------------------------------------------------------
+    // Member Variables
+    //-------------------------------------------------------------------------
+    private long handle; // hold pointer to C4BlobReadStream
+
+    C4BlobReadStream(long handle) {
+        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
+        this.handle = handle;
+    }
 
     /**
      * Reads from an open stream.
@@ -80,20 +89,10 @@ public class C4BlobReadStream {
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         close();
         super.finalize();
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-    static native byte[] read(long readStream, long maxBytesToRead) throws LiteCoreException;
-
-    static native long getLength(long readStream) throws LiteCoreException;
-
-    static native void seek(long readStream, long position) throws LiteCoreException;
-
-    static native void close(long readStream);
 }

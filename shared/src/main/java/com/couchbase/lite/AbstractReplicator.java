@@ -20,23 +20,11 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.StringUtils;
-import com.couchbase.lite.internal.core.C4Database;
-import com.couchbase.lite.internal.core.C4DocumentEnded;
-import com.couchbase.lite.internal.core.C4Error;
-import com.couchbase.lite.internal.core.C4ReplicationFilter;
-import com.couchbase.lite.internal.core.C4Replicator;
-import com.couchbase.lite.internal.core.C4ReplicatorListener;
-import com.couchbase.lite.internal.core.C4ReplicatorStatus;
-import com.couchbase.lite.internal.core.C4Socket;
-import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.fleece.FLDict;
-import com.couchbase.lite.internal.fleece.FLEncoder;
-import com.couchbase.lite.internal.fleece.FLValue;
-
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -49,21 +37,23 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionProgressLevel;
-import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorResetCheckpoint;
-import static com.couchbase.lite.internal.core.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.lite.internal.core.C4Constants.C4ErrorDomain.WebSocketDomain;
-import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevDeleted;
-import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevPurged;
-import static com.couchbase.lite.internal.core.C4Constants.LiteCoreError.kC4ErrorConflict;
-import static com.couchbase.lite.internal.core.C4ReplicatorMode.kC4Continuous;
-import static com.couchbase.lite.internal.core.C4ReplicatorMode.kC4Disabled;
-import static com.couchbase.lite.internal.core.C4ReplicatorMode.kC4OneShot;
-import static com.couchbase.lite.internal.core.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Connecting;
-import static com.couchbase.lite.internal.core.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Offline;
-import static com.couchbase.lite.internal.core.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
-import static com.couchbase.lite.internal.core.C4WebSocketCloseCode.kWebSocketCloseUserTransient;
-import static java.util.Collections.synchronizedSet;
+import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.core.C4Database;
+import com.couchbase.lite.internal.core.C4DocumentEnded;
+import com.couchbase.lite.internal.core.C4Error;
+import com.couchbase.lite.internal.core.C4ReplicationFilter;
+import com.couchbase.lite.internal.core.C4Replicator;
+import com.couchbase.lite.internal.core.C4ReplicatorListener;
+import com.couchbase.lite.internal.core.C4ReplicatorMode;
+import com.couchbase.lite.internal.core.C4ReplicatorStatus;
+import com.couchbase.lite.internal.core.C4Socket;
+import com.couchbase.lite.internal.core.C4WebSocketCloseCode;
+import com.couchbase.lite.internal.fleece.FLDict;
+import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.StringUtils;
+
 
 /**
  * A replicator for replicating document changes between a local database and a target database.
@@ -72,88 +62,27 @@ import static java.util.Collections.synchronizedSet;
  * be notified of progress.
  */
 public abstract class AbstractReplicator extends NetworkReachabilityListener {
-    //---------------------------------------------
-    // Load LiteCore library and its dependencies
-    //---------------------------------------------
-    static {
-        NativeLibraryLoader.load();
-    }
-
-    protected static final LogDomain DOMAIN = LogDomain.REPLICATOR;
-
-    /**
-     * Activity level of a replicator.
-     */
-    public enum ActivityLevel {
-        /**
-         * The replication is finished or hit a fatal error.
-         */
-        STOPPED(0),
-        /**
-         * The replicator is offline as the remote host is unreachable.
-         */
-        OFFLINE(1),
-        /**
-         * The replicator is connecting to the remote host.
-         */
-        CONNECTING(2),
-        /**
-         * The replication is inactive; either waiting for changes or offline as the remote host is
-         * unreachable.
-         */
-        IDLE(3),
-        /**
-         * The replication is actively transferring data.
-         */
-        BUSY(4);
-
-        private int value;
-
-        ActivityLevel(int value) {
-            this.value = value;
-        }
-
-        int getValue() {
-            return value;
-        }
-    }
-
-    /**
-     * An enum representing level of opt in on progress of replication
-     * OVERALL: No additional replication progress callback
-     * PER_DOCUMENT: >=1 Every document replication ended callback
-     * PER_ATTACHMENT: >=2 Every blob replication progress callback
-     */
-    enum ReplicatorProgressLevel {
-        OVERALL(0),
-        PER_DOCUMENT(1),
-        PER_ATTACHMENT(2);
-
-        private int value;
-
-        int getValue() {
-            return value;
-        }
-
-        ReplicatorProgressLevel(int value) {
-            this.value = value;
-        }
-    }
+    private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
+    private static final String[] kC4ReplicatorActivityLevelNames = {
+        "stopped", "offline", "connecting", "idle", "busy"
+    };
+    private static final int kMaxOneShotRetryCount = 2;
+    private static final int kMaxRetryDelay = 10 * 60; // 10min (600 sec)
 
     /**
      * Progress of a replicator. If `total` is zero, the progress is indeterminate; otherwise,
      * dividing the two will produce a fraction that can be used to draw a progress bar.
      */
-    public final static class Progress {
+    public static final class Progress {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
 
         // The number of completed changes processed.
-        private long completed;
+        private final long completed;
 
         // The total number of changes to be processed.
-        private long total;
+        private final long total;
 
         //---------------------------------------------
         // Constructors
@@ -186,9 +115,9 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         @Override
         public String toString() {
             return "Progress{" +
-                    "completed=" + completed +
-                    ", total=" + total +
-                    '}';
+                "completed=" + completed +
+                ", total=" + total +
+                '}';
         }
 
         Progress copy() {
@@ -199,7 +128,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     /**
      * Combined activity level and progress of a replicator.
      */
-    public final static class Status {
+    public static final class Status {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
@@ -251,10 +180,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         @Override
         public String toString() {
             return "Status{" +
-                    "activityLevel=" + activityLevel +
-                    ", progress=" + progress +
-                    ", error=" + error +
-                    '}';
+                "activityLevel=" + activityLevel +
+                ", progress=" + progress +
+                ", error=" + error +
+                '}';
         }
 
         Status copy() {
@@ -266,25 +195,93 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     // static initializer
     //---------------------------------------------
 
-    static {
-        //Register CBLWebSocket which is C4Socket implementation
-        //CBLWebSocket.register();
+    /**
+     * Activity level of a replicator.
+     */
+    public enum ActivityLevel {
+        /**
+         * The replication is finished or hit a fatal error.
+         */
+        STOPPED(0),
+        /**
+         * The replicator is offline as the remote host is unreachable.
+         */
+        OFFLINE(1),
+        /**
+         * The replicator is connecting to the remote host.
+         */
+        CONNECTING(2),
+        /**
+         * The replication is inactive; either waiting for changes or offline as the remote host is
+         * unreachable.
+         */
+        IDLE(3),
+        /**
+         * The replication is actively transferring data.
+         */
+        BUSY(4);
+
+        private final int value;
+
+        ActivityLevel(int value) {
+            this.value = value;
+        }
+
+        int getValue() {
+            return value;
+        }
     }
 
 
-    final static String[] kC4ReplicatorActivityLevelNames = {
-            "stopped", "offline", "connecting", "idle", "busy"
-    };
+    /**
+     * An enum representing level of opt in on progress of replication
+     * OVERALL: No additional replication progress callback
+     * PER_DOCUMENT: >=1 Every document replication ended callback
+     * PER_ATTACHMENT: >=2 Every blob replication progress callback
+     */
+    enum ReplicatorProgressLevel {
+        OVERALL(0),
+        PER_DOCUMENT(1),
+        PER_ATTACHMENT(2);
 
-    final static int kMaxOneShotRetryCount = 2;
-    final static int kMaxRetryDelay = 10 * 60; // 10min (600 sec)
+        private final int value;
+
+        ReplicatorProgressLevel(int value) {
+            this.value = value;
+        }
+
+        int getValue() {
+            return value;
+        }
+    }
+
+    private static int retryDelay(int retryCount) {
+        return Math.min(1 << Math.min(retryCount, 30), kMaxRetryDelay);
+    }
+
+    private static boolean isPush(ReplicatorConfiguration.ReplicatorType type) {
+        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
+            || type == ReplicatorConfiguration.ReplicatorType.PUSH;
+    }
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
 
-    private Object lock = new Object();
-    protected ReplicatorConfiguration config;
+    private static boolean isPull(ReplicatorConfiguration.ReplicatorType type) {
+        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
+            || type == ReplicatorConfiguration.ReplicatorType.PULL;
+    }
+
+    private static int mkmode(boolean active, boolean continuous) {
+        if (active && !continuous) { return C4ReplicatorMode.C4_ONE_SHOT; }
+        else if (active && continuous) { return C4ReplicatorMode.C4_CONTINUOUS; }
+        else { return C4ReplicatorMode.C4_DISABLED; }
+    }
+
+
+    private final Object lock = new Object();
+
     private Status status;
     private Set<ReplicatorChangeListenerToken> changeListenerTokens;
     private Set<DocumentReplicationListenerToken> docEndedListenerTokens;
@@ -296,15 +293,14 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
     private int retryCount;
     private CouchbaseLiteException lastError;
-    private String desc = null;
+    private String desc;
     private ScheduledExecutorService handler;
-    private NetworkReachabilityManager reachabilityManager = null;
-    private Map<String, Object> responseHeaders = null; // Do something with these (for auth)
-    private boolean resetCheckpoint = false; // Reset the replicator checkpoint.
+    private NetworkReachabilityManager reachabilityManager;
 
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
+    private Map<String, Object> responseHeaders; // Do something with these (for auth)
+    private boolean shouldResetCheckpoint; // Reset the replicator checkpoint.
+
+    ReplicatorConfiguration config;
 
     /**
      * Initializes a replicator with the given configuration.
@@ -312,12 +308,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      * @param config
      */
     public AbstractReplicator(@NonNull ReplicatorConfiguration config) {
-        if (config == null)
-            throw new IllegalArgumentException("config cannot be null.");
+        if (config == null) { throw new IllegalArgumentException("config cannot be null."); }
 
         this.config = config.readonlyCopy();
-        this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
-        this.docEndedListenerTokens = synchronizedSet(new HashSet<DocumentReplicationListenerToken>());
+        this.changeListenerTokens = Collections.synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
+        this.docEndedListenerTokens = Collections.synchronizedSet(new HashSet<DocumentReplicationListenerToken>());
         this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable target) {
@@ -325,10 +320,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
         });
     }
-
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
 
     /**
      * Starts the replicator. This method returns immediately; the replicator runs asynchronously
@@ -344,7 +335,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
             Log.i(DOMAIN, "%s: Starting", this);
             retryCount = 0;
-            _start();
+            internalStart();
         }
     }
 
@@ -358,19 +349,18 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             Log.i(DOMAIN, "%s: Replicator is stopping ...", this);
             if (c4repl != null) {
                 c4repl.stop(); // this is async; status will change when repl actually stops
-            } else
-                Log.i(DOMAIN, "%s: Replicator has been stopped or offlined ...", this);
+            }
+            else { Log.i(DOMAIN, "%s: Replicator has been stopped or offlined ...", this); }
 
-            if (c4ReplStatus.getActivityLevel() == kC4Offline) {
+            if (c4ReplStatus.getActivityLevel() == C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_OFFLINE) {
                 Log.i(DOMAIN, "%s: Replicator has been offlined; " +
-                        "make the replicator into the stopped state now.", this);
-                C4ReplicatorStatus c4replStatus = new C4ReplicatorStatus();
-                c4replStatus.setActivityLevel(kC4Stopped);
+                    "make the replicator into the stopped state now.", this);
+                final C4ReplicatorStatus c4replStatus = new C4ReplicatorStatus();
+                c4replStatus.setActivityLevel(C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_STOPPED);
                 this.c4StatusChanged(c4replStatus);
             }
 
-            if (reachabilityManager != null)
-                reachabilityManager.removeNetworkReachabilityListener(this);
+            if (reachabilityManager != null) { reachabilityManager.removeNetworkReachabilityListener(this); }
         }
     }
 
@@ -380,9 +370,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      * @return
      */
     @NonNull
-    public ReplicatorConfiguration getConfig() {
-        return config.readonlyCopy();
-    }
+    public ReplicatorConfiguration getConfig() { return config.readonlyCopy(); }
 
     /**
      * The replicator's current status: its activity level and progress. Observable.
@@ -390,14 +378,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      * @return
      */
     @NonNull
-    public Status getStatus() {
-        return status.copy();
-    }
+    public Status getStatus() { return status.copy(); }
 
     @NonNull
     public ListenerToken addChangeListener(@NonNull ReplicatorChangeListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("listener cannot be null.");
+        if (listener == null) { throw new IllegalArgumentException("listener cannot be null."); }
 
         return addChangeListener(null, listener);
     }
@@ -409,13 +394,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      */
     @NonNull
     public ListenerToken addChangeListener(Executor executor, @NonNull ReplicatorChangeListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("listener cannot be null.");
+        if (listener == null) { throw new IllegalArgumentException("listener cannot be null."); }
 
         synchronized (lock) {
-            if (listener == null)
-                throw new IllegalArgumentException();
-            ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
+            if (listener == null) { throw new IllegalArgumentException(); }
+            final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
             changeListenerTokens.add(token);
             return token;
         }
@@ -425,12 +408,13 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
      */
     public void removeChangeListener(@NonNull ListenerToken token) {
-        if (token == null)
-            throw new IllegalArgumentException("token cannot be null.");
+        if (token == null) { throw new IllegalArgumentException("token cannot be null."); }
 
         synchronized (lock) {
-            if (token == null || (!(token instanceof ReplicatorChangeListenerToken) && !(token instanceof DocumentReplicationListenerToken)))
+            if (!((token instanceof ReplicatorChangeListenerToken)
+                || (token instanceof DocumentReplicationListenerToken))) {
                 throw new IllegalArgumentException();
+            }
             changeListenerTokens.remove(token);
             docEndedListenerTokens.remove(token);
             if (docEndedListenerTokens.size() == 0) {
@@ -447,8 +431,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      */
     @NonNull
     public ListenerToken addDocumentReplicationListener(@NonNull DocumentReplicationListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("listener cannot be null.");
+        if (listener == null) { throw new IllegalArgumentException("listener cannot be null."); }
 
         return addDocumentReplicationListener(null, listener);
     }
@@ -459,13 +442,14 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      * @param listener
      */
     @NonNull
-    public ListenerToken addDocumentReplicationListener(Executor executor, @NonNull DocumentReplicationListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("listener cannot be null.");
+    public ListenerToken addDocumentReplicationListener(
+        Executor executor,
+        @NonNull DocumentReplicationListener listener) {
+        if (listener == null) { throw new IllegalArgumentException("listener cannot be null."); }
 
         synchronized (lock) {
             setProgressLevel(ReplicatorProgressLevel.PER_DOCUMENT);
-            DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
+            final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
             return token;
         }
@@ -478,19 +462,26 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      */
     public void resetCheckpoint() {
         synchronized (lock) {
-            if (c4ReplStatus != null && c4ReplStatus.getActivityLevel() != kC4Stopped)
-                throw new IllegalStateException("Replicator is not stopped. Resetting checkpoint is only allowed when the replicator is in the stopped state.");
-            resetCheckpoint = true;
+            if (c4ReplStatus != null && c4ReplStatus
+                .getActivityLevel() != C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_STOPPED) {
+                throw new IllegalStateException(
+                    "Replicator is not stopped. Resetting checkpoint is only allowed when the replicator is in the "
+                        + "stopped state.");
+            }
+            shouldResetCheckpoint = true;
         }
     }
 
     @NonNull
     @Override
     public String toString() {
-        if (desc == null)
-            desc = description();
+        if (desc == null) { desc = description(); }
         return desc;
     }
+
+    //---------------------------------------------
+    // Protected level access
+    //---------------------------------------------
 
     //---------------------------------------------
     // Implementation of NetworkReachabilityListener
@@ -511,34 +502,28 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         Log.v(DOMAIN, "%s: Server may NOT be reachable now.", this);
     }
 
-    //---------------------------------------------
-    // Protected level access
-    //---------------------------------------------
-
     // - (void) dealloc
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         clearRepl();
-        if (reachabilityManager != null) {
-            reachabilityManager.removeNetworkReachabilityListener(this);
-            reachabilityManager = null;
-        }
+        if (reachabilityManager != null) { reachabilityManager.removeNetworkReachabilityListener(this); }
         super.finalize();
     }
 
     abstract void initSocketFactory(Object socketFactoryContext);
 
-    abstract int framing();
-
-    abstract String schema();
-
     //---------------------------------------------
     // Private member methods (in class only)
     //---------------------------------------------
 
-    private void _start() {
+    abstract int framing();
+
+    abstract String schema();
+
+    private void internalStart() {
         // Source
-        C4Database db = config.getDatabase().getC4Database();
+        final C4Database db = config.getDatabase().getC4Database();
 
         // Target:
         String schema = null;
@@ -546,17 +531,17 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         int port = 0;
         String path = null;
 
-        URI remoteURI = config.getTargetURI();
+        final URI remoteUri = config.getTargetURI();
         String dbName = null;
         C4Database otherDB = null;
         // replicate against remote endpoint
-        if (remoteURI != null) {
-            schema = remoteURI.getScheme();
-            host = remoteURI.getHost();
+        if (remoteUri != null) {
+            schema = remoteUri.getScheme();
+            host = remoteUri.getHost();
             // NOTE: litecore use 0 for not set
-            port = remoteURI.getPort() <= 0 ? 0 : remoteURI.getPort();
-            path = StringUtils.stringByDeletingLastPathComponent(remoteURI.getPath());
-            dbName = StringUtils.lastPathComponent(remoteURI.getPath());
+            port = remoteUri.getPort() <= 0 ? 0 : remoteUri.getPort();
+            path = StringUtils.stringByDeletingLastPathComponent(remoteUri.getPath());
+            dbName = StringUtils.lastPathComponent(remoteUri.getPath());
         }
         // replicate against other database
         else {
@@ -564,54 +549,54 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         }
 
         // Encode the options:
-        Map<String, Object> options = config.effectiveOptions();
+        final Map<String, Object> options = config.effectiveOptions();
 
-        // Update resetCheckpoint flag if needed:
-        if (resetCheckpoint) {
-            options.put(kC4ReplicatorResetCheckpoint, true);
+        // Update shouldResetCheckpoint flag if needed:
+        if (shouldResetCheckpoint) {
+            options.put(ReplicatorConfiguration.kC4ReplicatorResetCheckpoint, true);
             // Clear the reset flag, it is a one-time thing
-            resetCheckpoint = false;
+            shouldResetCheckpoint = false;
         }
 
-        options.put(kC4ReplicatorOptionProgressLevel, progressLevel.value);
+        options.put(ReplicatorConfiguration.kC4ReplicatorOptionProgressLevel, progressLevel.value);
 
         byte[] optionsFleece = null;
         if (options.size() > 0) {
-            FLEncoder enc = new FLEncoder();
+            final FLEncoder enc = new FLEncoder();
             enc.write(options);
             try {
                 optionsFleece = enc.finish();
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 Log.e(DOMAIN, "Failed to encode", e);
-            } finally {
+            }
+            finally {
                 enc.free();
             }
         }
 
-        Object socketFactoryContext = this;
-
         // Figure out C4Socket Factory class based on target type:
         // Note: We should call this method something else:
-        initSocketFactory(socketFactoryContext);
+        initSocketFactory(this);
 
-        int framing = framing();
-        if (schema() != null)
-            schema = schema();
+        final int framing = framing();
+        if (schema() != null) { schema = schema(); }
 
         // This allow the socket callback to map from the socket factory context
         // and the replicator:
-        C4Socket.socketFactoryContext.put(socketFactoryContext, (Replicator) this);
+        C4Socket.socketFactoryContext.put(this, (Replicator) this);
 
         // Push / Pull / Continuous:
-        boolean push = isPush(config.getReplicatorType());
-        boolean pull = isPull(config.getReplicatorType());
-        boolean continuous = config.isContinuous();
+        final boolean push = isPush(config.getReplicatorType());
+        final boolean pull = isPull(config.getReplicatorType());
+        final boolean continuous = config.isContinuous();
 
         if (config.getPushFilter() != null) {
             c4ReplPushFilter = new C4ReplicationFilter() {
                 @Override
-                public boolean validationFunction(final String docID, final int flags, final long dict,
-                                                  final boolean isPush, final Object context) {
+                public boolean validationFunction(
+                    final String docID, final int flags, final long dict,
+                    final boolean isPush, final Object context) {
                     final AbstractReplicator replicator = (AbstractReplicator) context;
                     return replicator.validationFunction(docID, documentFlags(flags), dict, isPush);
                 }
@@ -621,8 +606,9 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         if (config.getPullFilter() != null) {
             c4ReplPullFilter = new C4ReplicationFilter() {
                 @Override
-                public boolean validationFunction(final String docID, final int flags, final long dict,
-                                                  final boolean isPush, final Object context) {
+                public boolean validationFunction(
+                    final String docID, final int flags, final long dict,
+                    final boolean isPush, final Object context) {
                     final AbstractReplicator replicator = (AbstractReplicator) context;
                     return replicator.validationFunction(docID, documentFlags(flags), dict, isPush);
                 }
@@ -645,9 +631,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             @Override
-            public void documentEnded(C4Replicator repl, final boolean pushing,
-                                      final C4DocumentEnded[] documents,
-                                      Object context) {
+            public void documentEnded(
+                C4Replicator repl, final boolean pushing,
+                final C4DocumentEnded[] documents,
+                Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
@@ -661,23 +648,31 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         };
 
         // Create a C4Replicator:
-        C4ReplicatorStatus status = null;
+        C4ReplicatorStatus status;
         try {
             synchronized (config.getDatabase().getLock()) {
                 c4repl = db.createReplicator(schema, host, port, path, dbName, otherDB,
-                        mkmode(push, continuous), mkmode(pull, continuous),
-                        optionsFleece,
-                        c4ReplListener,
-                        c4ReplPushFilter,
-                        c4ReplPullFilter,
-                        this,
-                        socketFactoryContext,
-                        framing);
+                    mkmode(push, continuous), mkmode(pull, continuous),
+                    optionsFleece,
+                    c4ReplListener,
+                    c4ReplPushFilter,
+                    c4ReplPullFilter,
+                    this,
+                    this,
+                    framing);
             }
             status = c4repl.getStatus();
             config.getDatabase().getActiveReplications().add((Replicator) this); // keeps me from being deallocated
-        } catch (LiteCoreException e) {
-            status = new C4ReplicatorStatus(kC4Stopped, 0, 0, 0, e.domain, e.code, 0);
+        }
+        catch (LiteCoreException e) {
+            status = new C4ReplicatorStatus(
+                C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_STOPPED,
+                0,
+                0,
+                0,
+                e.domain,
+                e.code,
+                0);
         }
         updateStateProperties(status);
 
@@ -686,96 +681,94 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     private void documentEnded(boolean pushing, C4DocumentEnded[] docEnds) {
-        List<ReplicatedDocument> docs = new ArrayList<ReplicatedDocument>();
+        final List<ReplicatedDocument> docs = new ArrayList<>();
         for (C4DocumentEnded docEnd : docEnds) {
-            String docID = docEnd.getDocID();
+            final String docID = docEnd.getDocID();
             C4Error error = docEnd.getC4Error();
-            if (!pushing && docEnd.getErrorDomain() == LiteCoreDomain && docEnd.getErrorCode() == kC4ErrorConflict) {
+            if (!pushing
+                && docEnd.getErrorDomain() == C4Constants.C4ErrorDomain.LiteCoreDomain
+                && docEnd.getErrorCode() == C4Constants.LiteCoreError.kC4ErrorConflict) {
                 // Conflict pulling a document -- the revision was added but app needs to resolve it:
                 Log.i(DOMAIN, "%s: pulled conflicting version of '%s'", this, docID);
                 try {
                     this.config.getDatabase().resolveConflictInDocument(docID);
                     error = new C4Error();
-                } catch (CouchbaseLiteException ex) {
+                }
+                catch (CouchbaseLiteException ex) {
                     Log.e(DOMAIN, "Failed to resolveConflict: docID -> %s", ex, docID);
                 }
             }
-            ReplicatedDocument doc = new ReplicatedDocument(docID, docEnd.getFlags(), error,
-                                                                docEnd.errorIsTransient());
+            final ReplicatedDocument doc
+                = new ReplicatedDocument(docID, docEnd.getFlags(), error, docEnd.errorIsTransient());
             docs.add(doc);
         }
-        DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
-        notifyDocumentEnded(update);
+        notifyDocumentEnded(new DocumentReplication((Replicator) this, pushing, docs));
     }
 
-    private void notifyDocumentEnded(DocumentReplication update)
-    {
-        synchronized (docEndedListenerTokens) {
-            for (DocumentReplicationListenerToken token : docEndedListenerTokens)
-                token.notify(update);
+    private void notifyDocumentEnded(DocumentReplication update) {
+        synchronized (lock) {
+            for (DocumentReplicationListenerToken token : docEndedListenerTokens) { token.notify(update); }
         }
         Log.i(DOMAIN, "C4ReplicatorListener.documentEnded() " + update.toString());
     }
 
-    private EnumSet<DocumentFlag> documentFlags(int flags){
-        EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
-        if ((flags & kRevDeleted) == kRevDeleted)
+    private EnumSet<DocumentFlag> documentFlags(int flags) {
+        final EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
+        if ((flags & C4Constants.C4RevisionFlags.kRevDeleted) == C4Constants.C4RevisionFlags.kRevDeleted) {
             documentFlags.add(DocumentFlag.DocumentFlagsDeleted);
-        if ((flags & kRevPurged) == kRevPurged)
+        }
+        if ((flags & C4Constants.C4RevisionFlags.kRevPurged) == C4Constants.C4RevisionFlags.kRevPurged) {
             documentFlags.add(DocumentFlag.DocumentFlagsAccessRemoved);
+        }
         return documentFlags;
     }
 
     private boolean validationFunction(String docID, EnumSet<DocumentFlag> flags, long dict, boolean isPush) {
-        Document document = new Document(config.getDatabase(), docID, new FLDict(dict));
-        if(isPush)
-            return config.getPushFilter().filtered(document, flags);
-        else
-            return config.getPullFilter().filtered(document, flags);
+        final Document document = new Document(config.getDatabase(), docID, new FLDict(dict));
+        if (isPush) { return config.getPushFilter().filtered(document, flags); }
+        else { return config.getPullFilter().filtered(document, flags); }
     }
 
     private void retry() {
         synchronized (lock) {
-            if (c4repl != null || this.c4ReplStatus.getActivityLevel() != kC4Offline)
-                return;
+            if (c4repl != null || this.c4ReplStatus
+                .getActivityLevel() != C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_OFFLINE) { return; }
             Log.i(DOMAIN, "%s: Retrying...", this);
-            _start();
+            internalStart();
         }
     }
 
     private void c4StatusChanged(C4ReplicatorStatus c4Status) {
         synchronized (lock) {
             if (responseHeaders == null && c4repl != null) {
-                byte[] h = c4repl.getResponseHeaders();
-                if (h != null)
-                    responseHeaders = FLValue.fromData(h).asDict();
+                final byte[] h = c4repl.getResponseHeaders();
+                if (h != null) { responseHeaders = FLValue.fromData(h).asDict(); }
             }
 
             Log.i(DOMAIN, "%s: status changed: " + c4Status, this);
-            if (c4Status.getActivityLevel() == kC4Stopped) {
+            if (c4Status.getActivityLevel() == C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_STOPPED) {
                 if (handleError(c4Status.getC4Error())) {
                     // Change c4Status to offline, so my state will reflect that, and proceed:
-                    c4Status.setActivityLevel(kC4Offline);
+                    c4Status.setActivityLevel(C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_OFFLINE);
                 }
-            } else if (c4Status.getActivityLevel() > kC4Connecting) {
+            }
+            else if (c4Status.getActivityLevel() > C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_CONNECTING) {
                 retryCount = 0;
-                if (reachabilityManager != null)
-                    reachabilityManager.removeNetworkReachabilityListener(this);
+                if (reachabilityManager != null) { reachabilityManager.removeNetworkReachabilityListener(this); }
             }
 
             // Update my properties:
             updateStateProperties(c4Status);
 
             // Post notification
-            synchronized (changeListenerTokens) {
+            synchronized (lock) {
                 // Replicator.getStatus() creates a copy of Status.
-                ReplicatorChange change = new ReplicatorChange((Replicator) this, this.getStatus());
-                for (ReplicatorChangeListenerToken token : changeListenerTokens)
-                    token.notify(change);
+                final ReplicatorChange change = new ReplicatorChange((Replicator) this, this.getStatus());
+                for (ReplicatorChangeListenerToken token : changeListenerTokens) { token.notify(change); }
             }
 
             // If Stopped:
-            if (c4Status.getActivityLevel() == kC4Stopped) {
+            if (c4Status.getActivityLevel() == C4ReplicatorStatus.C4ReplicatorActivityLevel.C4_STOPPED) {
                 // Stopped
                 this.clearRepl();
                 config.getDatabase().getActiveReplications().remove(this); // this is likely to dealloc me
@@ -787,30 +780,36 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private boolean handleError(C4Error c4err) {
         // If this is a transient error, or if I'm continuous and the error might go away with a change
         // in network (i.e. network down, hostname unknown), then go offline and retry later.
-        boolean bTransient = C4Replicator.mayBeTransient(c4err) ||
-                (c4err.getDomain() == WebSocketDomain &&
-                        c4err.getCode() == kWebSocketCloseUserTransient);
+        final boolean isTransient = C4Replicator.mayBeTransient(c4err) ||
+            ((c4err.getDomain() == C4Constants.C4ErrorDomain.WebSocketDomain) &&
+                (c4err.getCode() == C4WebSocketCloseCode.kWebSocketCloseUserTransient));
 
-        boolean bNetworkDependent = C4Replicator.mayBeNetworkDependent(c4err);
-        if (!bTransient && !(config.isContinuous() && bNetworkDependent))
+        final boolean isNetworkDependent = C4Replicator.mayBeNetworkDependent(c4err);
+        if (!isTransient && !(config.isContinuous() && isNetworkDependent)) {
             return false; // nope, this is permanent
-        if (!config.isContinuous() && retryCount >= kMaxOneShotRetryCount)
+        }
+        if (!config.isContinuous() && retryCount >= kMaxOneShotRetryCount) {
             return false; //too many retries
+        }
 
         clearRepl();
 
-        if (bTransient) {
-            // On transient error, retry periodically, with exponential backoff:
-            int delay = retryDelay(++retryCount);
-            Log.i(DOMAIN, "%s: Transient error (%s); will retry in %d sec...", this, c4err, delay);
-            handler.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    retry();
-                }
-            }, delay, TimeUnit.SECONDS);
-        } else {
+        if (!isTransient) {
             Log.i(DOMAIN, "%s: Network error (%s); will retry when network changes...", this, c4err);
+        }
+        else {
+            // On transient error, retry periodically, with exponential backoff:
+            final int delay = retryDelay(++retryCount);
+            Log.i(DOMAIN, "%s: Transient error (%s); will retry in %d sec...", this, c4err, delay);
+            handler.schedule(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        retry();
+                    }
+                },
+                delay,
+                TimeUnit.SECONDS);
         }
 
         // Also retry when the network changes:
@@ -818,48 +817,51 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         return true;
     }
 
-    private static int retryDelay(int retryCount) {
-        int delay = 1 << Math.min(retryCount, 30);
-        return Math.min(delay, kMaxRetryDelay);
-    }
-
     private void updateStateProperties(C4ReplicatorStatus status) {
         CouchbaseLiteException error = null;
-        if (status.getErrorCode() != 0)
-            error = CBLStatus.convertException(status.getErrorDomain(), status.getErrorCode(), status.getErrorInternalInfo());
-        if (error != this.lastError)
-            this.lastError = error;
+        if (status.getErrorCode() != 0) {
+            error = CBLStatus.convertException(
+                status.getErrorDomain(),
+                status.getErrorCode(),
+                status.getErrorInternalInfo());
+        }
+        if (error != this.lastError) { this.lastError = error; }
 
         c4ReplStatus = status.copy();
 
         // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
-        ActivityLevel level = ActivityLevel.values()[status.getActivityLevel()];
+        final ActivityLevel level = ActivityLevel.values()[status.getActivityLevel()];
 
-        Progress progress = new Progress((int) status.getProgressUnitsCompleted(),
-                (int) status.getProgressUnitsTotal());
-        this.status = new Status(level, progress, error);
+        this.status = new Status(
+            level,
+            new Progress((int) status.getProgressUnitsCompleted(), (int) status.getProgressUnitsTotal()),
+            error);
 
         Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
-                this,
-                kC4ReplicatorActivityLevelNames[status.getActivityLevel()],
-                status.getProgressUnitsCompleted(),
-                status.getProgressUnitsTotal(),
-                error);
+            this,
+            kC4ReplicatorActivityLevelNames[status.getActivityLevel()],
+            status.getProgressUnitsCompleted(),
+            status.getProgressUnitsTotal(),
+            error);
     }
 
     private void startReachabilityObserver() {
-        URI remoteURI = config.getTargetURI();
+        final URI remoteUri = config.getTargetURI();
 
         // target is databaes
-        if (remoteURI == null)
-            return;
+        if (remoteUri == null) { return; }
 
-        String hostname = remoteURI.getHost();
-        if ("localhost".equals(hostname) || "127.0.0.1".equals(hostname))
-            return;
+        try {
+            final InetAddress host = InetAddress.getByName(remoteUri.getHost());
+            if (host.isAnyLocalAddress() || host.isLoopbackAddress()) { return; }
+        }
+        // an unknown host is surely not local
+        catch (UnknownHostException ignore) { }
 
-        if (reachabilityManager == null)
+        if (reachabilityManager == null) {
             reachabilityManager = new AndroidNetworkReachabilityManager(config.getDatabase().getConfig().getContext());
+        }
+
         reachabilityManager.addNetworkReachabilityListener(this);
     }
 
@@ -874,34 +876,31 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     // - (NSString*) description
     private String description() {
         return String.format(Locale.ENGLISH, "%s[%s%s%s %s %s]",
-                Replicator.class.getSimpleName(),
-                isPull(config.getReplicatorType()) ? "<" : "",
-                config.isContinuous() ? "*" : "-",
-                isPush(config.getReplicatorType()) ? ">" : "",
-                config.getDatabase(),
-                config.getTarget());
-    }
-
-    private void setProgressLevel(ReplicatorProgressLevel level)
-    {
-        progressLevel = level;
+            Replicator.class.getSimpleName(),
+            isPull(config.getReplicatorType()) ? "<" : "",
+            config.isContinuous() ? "*" : "-",
+            isPush(config.getReplicatorType()) ? ">" : "",
+            config.getDatabase(),
+            config.getTarget());
     }
 
     //---------------------------------------------
     // Private static methods (in class only)
     //---------------------------------------------
 
-    private static boolean isPush(ReplicatorConfiguration.ReplicatorType type) {
-        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL || type == ReplicatorConfiguration.ReplicatorType.PUSH;
+    private void setProgressLevel(ReplicatorProgressLevel level) {
+        progressLevel = level;
     }
 
-    private static boolean isPull(ReplicatorConfiguration.ReplicatorType type) {
-        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL || type == ReplicatorConfiguration.ReplicatorType.PULL;
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
     }
 
-    private static int mkmode(boolean active, boolean continuous) {
-        if (active && !continuous) return kC4OneShot;
-        else if (active && continuous) return kC4Continuous;
-        else return kC4Disabled;
+    static {
+        //Register CBLWebSocket which is C4Socket implementation
+        //CBLWebSocket.register();
     }
 }

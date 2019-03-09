@@ -21,15 +21,16 @@ import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.core.C4Log;
 
+
 /**
  * Gets the log controller for Couchbase Lite, which stores the
  * three available logging methods:  console (logcat), file, and
  * custom.
  */
 public final class Log {
-    private final ConsoleLogger _consoleLogger = new ConsoleLogger();
-    private final FileLogger _fileLogger = new FileLogger();
-    private Logger _customLogger;
+    private final ConsoleLogger consoleLogger = new ConsoleLogger();
+    private final FileLogger fileLogger = new FileLogger();
+    private Logger customLogger;
 
     //---------------------------------------------
     // Constructor should not be exposed (singleton)
@@ -45,7 +46,7 @@ public final class Log {
      */
     @NonNull
     public ConsoleLogger getConsole() {
-        return _consoleLogger;
+        return consoleLogger;
     }
 
     /**
@@ -55,7 +56,7 @@ public final class Log {
      */
     @NonNull
     public FileLogger getFile() {
-        return _fileLogger;
+        return fileLogger;
     }
 
     /**
@@ -66,7 +67,7 @@ public final class Log {
      * the application, or null.
      */
     public Logger getCustom() {
-        return _customLogger;
+        return customLogger;
     }
 
     /**
@@ -76,6 +77,6 @@ public final class Log {
      *                     receive logging messages
      */
     public void setCustom(Logger customLogger) {
-        _customLogger = customLogger;
+        this.customLogger = customLogger;
     }
 }

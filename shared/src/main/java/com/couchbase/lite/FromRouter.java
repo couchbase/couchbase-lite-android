@@ -20,6 +20,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 interface FromRouter {
     @NonNull
     From from(@NonNull DataSource dataSource);

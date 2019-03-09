@@ -23,6 +23,7 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * An OrderBy represents an ORDER BY clause of the query for specifying properties or expressions
  * that the result rows should be sorted by.
@@ -33,7 +34,7 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
     // Member variables
     //---------------------------------------------
 
-    private List<Ordering> orderings;
+    private final List<Ordering> orderings;
 
     //---------------------------------------------
     // Constructor
@@ -85,9 +86,8 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
     //---------------------------------------------
 
     Object asJSON() {
-        List<Object> json = new ArrayList<>();
-        for (Ordering ordering : orderings)
-            json.add(ordering.asJSON());
+        final List<Object> json = new ArrayList<>();
+        for (Ordering ordering : orderings) { json.add(ordering.asJSON()); }
         return json;
     }
 }

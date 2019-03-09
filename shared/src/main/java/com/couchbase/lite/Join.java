@@ -22,6 +22,7 @@ import android.support.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * A Join component representing a single JOIN clause in the query statement.
  */
@@ -29,29 +30,19 @@ public class Join {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    static final String kCBLInnerJoin = "INNER";
+    private static final String kCBLInnerJoin = "INNER";
     static final String kCBLOuterJoin = "OUTER";
-    static final String kCBLLeftOuterJoin = "LEFT OUTER";
-    static final String kCBLCrossJoin = "CROSS";
-
-    //---------------------------------------------
-    // member variables
-    //---------------------------------------------
-    private String type;
-    private DataSource dataSource;
-
-    //---------------------------------------------
-    // Inner public Class
-    //---------------------------------------------
+    private static final String kCBLLeftOuterJoin = "LEFT OUTER";
+    private static final String kCBLCrossJoin = "CROSS";
 
     /**
      * On component used for specifying join conditions.
      */
-    public final static class On extends Join {
+    public static final class On extends Join {
         //---------------------------------------------
         // Member variables
         //---------------------------------------------
-        private Expression on;
+        private Expression onExpression;
 
         //---------------------------------------------
         // Constructors
@@ -75,7 +66,7 @@ public class Join {
             if (expression == null) {
                 throw new IllegalArgumentException("expression cannot be null.");
             }
-            this.on = expression;
+            this.onExpression = expression;
             return this;
         }
 
@@ -85,26 +76,13 @@ public class Join {
 
         @Override
         Object asJSON() {
-            Map<String, Object> json = new HashMap<>();
+            final Map<String, Object> json = new HashMap<>();
             json.put("JOIN", super.type);
-            json.put("ON", on.asJSON());
+            json.put("ON", onExpression.asJSON());
             json.putAll(super.dataSource.asJSON());
             return json;
         }
     }
-
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-
-    private Join(String type, DataSource dataSource) {
-        this.type = type;
-        this.dataSource = dataSource;
-    }
-
-    //---------------------------------------------
-    // API - public static methods
-    //---------------------------------------------
 
     /**
      * Create a JOIN (same as INNER JOIN) component with the given data source.
@@ -121,6 +99,10 @@ public class Join {
         return innerJoin(datasource);
     }
 
+    //---------------------------------------------
+    // Inner public Class
+    //---------------------------------------------
+
     /**
      * Create a LEFT JOIN (same as LEFT OUTER JOIN) component with the given data source.
      * Use the returned On component to specify join conditions.
@@ -136,6 +118,10 @@ public class Join {
         return new On(kCBLLeftOuterJoin, datasource);
     }
 
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+
     /**
      * Create a LEFT OUTER JOIN component with the given data source.
      * Use the returned On component to specify join conditions.
@@ -150,6 +136,10 @@ public class Join {
         }
         return new On(kCBLLeftOuterJoin, datasource);
     }
+
+    //---------------------------------------------
+    // API - public static methods
+    //---------------------------------------------
 
     /**
      * Create an INNER JOIN component with the given data source.
@@ -180,13 +170,23 @@ public class Join {
         }
         return new Join(kCBLCrossJoin, datasource);
     }
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+    private final String type;
+    private final DataSource dataSource;
+
+    private Join(String type, DataSource dataSource) {
+        this.type = type;
+        this.dataSource = dataSource;
+    }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
     Object asJSON() {
-        Map<String, Object> json = new HashMap<>();
+        final Map<String, Object> json = new HashMap<>();
         json.put("JOIN", type);
         json.putAll(dataSource.asJSON());
         return json;

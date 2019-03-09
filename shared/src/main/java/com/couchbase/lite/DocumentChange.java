@@ -20,6 +20,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Provides details about a Document change.
  */
@@ -53,8 +54,8 @@ public final class DocumentChange {
     @Override
     public String toString() {
         return "DocumentChange{" +
-                "database='" + database.getName() + '\'' +
-                "documentID='" + documentID + '\'' +
-                '}';
+            "database='" + database.getName() + '\'' +
+            "documentID='" + documentID + '\'' +
+            '}';
     }
 }

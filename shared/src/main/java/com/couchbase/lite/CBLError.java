@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+@SuppressWarnings("ConstantName")
 interface CBLError {
     // Error Domain
     interface Domain {

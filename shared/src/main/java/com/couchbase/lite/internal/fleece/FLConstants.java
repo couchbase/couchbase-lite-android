@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+@SuppressWarnings("ConstantName")
 public class FLConstants {
     // Types of Fleece values. Basically JSON, with the addition of Data (raw blob).
     public interface FLValueType {

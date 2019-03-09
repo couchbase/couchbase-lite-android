@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 /**
  * Select represents the SELECT clause of the query for specifying the returning properties in each
  * query result row.
@@ -32,8 +33,8 @@ public final class Select extends AbstractQuery implements FromRouter {
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
-    private boolean distinct;                 // DISTINCT
-    private List<SelectResult> selectResults; // result-columns
+    private final boolean distinct;                 // DISTINCT
+    private final List<SelectResult> selectResults; // result-columns
 
     //---------------------------------------------
     // Constructor
@@ -81,9 +82,8 @@ public final class Select extends AbstractQuery implements FromRouter {
     }
 
     Object asJSON() {
-        List<Object> json = new ArrayList<Object>();
-        for (SelectResult sr : selectResults)
-            json.add(sr.asJSON());
+        final List<Object> json = new ArrayList<>();
+        for (SelectResult sr : selectResults) { json.add(sr.asJSON()); }
         return json;
     }
 }

@@ -21,6 +21,6 @@ package com.couchbase.lite.internal.core;
  * Flags indicating which network API(s) to serve.
  */
 public interface C4ListenerAPIs {
-    int kC4RESTAPI = 0x01; ///< CouchDB-like REST API
-    int kC4SyncAPI = 0x02; ///< Replication server
+    int C4_REST_API = 0x01; ///< CouchDB-like REST API
+    int C4_SYNC_API = 0x02; ///< Replication server
 }

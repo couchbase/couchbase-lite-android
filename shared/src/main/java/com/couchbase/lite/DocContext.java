@@ -17,34 +17,36 @@
 //
 package com.couchbase.lite;
 
+import java.nio.charset.StandardCharsets;
+
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.MContext;
+
 
 /**
  * This DocContext implementation is simplified version of lite-core DocContext implementation
  * by eliminating unused variables and methods
  */
 class DocContext extends MContext {
-    private Database _db;
-    private C4Document _doc;
+    private final Database db;
+    private final C4Document doc;
 
     DocContext(Database db, C4Document doc) {
-        super(new AllocSlice("{}".getBytes()));
-        _db = db;
-        _doc = doc;
-        if (_doc != null)
-            _doc.retain();
+        super(new AllocSlice("{}".getBytes(StandardCharsets.UTF_8)));
+        this.db = db;
+        this.doc = doc;
+        if (this.doc != null) { this.doc.retain(); }
     }
 
     Database getDatabase() {
-        return _db;
+        return db;
     }
 
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        if (_doc != null)
-            _doc.release();
+        if (doc != null) { doc.release(); }
         super.finalize();
     }
 }

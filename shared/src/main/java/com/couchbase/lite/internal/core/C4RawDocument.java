@@ -19,18 +19,23 @@ package com.couchbase.lite.internal.core;
 
 import com.couchbase.lite.LiteCoreException;
 
+
 public class C4RawDocument {
+    static native String key(long rawDoc);
+
+    static native String meta(long rawDoc);
+
+    static native byte[] body(long rawDoc);
     //-------------------------------------------------------------------------
     // Member Variables
     //-------------------------------------------------------------------------
-    private long handle = 0L; // hold pointer to C4Database
+    private long handle; // hold pointer to C4Database
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
     C4RawDocument(long handle) {
-        if (handle == 0)
-            throw new IllegalArgumentException("handle is 0");
+        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
         this.handle = handle;
     }
 
@@ -44,6 +49,10 @@ public class C4RawDocument {
     public String meta() {
         return meta(handle);
     }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
 
     public byte[] body() {
         return body(handle);
@@ -59,19 +68,10 @@ public class C4RawDocument {
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         free();
         super.finalize();
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    static native String key(long rawDoc);
-
-    static native String meta(long rawDoc);
-
-    static native byte[] body(long rawDoc);
 }

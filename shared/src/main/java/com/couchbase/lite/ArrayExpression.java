@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Array expression
  */
@@ -27,10 +28,6 @@ public final class ArrayExpression {
         ANY,
         ANY_AND_EVERY,
         EVERY
-    }
-
-    private ArrayExpression() {
-
     }
 
     /**
@@ -105,4 +102,6 @@ public final class ArrayExpression {
         }
         return new VariableExpression(name);
     }
+
+    private ArrayExpression() { }
 }

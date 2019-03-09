@@ -19,27 +19,21 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Meta is a factory class for creating the expressions that refer to
  * the metadata properties of the document.
  */
+@SuppressWarnings("ConstantName")
 public class Meta {
-    //---------------------------------------------
-    // Constructor
-    //---------------------------------------------
-    private Meta() {
-
-    }
-    //---------------------------------------------
-    // API - public static variables
-    //---------------------------------------------
-
     /**
      * A metadata expression referring to the ID of the document.
      */
     @NonNull
     public static final MetaExpression id = new MetaExpression("_id", "id", null);
-
+    //---------------------------------------------
+    // API - public static variables
+    //---------------------------------------------
     /**
      * A metadata expression refering to the sequence number of the document.
      * The sequence number indicates how recently the document has been changed. If one document's
@@ -47,16 +41,19 @@ public class Meta {
      */
     @NonNull
     public static final MetaExpression sequence = new MetaExpression("_sequence", "sequence", null);
-
     /**
      * A metadata expression refering to the deleted boolean flag of the document.
      */
     @NonNull
     public static final MetaExpression deleted = new MetaExpression("_deleted", "deleted", null);
-
     /**
      * A metadata expression refering to the expiration date of the document.
      */
     @NonNull
     public static final MetaExpression expiration = new MetaExpression("_expiration", "expiration", null);
+
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+    private Meta() { }
 }

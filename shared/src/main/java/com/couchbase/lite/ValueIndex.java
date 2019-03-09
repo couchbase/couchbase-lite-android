@@ -21,11 +21,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 /**
  * Value (standard query) index
  */
 public final class ValueIndex extends AbstractIndex {
-    private List<ValueIndexItem> indexItems;
+    private final List<ValueIndexItem> indexItems;
 
     ValueIndex(ValueIndexItem... indexItems) {
         this.indexItems = Arrays.asList(indexItems);
@@ -48,10 +49,8 @@ public final class ValueIndex extends AbstractIndex {
 
     @Override
     List<Object> items() {
-        List<Object> items = new ArrayList<Object>();
-        for (ValueIndexItem item : indexItems)
-
-            items.add(item.expression.asJSON());
+        final List<Object> items = new ArrayList<>();
+        for (ValueIndexItem item : indexItems) { items.add(item.viExpression.asJSON()); }
         return items;
     }
 }

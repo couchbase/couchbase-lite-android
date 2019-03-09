@@ -27,5 +27,4 @@ public class C4Base {
     public static native String getMessage(int domain, int code, int internalInfo);
 
     public static native void setTempDir(String tempDir);
-
 }

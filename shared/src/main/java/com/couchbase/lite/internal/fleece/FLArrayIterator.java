@@ -18,62 +18,6 @@
 package com.couchbase.lite.internal.fleece;
 
 public class FLArrayIterator {
-    private long handle = 0L; // hold pointer to FLArrayIterator
-    private boolean managed = false;
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-    public FLArrayIterator() {
-        this.managed = false;
-        this.handle = init();
-    }
-
-    public FLArrayIterator(long handle) {
-        this.managed = true;
-        this.handle = handle;
-    }
-
-    public void begin(FLArray array) {
-        begin(array.getHandle(), handle);
-    }
-
-    public FLValue getValue() {
-        long hValue = getValue(handle);
-        return hValue != 0L ? new FLValue(hValue) : null;
-    }
-
-    public FLValue getValueAt(int index) {
-        long hValue = getValueAt(handle, index);
-        return hValue != 0L ? new FLValue(hValue) : null;
-    }
-
-    public boolean next() {
-        return next(handle);
-    }
-
-    public void free() {
-        if (handle != 0L && !managed) {
-            free(handle);
-            handle = 0L;
-        }
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
-    }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    // TODO: init() and begin() could be combined.
-
     /**
      * Create FLArrayIterator instance
      *
@@ -117,4 +61,62 @@ public class FLArrayIterator {
      * @param itr (FLArrayIterator *)
      */
     static native void free(long itr);
+
+    private long handle; // hold pointer to FLArrayIterator
+
+    private final boolean managed;
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+    public FLArrayIterator() {
+        this.managed = false;
+        this.handle = init();
+    }
+
+    public FLArrayIterator(long handle) {
+        this.managed = true;
+        this.handle = handle;
+    }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
+    // TODO: init() and begin() could be combined.
+
+    public void begin(FLArray array) {
+        begin(array.getHandle(), handle);
+    }
+
+    public FLValue getValue() {
+        final long hValue = getValue(handle);
+        return hValue != 0L ? new FLValue(hValue) : null;
+    }
+
+    public FLValue getValueAt(int index) {
+        final long hValue = getValueAt(handle, index);
+        return hValue != 0L ? new FLValue(hValue) : null;
+    }
+
+    public boolean next() {
+        return next(handle);
+    }
+
+    public void free() {
+        if (handle != 0L && !managed) {
+            free(handle);
+            handle = 0L;
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
 }

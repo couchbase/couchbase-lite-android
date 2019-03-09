@@ -19,31 +19,31 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import java.io.File;
+
 import com.couchbase.lite.internal.core.C4Base;
 
-import java.io.File;
 
 abstract class AbstractDatabaseConfiguration {
     private static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
 
-    private static String TEMP_DIR = null;
+    private static String tempDir;
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
 
-    private boolean readonly = false;
-    private Context context = null;
-    private String directory = null;
-    private boolean customDir = false;
+    private boolean readonly;
+    private Context context;
+    private String directory;
+    private boolean customDir;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     protected AbstractDatabaseConfiguration(@NonNull Context context) {
-        if (context == null)
-            throw new IllegalArgumentException("context cannot be null.");
+        if (context == null) { throw new IllegalArgumentException("context cannot be null."); }
         this.readonly = false;
         this.context = context;
         this.directory = context.getFilesDir().getAbsolutePath();
@@ -51,8 +51,7 @@ abstract class AbstractDatabaseConfiguration {
     }
 
     protected AbstractDatabaseConfiguration(@NonNull AbstractDatabaseConfiguration config) {
-        if (config == null)
-            throw new IllegalArgumentException("config cannot be null.");
+        if (config == null) { throw new IllegalArgumentException("config cannot be null."); }
         this.readonly = false;
         this.context = config.context;
         this.directory = config.directory;
@@ -78,10 +77,8 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
 
     protected AbstractDatabaseConfiguration setDirectory(@NonNull String directory) {
-        if (directory == null)
-            throw new IllegalArgumentException("directory cannot be null.");
-        if (readonly)
-            throw new IllegalStateException("DatabaseConfiguration is readonly mode.");
+        if (directory == null) { throw new IllegalArgumentException("directory cannot be null."); }
+        if (readonly) { throw new IllegalStateException("DatabaseConfiguration is readonly mode."); }
         this.directory = directory;
         this.customDir = true;
         return this;
@@ -111,10 +108,10 @@ abstract class AbstractDatabaseConfiguration {
      */
     void setTempDir() {
         synchronized (AbstractDatabaseConfiguration.class) {
-            String tempDir = tempDir();
-            if (!tempDir.equals(TEMP_DIR)) {
-                TEMP_DIR = tempDir;
-                C4Base.setTempDir(TEMP_DIR);
+            final String tempDir = getTempDir();
+            if (!tempDir.equals(AbstractDatabaseConfiguration.tempDir)) {
+                AbstractDatabaseConfiguration.tempDir = tempDir;
+                C4Base.setTempDir(AbstractDatabaseConfiguration.tempDir);
             }
         }
     }
@@ -128,18 +125,14 @@ abstract class AbstractDatabaseConfiguration {
      * If a custom database directory is set, the temp directory will be
      * CUSTOM_DATABASE_DIR/Couchbase/tmp.
      */
-    private String tempDir() {
-        File temp = null;
-        if (customDir) {
-            temp = new File(directory, TEMP_DIR_NAME);
-        } else
-            temp = new File(context.getCacheDir(), TEMP_DIR_NAME);
+    private String getTempDir() {
+        final File temp = (customDir)
+            ? new File(directory, TEMP_DIR_NAME)
+            : new File(context.getCacheDir(), TEMP_DIR_NAME);
 
-        if (temp.exists() || temp.mkdirs()) {
-            if (temp.isDirectory())
-                return temp.getAbsolutePath();
-        }
+        if ((temp.exists() || temp.mkdirs()) && temp.isDirectory()) { return temp.getAbsolutePath(); }
+
         throw new IllegalStateException("Cannot create or access temp directory at " +
-                temp.getAbsolutePath());
+            temp.getAbsolutePath());
     }
 }

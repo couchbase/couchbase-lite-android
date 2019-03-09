@@ -27,8 +27,7 @@ abstract class RefCounted {
     }
 
     public synchronized void release() {
-        if (--refCount <= 0)
-            free();
+        if (--refCount <= 0) { free(); }
 
         // For debug
         //if (refCount < 0)

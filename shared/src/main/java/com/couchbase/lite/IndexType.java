@@ -35,7 +35,7 @@ public enum IndexType {
      */
     Predictive(3);
 
-    private int value;
+    private final int value;
 
     IndexType(int value) {
         this.value = value;

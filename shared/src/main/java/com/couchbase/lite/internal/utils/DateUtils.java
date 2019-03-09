@@ -23,27 +23,25 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+
 public final class DateUtils {
-    private static SimpleDateFormat sdf;
+    private static final ThreadLocal<SimpleDateFormat> dateFormat = new ThreadLocal<SimpleDateFormat>() {
+        protected synchronized SimpleDateFormat initialValue() {
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+            return sdf;
+        }
+    };
 
-    static {
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-    }
-
-    private DateUtils() {
-    }
-
-    public static String toJson(Date date) {
-        return sdf.format(date);
-    }
+    public static String toJson(Date date) { return dateFormat.get().format(date); }
 
     public static Date fromJson(String json) {
-        if (json == null) return null;
-        try {
-            return sdf.parse(json);
-        } catch (ParseException e) {
-            return null;
+        if (json != null) {
+            try { return dateFormat.get().parse(json); }
+            catch (ParseException ignore) { }
         }
+        return null;
     }
+
+    private DateUtils() { }
 }

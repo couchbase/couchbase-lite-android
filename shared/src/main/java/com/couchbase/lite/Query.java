@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 
 import java.util.concurrent.Executor;
 
+
 /**
  * A database query used for querying data from the database. The query statement of the Query
  * object can be fluently constructed by calling the static select methods.

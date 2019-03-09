@@ -20,22 +20,20 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.core.C4Error;
-
 import java.util.EnumSet;
 
-import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevDeleted;
-import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevPurged;
+import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.core.C4Error;
+
 
 public final class ReplicatedDocument {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private EnumSet<DocumentFlag> documentFlags;
-    private String id = "";
-    private C4Error error;
-    private boolean trans;
+    private final EnumSet<DocumentFlag> documentFlags;
+    private final String id;
+    private final C4Error error;
 
     //---------------------------------------------
     // Constructors
@@ -47,14 +45,15 @@ public final class ReplicatedDocument {
     ReplicatedDocument(String id, int flags, C4Error error, boolean trans) {
         this.id = id;
         this.error = error;
-        this.trans = trans;
 
         documentFlags = EnumSet.noneOf(DocumentFlag.class);
-        if ((flags & kRevDeleted) == kRevDeleted)
+        if ((flags & C4Constants.C4RevisionFlags.kRevDeleted) == C4Constants.C4RevisionFlags.kRevDeleted) {
             documentFlags.add(DocumentFlag.DocumentFlagsDeleted);
+        }
 
-        if ((flags & kRevPurged) == kRevPurged)
+        if ((flags & C4Constants.C4RevisionFlags.kRevPurged) == C4Constants.C4RevisionFlags.kRevPurged) {
             documentFlags.add(DocumentFlag.DocumentFlagsAccessRemoved);
+        }
     }
 
     //---------------------------------------------
@@ -88,10 +87,10 @@ public final class ReplicatedDocument {
     @Override
     public String toString() {
         return "ReplicatedDocument {" +
-                ", document id =" + id +
-                ", error code =" + error.getCode()+
-                ", error domain=" + error.getDomain() +
-                '}';
+            ", document id =" + id +
+            ", error code =" + error.getCode() +
+            ", error domain=" + error.getDomain() +
+            '}';
     }
 }
 

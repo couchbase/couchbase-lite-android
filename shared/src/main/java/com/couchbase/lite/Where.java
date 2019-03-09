@@ -22,6 +22,7 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+
 /**
  * A Where represents the WHERE clause of the query for filtering the query result.
  */

@@ -36,13 +36,14 @@ public class C4ListenerConfig {
     public C4ListenerConfig() {
     }
 
-    public C4ListenerConfig(int port,
-                            int apis,
-                            String directory,
-                            boolean allowCreateDBs,
-                            boolean allowDeleteDBs,
-                            boolean allowPush,
-                            boolean allowPull) {
+    public C4ListenerConfig(
+        int port,
+        int apis,
+        String directory,
+        boolean allowCreateDBs,
+        boolean allowDeleteDBs,
+        boolean allowPush,
+        boolean allowPull) {
         this.port = port;
         this.apis = apis;
         this.directory = directory;
@@ -111,13 +112,13 @@ public class C4ListenerConfig {
     @Override
     public String toString() {
         return "C4ListenerConfig{" +
-                "port=" + port +
-                ", apis=" + apis +
-                ", directory='" + directory + '\'' +
-                ", allowCreateDBs=" + allowCreateDBs +
-                ", allowDeleteDBs=" + allowDeleteDBs +
-                ", allowPush=" + allowPush +
-                ", allowPull=" + allowPull +
-                '}';
+            "port=" + port +
+            ", apis=" + apis +
+            ", directory='" + directory + '\'' +
+            ", allowCreateDBs=" + allowCreateDBs +
+            ", allowDeleteDBs=" + allowDeleteDBs +
+            ", allowPush=" + allowPush +
+            ", allowPull=" + allowPull +
+            '}';
     }
 }

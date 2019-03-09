@@ -2,6 +2,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * A class that describes the file configuration for the {@link FileLogger} class.
  * These options must be set atomically so they won't take effect unless a new
@@ -12,12 +13,13 @@ public final class LogFileConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-
-    private boolean readonly = false;
+    private final String directory;
     private int maxRotateCount = 1;
     private long maxSize = 1024 * 500;
-    private boolean usePlaintext = false;
-    private String directory = null;
+
+
+    private boolean readonly;
+    private boolean usePlaintext;
 
     //---------------------------------------------
     // Constructors
@@ -29,7 +31,7 @@ public final class LogFileConfiguration {
      * @param directory The directory that the logs will be written to
      */
     public LogFileConfiguration(@NonNull String directory) {
-        if(directory == null) {
+        if (directory == null) {
             throw new IllegalArgumentException("directory cannot be null");
         }
 
@@ -43,7 +45,7 @@ public final class LogFileConfiguration {
      * @param other The other configuration to copy settings from
      */
     public LogFileConfiguration(@NonNull LogFileConfiguration other) {
-        if(other == null) {
+        if (other == null) {
             throw new IllegalArgumentException("other cannot be null");
         }
 
@@ -58,11 +60,11 @@ public final class LogFileConfiguration {
      * the directory
      *
      * @param directory The directory that the logs will be written to
-     * @param other The other configuration to copy settings from
+     * @param other     The other configuration to copy settings from
      */
     public LogFileConfiguration(@NonNull String directory, LogFileConfiguration other) {
         this(directory);
-        if(other != null) {
+        if (other != null) {
             maxRotateCount = other.maxRotateCount;
             maxSize = other.maxSize;
             usePlaintext = other.usePlaintext;
@@ -74,40 +76,6 @@ public final class LogFileConfiguration {
     //---------------------------------------------
 
     /**
-     * Sets the number of rotated logs that are saved (i.e.
-     * if the value is 1, then 2 logs will be present:  the 'current'
-     * and the 'rotated')
-     *
-     * @param maxRotateCount The number of rotated logs to be saved
-     * @return The self object
-     */
-    @NonNull
-    public LogFileConfiguration setMaxRotateCount(int maxRotateCount) {
-        if (readonly)
-            throw new IllegalStateException("LogFileConfiguration is readonly mode.");
-
-        this.maxRotateCount = maxRotateCount;
-        return this;
-    }
-
-    /**
-     * Sets the max size of the log file in bytes.  If a log file
-     * passes this size then a new log file will be started.  This
-     * number is a best effort and the actual size may go over slightly.
-     *
-     * @param maxSize The max size of the log file in bytes
-     * @return The self object
-     */
-    @NonNull
-    public LogFileConfiguration setMaxSize(long maxSize) {
-        if (readonly)
-            throw new IllegalStateException("LogFileConfiguration is readonly mode.");
-
-        this.maxSize = maxSize;
-        return this;
-    }
-
-    /**
      * Sets whether or not to log in plaintext.  The default is
      * to log in a binary encoded format that is more CPU and I/O friendly
      * and enabling plaintext is not recommended in production.
@@ -117,16 +85,11 @@ public final class LogFileConfiguration {
      */
     @NonNull
     public LogFileConfiguration setUsePlaintext(boolean usePlaintext) {
-        if (readonly)
-            throw new IllegalStateException("LogFileConfiguration is readonly mode.");
+        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
 
         this.usePlaintext = usePlaintext;
         return this;
     }
-
-    //---------------------------------------------
-    // Getters
-    //---------------------------------------------
 
     /**
      * Gets the number of rotated logs that are saved (i.e.
@@ -140,6 +103,26 @@ public final class LogFileConfiguration {
     }
 
     /**
+     * Sets the number of rotated logs that are saved (i.e.
+     * if the value is 1, then 2 logs will be present:  the 'current'
+     * and the 'rotated')
+     *
+     * @param maxRotateCount The number of rotated logs to be saved
+     * @return The self object
+     */
+    @NonNull
+    public LogFileConfiguration setMaxRotateCount(int maxRotateCount) {
+        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
+
+        this.maxRotateCount = maxRotateCount;
+        return this;
+    }
+
+    //---------------------------------------------
+    // Getters
+    //---------------------------------------------
+
+    /**
      * Gets the max size of the log file in bytes.  If a log file
      * passes this size then a new log file will be started.  This
      * number is a best effort and the actual size may go over slightly.
@@ -148,6 +131,22 @@ public final class LogFileConfiguration {
      */
     public long getMaxSize() {
         return maxSize;
+    }
+
+    /**
+     * Sets the max size of the log file in bytes.  If a log file
+     * passes this size then a new log file will be started.  This
+     * number is a best effort and the actual size may go over slightly.
+     *
+     * @param maxSize The max size of the log file in bytes
+     * @return The self object
+     */
+    @NonNull
+    public LogFileConfiguration setMaxSize(long maxSize) {
+        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
+
+        this.maxSize = maxSize;
+        return this;
     }
 
     /**
@@ -176,7 +175,7 @@ public final class LogFileConfiguration {
     //---------------------------------------------
 
     LogFileConfiguration readOnlyCopy() {
-        LogFileConfiguration config = new LogFileConfiguration(this);
+        final LogFileConfiguration config = new LogFileConfiguration(this);
         config.readonly = true;
         return config;
     }

@@ -19,27 +19,15 @@ package com.couchbase.lite;
 
 import java.util.concurrent.Executor;
 
-class ChangeListenerToken<ChangeType> implements ListenerToken {
-    private Executor executor;
-    private final ChangeListener<ChangeType> listener;
+
+class ChangeListenerToken<T> implements ListenerToken {
+    private final ChangeListener<T> listener;
+    private final Executor executor;
     private Object key;
 
-    ChangeListenerToken(Executor executor, ChangeListener<ChangeType> listener) {
+    ChangeListenerToken(Executor executor, ChangeListener<T> listener) {
         this.executor = executor;
         this.listener = listener;
-    }
-
-    void postChange(final ChangeType change) {
-        getExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-                listener.changed(change);
-            }
-        });
-    }
-
-    Executor getExecutor() {
-        return executor != null ? executor : DefaultExecutor.instance();
     }
 
     public Object getKey() {
@@ -48,5 +36,18 @@ class ChangeListenerToken<ChangeType> implements ListenerToken {
 
     public void setKey(Object key) {
         this.key = key;
+    }
+
+    void postChange(final T change) {
+        getExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                listener.changed(change);
+            }
+        });
+    }
+
+    private Executor getExecutor() {
+        return executor != null ? executor : DefaultExecutor.getInstance();
     }
 }

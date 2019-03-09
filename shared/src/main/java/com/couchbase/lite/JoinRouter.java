@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Note: JoinRouter is an internal interface. This should not be public.
  */

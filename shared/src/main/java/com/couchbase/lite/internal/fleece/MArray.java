@@ -20,52 +20,47 @@ package com.couchbase.lite.internal.fleece;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MArray extends MCollection {
-    private List<MValue> _values = new ArrayList<MValue>();
+    private List<MValue> values = new ArrayList<>();
 
-    private FLArray _baseArray;
-
-    /* Constructors */
-
-    public MArray() {
-
-    }
+    private FLArray baseArray;
 
     public void initInSlot(MValue mv, MCollection parent) {
-        initInSlot(mv, parent, parent != null ? parent.getMutableChildren() : false);
+        initInSlot(mv, parent, parent != null && parent.hasMutableChildren());
     }
 
     @Override
     protected void initInSlot(MValue mv, MCollection parent, boolean isMutable) {
         super.initInSlot(mv, parent, isMutable);
-        if (_baseArray != null)
-            throw new IllegalStateException("base array is not null.");
+        if (baseArray != null) { throw new IllegalStateException("base array is not null."); }
 
-        FLValue value = mv.getValue();
+        final FLValue value = mv.getValue();
         if (value != null) {
-            _baseArray = value.asFLArray();
-            resize(_baseArray.count());
-        } else {
-            _baseArray = null;
+            baseArray = value.asFLArray();
+            resize(baseArray.count());
+        }
+        else {
+            baseArray = null;
             resize(0);
         }
     }
 
     public void initAsCopyOf(MArray array, boolean isMutable) {
         super.initAsCopyOf(array, isMutable);
-        _baseArray = array != null ? array.getBaseArray() : null;
-        _values = array != null ? new ArrayList<>(array._values) : new ArrayList<MValue>();
+        baseArray = array != null ? array.getBaseArray() : null;
+        values = array != null ? new ArrayList<>(array.values) : new ArrayList<MValue>();
     }
 
     /* Properties */
 
     public long count() {
-        return _values.size();
+        return values.size();
     }
 
 
     public FLArray getBaseArray() {
-        return _baseArray;
+        return baseArray;
     }
 
     /* Public Methods */
@@ -75,43 +70,36 @@ public class MArray extends MCollection {
      * If the index is out of range, returns an empty MValue.
      */
     public MValue get(long index) {
-        if (index < 0 || index >= _values.size())
-            return MValue.EMPTY;
+        if (index < 0 || index >= values.size()) { return MValue.EMPTY; }
 
-        MValue value = _values.get((int) index);
-        if (value.isEmpty()) {
-            if (_baseArray != null) {
-                value = new MValue(_baseArray.get(index));
-                _values.set((int) index, value);
-            }
+        MValue value = values.get((int) index);
+        if (value.isEmpty() && (baseArray != null)) {
+            value = new MValue(baseArray.get(index));
+            values.set((int) index, value);
         }
+
         return value;
     }
 
     public boolean set(long index, Object value) {
-        if (!isMutable())
-            throw new IllegalStateException("Cannot set items in a non-mutable MArray");
+        if (!isMutable()) { throw new IllegalStateException("Cannot set items in a non-mutable MArray"); }
 
-        if (index < 0 || index >= count())
-            return false;
+        if (index < 0 || index >= count()) { return false; }
 
         mutate();
-        _values.set((int) index, new MValue(value));
+        values.set((int) index, new MValue(value));
         return true;
     }
 
     public boolean insert(long index, Object value) {
-        if (!isMutable())
-            throw new IllegalStateException("Cannot insert items in a non-mutable MArray");
+        if (!isMutable()) { throw new IllegalStateException("Cannot insert items in a non-mutable MArray"); }
 
-        if (index < 0 || index > count())
-            return false;
+        if (index < 0 || index > count()) { return false; }
 
-        if (index < count())
-            populateValues();
+        if (index < count()) { populateValues(); }
 
         mutate();
-        _values.add((int) index, new MValue(value));
+        values.add((int) index, new MValue(value));
         return true;
     }
 
@@ -120,22 +108,18 @@ public class MArray extends MCollection {
     }
 
     public boolean remove(long start, long num) {
-        if (!isMutable())
-            throw new IllegalStateException("Cannot remove items in a non-mutable MArray");
+        if (!isMutable()) { throw new IllegalStateException("Cannot remove items in a non-mutable MArray"); }
 
-        long end = start + num;
-        if (end <= start)
-            return end == start;
+        final long end = start + num;
+        if (end <= start) { return end == start; }
 
-        long count = count();
-        if (end > count)
-            return false;
+        final long count = count();
+        if (end > count) { return false; }
 
-        if (end < count)
-            populateValues();
+        if (end < count) { populateValues(); }
 
         mutate();
-        _values.subList((int) start, (int) end).clear();
+        values.subList((int) start, (int) end).clear();
         return true;
     }
 
@@ -144,57 +128,50 @@ public class MArray extends MCollection {
     }
 
     public boolean clear() {
-        if (!isMutable())
-            throw new IllegalStateException("Cannot clear items in a non-mutable MArray");
+        if (!isMutable()) { throw new IllegalStateException("Cannot clear items in a non-mutable MArray"); }
 
-        if (_values.isEmpty())
-            return true;
+        if (values.isEmpty()) { return true; }
 
         mutate();
-        _values.clear();
+        values.clear();
         return true;
     }
 
     /* Private Methods */
 
     void resize(long newSize) {
-        int count = _values.size();
-        if (newSize < count)
-            _values.subList((int) newSize, count).clear();
+        final int count = values.size();
+        if (newSize < count) { values.subList((int) newSize, count).clear(); }
         else if (newSize > count) {
-            for (int i = 0; i < newSize - count; i++)
-                _values.add(MValue.EMPTY);
+            for (int i = 0; i < newSize - count; i++) { values.add(MValue.EMPTY); }
         }
     }
 
     void populateValues() {
-        if (_baseArray == null)
-            return;
+        if (baseArray == null) { return; }
 
-        int size = _values.size();
+        final int size = values.size();
         for (int i = 0; i < size; i++) {
-            MValue v = _values.get(i);
-            if (v.isEmpty()) {
-                _values.set(i, new MValue(_baseArray.get(i)));
+            if (values.get(i).isEmpty()) {
+                values.set(i, new MValue(baseArray.get(i)));
             }
         }
     }
 
     public void encodeTo(Encoder enc) {
         if (!isMutated()) {
-            if (_baseArray == null) {
+            if (baseArray == null) {
                 enc.beginArray(0);
                 enc.endArray();
-            } else
-                enc.writeValue(_baseArray);
-        } else {
+            }
+            else { enc.writeValue(baseArray); }
+        }
+        else {
             enc.beginArray(count());
             long i = 0;
-            for (MValue value : _values) {
-                if (value.isEmpty())
-                    enc.writeValue(_baseArray.get(i));
-                else
-                    value.encodeTo(enc);
+            for (MValue value : values) {
+                if (value.isEmpty()) { enc.writeValue(baseArray.get(i)); }
+                else { value.encodeTo(enc); }
                 i++;
             }
             enc.endArray();

@@ -20,11 +20,12 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * Variable expression
  */
 public final class VariableExpression extends Expression {
-    private String name;
+    private final String name;
 
     VariableExpression(String name) {
         this.name = name;
@@ -36,7 +37,7 @@ public final class VariableExpression extends Expression {
 
     @Override
     Object asJSON() {
-        List<Object> json = new ArrayList<>();
+        final List<Object> json = new ArrayList<>();
         json.add("?" + name);
         return json;
     }

@@ -17,14 +17,24 @@
 //
 package com.couchbase.lite.internal.core;
 
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+
+/**
+ * WARNING!
+ * This class and its members are referenced by name, from native code.
+ */
 public class C4DocumentEnded {
     private String docID;
     private String revID;
     private int flags;
+    @SuppressFBWarnings("UUF_UNUSED_FIELD")
     private long sequence;
-    private int errorDomain = 0;         // C4Error.domain
-    private int errorCode = 0;           // C4Error.code
-    private int errorInternalInfo = 0;   // C4Error.internal_info
+    private int errorDomain;         // C4Error.domain
+    private int errorCode;           // C4Error.code
+    private int errorInternalInfo;   // C4Error.internal_info
+    @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
     private boolean errorIsTransient;
 
     public String getDocID() {
@@ -62,13 +72,13 @@ public class C4DocumentEnded {
     @Override
     public String toString() {
         return "C4DocumentEnded{" +
-                "doc id = " + docID +
-                ", rev id = " + revID +
-                ", flags = " + flags +
-                ", error Is Transient = " + errorIsTransient +
-                ", errorDomain=" + errorDomain +
-                ", errorCode=" + errorCode +
-                ", errorInternalInfo=" + errorInternalInfo +
-                '}';
+            "doc id = " + docID +
+            ", rev id = " + revID +
+            ", flags = " + flags +
+            ", error Is Transient = " + errorIsTransient +
+            ", errorDomain=" + errorDomain +
+            ", errorCode=" + errorCode +
+            ", errorInternalInfo=" + errorInternalInfo +
+            '}';
     }
 }

@@ -24,25 +24,25 @@ import java.util.Set;
 
 
 public class FleeceDict implements Map<String, Object>, Encodable {
-    private MDict _dict;
+    private MDict dict;
 
     private FleeceDict() {
-        _dict = new MDict();
+        dict = new MDict();
     }
 
     // Call from native method
     FleeceDict(MValue mv, MCollection parent) {
         this();
-        _dict.initInSlot(mv, parent);
+        dict.initInSlot(mv, parent);
     }
 
     public boolean isMutated() {
-        return _dict.isMutated();
+        return dict.isMutated();
     }
 
     @Override
     public int size() {
-        return (int) _dict.count();
+        return (int) dict.count();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     @Override
     public boolean containsKey(Object o) {
         if (!(o instanceof String)) { return false; }
-        return _dict.contains((String) o);
+        return dict.contains((String) o);
     }
 
     @Override
@@ -64,14 +64,14 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     @Override
     public Object get(Object key) {
         if (!(key instanceof String)) { return null; }
-        return _dict.get((String) key).asNative(_dict);
+        return dict.get((String) key).asNative(dict);
     }
 
     @Override
     public Object put(String key, Object o) {
         Object prev = null;
-        if (_dict.contains(key)) { prev = _dict.get(key); }
-        _dict.set(key, new MValue(o));
+        if (dict.contains(key)) { prev = dict.get(key); }
+        dict.set(key, new MValue(o));
         return prev;
     }
 
@@ -79,8 +79,8 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     public Object remove(Object key) {
         if (!(key instanceof String)) { return null; }
         Object prev = null;
-        if (_dict.contains((String) key)) { prev = get(key); }
-        _dict.remove((String) key);
+        if (dict.contains((String) key)) { prev = get(key); }
+        dict.remove((String) key);
         return prev;
     }
 
@@ -91,12 +91,12 @@ public class FleeceDict implements Map<String, Object>, Encodable {
 
     @Override
     public void clear() {
-        _dict.clear();
+        dict.clear();
     }
 
     @Override
     public Set<String> keySet() {
-        return new HashSet<String>(_dict.getKeys());
+        return new HashSet<String>(dict.getKeys());
     }
 
     @Override
@@ -105,19 +105,17 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     }
 
     @Override
-    public Set<Entry<String, Object>> entrySet() {
-        throw new UnsupportedOperationException();
-    }
+    public Set<Entry<String, Object>> entrySet() { throw new UnsupportedOperationException(); }
 
     // Implementation of FLEncodable
     @Override
     public void encodeTo(Encoder enc) {
-        _dict.encodeTo(enc);
+        dict.encodeTo(enc);
     }
 
     // For MValue
 
     MCollection toMCollection() {
-        return _dict;
+        return dict;
     }
 }

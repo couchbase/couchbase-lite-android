@@ -22,6 +22,7 @@ import android.support.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * Collation defines how strings are compared and is used when creating a COLLATE expression.
  * The COLLATE expression can be used in the WHERE clause when comparing two strings or in the
@@ -31,17 +32,12 @@ import java.util.Map;
  */
 public class Collation {
 
-    boolean unicode = false;
-    boolean ignoreCase = false;
-    boolean ignoreAccents = false;
-    String locale = null;
-
     /**
      * ASCII collation compares two strings by using binary comparison.
      */
-    public final static class ASCII extends Collation {
+    public static final class ASCII extends Collation {
         ASCII() {
-            this.unicode = false;
+            this.isUnicode = false;
         }
 
         /**
@@ -64,9 +60,9 @@ public class Collation {
      * Unicode-aware but not localized; for example, accented Roman letters sort right after
      * the base letter
      */
-    public final static class Unicode extends Collation {
+    public static final class Unicode extends Collation {
         Unicode() {
-            this.unicode = true;
+            this.isUnicode = true;
             // NOTE: System.getProperty("user.country") returns null for country code
             this.locale = System.getProperty("user.language");
         }
@@ -116,15 +112,6 @@ public class Collation {
         }
     }
 
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-    private Collation() {
-    }
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
-
     /**
      * Creates an ASCII collation that will compare two strings by using binary comparison.
      *
@@ -147,21 +134,35 @@ public class Collation {
         return new Unicode();
     }
 
+    boolean isUnicode;
+    boolean ignoreCase;
+    boolean ignoreAccents;
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
+    String locale;
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    private Collation() {
+    }
+
     @NonNull
     @Override
     public String toString() {
         return "Collation{" +
-                "unicode=" + unicode +
-                ", ignoreCase=" + ignoreCase +
-                ", ignoreAccents=" + ignoreAccents +
-                ", locale='" + locale + '\'' +
-                '}';
+            "isUnicode=" + isUnicode +
+            ", ignoreCase=" + ignoreCase +
+            ", ignoreAccents=" + ignoreAccents +
+            ", locale='" + locale + '\'' +
+            '}';
     }
 
     Object asJSON() {
-        Map<String, Object> json = new HashMap<>();
-        json.put("UNICODE", unicode);
-        json.put("LOCALE", locale == null ? null : locale);
+        final Map<String, Object> json = new HashMap<>();
+        json.put("UNICODE", isUnicode);
+        json.put("LOCALE", locale);
         json.put("CASE", !ignoreCase);
         json.put("DIAC", !ignoreAccents);
         return json;

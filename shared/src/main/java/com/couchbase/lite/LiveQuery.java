@@ -19,10 +19,11 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.support.Log;
-
 import java.util.Locale;
 import java.util.concurrent.Executor;
+
+import com.couchbase.lite.internal.support.Log;
+
 
 /**
  * A Query subclass that automatically refreshes the result rows every time the database changes.
@@ -31,29 +32,27 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private final static LogDomain DOMAIN = LogDomain.QUERY;
-    private final static long kDefaultLiveQueryUpdateInterval = 200; // 0.2sec (200ms)
+    private static final LogDomain DOMAIN = LogDomain.QUERY;
+    private static final long kDefaultLiveQueryUpdateInterval = 200; // 0.2sec (200ms)
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-
-    private ChangeNotifier<QueryChange> changeNotifier;
     private final AbstractQuery query;
+    private final Object lock = new Object(); // lock for thread-safety
+    private ChangeNotifier<QueryChange> changeNotifier;
     private ResultSet resultSet;
     private boolean observing;
     private boolean willUpdate;
     private long lastUpdatedAt;
     private ListenerToken dbListenerToken;
-    private final Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     LiveQuery(AbstractQuery query) {
-        if (query == null)
-            throw new IllegalArgumentException("query should not be null.");
+        if (query == null) { throw new IllegalArgumentException("query should not be null."); }
 
         this.query = query;
         this.changeNotifier = new ChangeNotifier<>();
@@ -80,15 +79,15 @@ final class LiveQuery implements DatabaseChangeListener {
     @Override
     public void changed(@NonNull DatabaseChange change) {
         synchronized (lock) {
-            if (willUpdate)
+            if (willUpdate) {
                 return; // Already a pending update scheduled
+            }
 
-            if (!observing)
-                return;
+            if (!observing) { return; }
 
             // Schedule an update, respecting the updateInterval:
             long updateDelay = lastUpdatedAt + kDefaultLiveQueryUpdateInterval - System.currentTimeMillis();
-            updateDelay = Math.max(0, Math.min(this.kDefaultLiveQueryUpdateInterval, updateDelay));
+            updateDelay = Math.max(0, Math.min(kDefaultLiveQueryUpdateInterval, updateDelay));
             update(updateDelay);
         }
     }
@@ -97,6 +96,7 @@ final class LiveQuery implements DatabaseChangeListener {
     // protected methods
     //---------------------------------------------
 
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         stop(true);
@@ -112,34 +112,17 @@ final class LiveQuery implements DatabaseChangeListener {
      */
     void start() {
         synchronized (lock) {
-            if (query.getDatabase() == null)
+            if (query.getDatabase() == null) {
                 throw new IllegalArgumentException("associated database should not be null.");
+            }
 
             observing = true;
             releaseResultSet();
             query.getDatabase().getActiveLiveQueries().add(this);
             // NOTE: start() method could be called during LiveQuery is running.
             // Ex) Query.setParameters() with LiveQuery.
-            if (dbListenerToken == null)
-                dbListenerToken = query.getDatabase().addChangeListener(this);
+            if (dbListenerToken == null) { dbListenerToken = query.getDatabase().addChangeListener(this); }
             update(0);
-        }
-    }
-
-    /**
-     * Stops observing database changes.
-     */
-    void stop(boolean removeFromList) {
-        synchronized (lock) {
-            observing = false;
-            willUpdate = false; // cancels the delayed update started by -databaseChanged
-            if (query != null && query.getDatabase() != null && dbListenerToken != null) {
-                query.getDatabase().removeChangeListener(dbListenerToken);
-                dbListenerToken = null;
-            }
-            if (removeFromList && query != null && query.getDatabase() != null)
-                query.getDatabase().getActiveLiveQueries().remove(this);
-            releaseResultSet();
         }
     }
 
@@ -150,8 +133,7 @@ final class LiveQuery implements DatabaseChangeListener {
      */
     ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
         synchronized (lock) {
-            if (!observing)
-                start();
+            if (!observing) { start(); }
             return changeNotifier.addChangeListener(executor, listener);
         }
     }
@@ -163,8 +145,7 @@ final class LiveQuery implements DatabaseChangeListener {
      */
     void removeChangeListener(ListenerToken token) {
         synchronized (lock) {
-            if (changeNotifier.removeChangeListener(token) == 0)
-                stop(true);
+            if (changeNotifier.removeChangeListener(token) == 0) { stop(true); }
         }
     }
 
@@ -173,16 +154,34 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     /**
+     * Stops observing database changes.
+     */
+    private void stop(boolean removeFromList) {
+        synchronized (lock) {
+            observing = false;
+            willUpdate = false; // cancels the delayed update started by -databaseChanged
+            if (query != null && query.getDatabase() != null && dbListenerToken != null) {
+                query.getDatabase().removeChangeListener(dbListenerToken);
+                dbListenerToken = null;
+            }
+            if (removeFromList && query != null && query.getDatabase() != null) {
+                query.getDatabase().getActiveLiveQueries().remove(this);
+            }
+            releaseResultSet();
+        }
+    }
+
+    /**
      * NOTE: update(long delay) is only called from synchronzied LiveQuery methods by lock.
      *
      * @param delay millisecond
      */
     private void update(long delay) {
-        if (willUpdate)
+        if (willUpdate) {
             return; // Already a pending update scheduled
+        }
 
-        if (!observing)
-            return;
+        if (!observing) { return; }
 
         willUpdate = true;
 
@@ -200,30 +199,26 @@ final class LiveQuery implements DatabaseChangeListener {
      */
     private void update() {
         synchronized (lock) {
-            if (!observing)
-                return;
+            if (!observing) { return; }
 
             try {
                 Log.i(DOMAIN, "%s: Querying...", this);
-                ResultSet oldResultSet = resultSet;
-                ResultSet newResultSet;
-                if (oldResultSet == null)
-                    newResultSet = query.execute();
-                else
-                    newResultSet = oldResultSet.refresh();
+                final ResultSet oldResultSet = resultSet;
+                final ResultSet newResultSet = (oldResultSet == null) ? query.execute() : oldResultSet.refresh();
 
                 willUpdate = false;
                 lastUpdatedAt = System.currentTimeMillis();
 
                 if (newResultSet != null) {
-                    if (oldResultSet != null)
-                        Log.i(DOMAIN, "%s: Changed!", this);
+                    if (oldResultSet != null) { Log.i(DOMAIN, "%s: Changed!", this); }
                     resultSet = newResultSet;
                     changeNotifier.postChange(new QueryChange(this.query, resultSet, null));
-                } else {
+                }
+                else {
                     Log.i(DOMAIN, "%s: ...no change", this);
                 }
-            } catch (CouchbaseLiteException e) {
+            }
+            catch (CouchbaseLiteException e) {
                 changeNotifier.postChange(new QueryChange(this.query, null, e));
             }
         }

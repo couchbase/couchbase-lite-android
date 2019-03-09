@@ -22,7 +22,6 @@ import android.support.annotation.NonNull;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionCookies;
 
 /**
  * SessionAuthenticator class is an authenticator that will authenticate by using the session ID of
@@ -30,7 +29,7 @@ import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionCook
  */
 public final class SessionAuthenticator extends Authenticator {
 
-    private final static String DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME = "SyncGatewaySession";
+    private static final String DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME = "SyncGatewaySession";
 
     //---------------------------------------------
     // member variables
@@ -60,8 +59,7 @@ public final class SessionAuthenticator extends Authenticator {
      * @param cookieName The cookie name
      */
     public SessionAuthenticator(@NonNull String sessionID, String cookieName) {
-        if (sessionID == null)
-            throw new IllegalArgumentException("sessionID cannot be null.");
+        if (sessionID == null) { throw new IllegalArgumentException("sessionID cannot be null."); }
 
         this.sessionID = sessionID;
         this.cookieName = cookieName != null ? cookieName : DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME;
@@ -93,13 +91,12 @@ public final class SessionAuthenticator extends Authenticator {
 
     @Override
     void authenticate(Map<String, Object> options) {
-        String current = (String) options.get(kC4ReplicatorOptionCookies);
-        StringBuffer cookieStr = current != null ? new StringBuffer(current) : new StringBuffer();
+        final String current = (String) options.get(ReplicatorConfiguration.kC4ReplicatorOptionCookies);
+        final StringBuffer cookieStr = current != null ? new StringBuffer(current) : new StringBuffer();
 
-        if (cookieStr.length() > 0)
-            cookieStr.append("; ");
+        if (cookieStr.length() > 0) { cookieStr.append("; "); }
         cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, sessionID));
 
-        options.put(kC4ReplicatorOptionCookies, cookieStr.toString());
+        options.put(ReplicatorConfiguration.kC4ReplicatorOptionCookies, cookieStr.toString());
     }
 }

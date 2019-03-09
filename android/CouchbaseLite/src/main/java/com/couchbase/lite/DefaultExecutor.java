@@ -22,20 +22,19 @@ import android.os.Looper;
 
 import java.util.concurrent.Executor;
 
+
 final class DefaultExecutor implements Executor {
 
-    private static DefaultExecutor _instance;
+    private static volatile DefaultExecutor instance;
 
-    public static DefaultExecutor instance() {
-        if (_instance == null)
-            _instance = new DefaultExecutor();
-        return _instance;
+    public static DefaultExecutor getInstance() {
+        if (instance == null) { instance = new DefaultExecutor(); }
+        return instance;
     }
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     private DefaultExecutor() {
     }
-
-    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     public void execute(Runnable runnable) {

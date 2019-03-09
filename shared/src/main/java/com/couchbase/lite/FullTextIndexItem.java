@@ -19,16 +19,11 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Full-text Index Item.
  */
 public final class FullTextIndexItem {
-    Expression expression;
-
-    private FullTextIndexItem(Expression expression) {
-        this.expression = expression;
-    }
-
     /**
      * Creates a full-text search index item with the given property.
      *
@@ -41,5 +36,11 @@ public final class FullTextIndexItem {
             throw new IllegalArgumentException("property cannot be null.");
         }
         return new FullTextIndexItem(Expression.property(property));
+    }
+
+    final Expression expression;
+
+    private FullTextIndexItem(Expression expression) {
+        this.expression = expression;
     }
 }

@@ -22,20 +22,11 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+
 /**
  * Full-text function.
  */
 public class FullTextFunction {
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-    private FullTextFunction() {
-    }
-
-    //---------------------------------------------
-    // FTS
-    //---------------------------------------------
-
     /**
      * Creates a full-text rank function with the given full-text index name.
      * The rank function indicates how well the current query result matches
@@ -50,5 +41,15 @@ public class FullTextFunction {
             throw new IllegalArgumentException("indexName cannot be null.");
         }
         return new Expression.FunctionExpression("RANK()", Arrays.asList(Expression.string(indexName)));
+    }
+
+    //---------------------------------------------
+    // FTS
+    //---------------------------------------------
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    private FullTextFunction() {
     }
 }

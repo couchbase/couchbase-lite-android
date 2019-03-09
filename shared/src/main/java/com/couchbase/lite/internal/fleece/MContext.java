@@ -20,15 +20,15 @@ package com.couchbase.lite.internal.fleece;
 public class MContext {
     public static final MContext NULL = new MContext();
 
-    private AllocSlice _data;
+    private AllocSlice data;
 
-    public MContext() { }
+    protected MContext() { }
 
     public MContext(AllocSlice data) {
-        _data = data;
+        this.data = data;
     }
 
     public AllocSlice getData() {
-        return _data;
+        return data;
     }
 }

@@ -17,27 +17,28 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.fleece.MValue;
-
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.support.Log;
+
 
 final class NativeLibraryLoader {
     private static final LogDomain DOMAIN = LogDomain.DATABASE;
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
-    private static AtomicBoolean loaded = new AtomicBoolean(false);
-
-    NativeLibraryLoader() {  }
+    private static final AtomicBoolean loaded = new AtomicBoolean(false);
 
     static void load() {
         if (!loaded.getAndSet(true)) {
-            if (load(LITECORE_JNI_LIBRARY))
-                Log.v(DOMAIN, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
-            else
-                Log.e(DOMAIN, "Cannot load native library");
+            if (load(LITECORE_JNI_LIBRARY)) {
+                Log.v(
+                    DOMAIN,
+                    "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
+            }
+            else { Log.e(DOMAIN, "Cannot load native library"); }
             initMValue();
         }
     }
@@ -50,7 +51,8 @@ final class NativeLibraryLoader {
     private static boolean loadSystemLibrary(String libName) {
         try {
             System.loadLibrary(libName);
-        } catch (UnsatisfiedLinkError e) {
+        }
+        catch (UnsatisfiedLinkError e) {
             return false;
         }
         return true;
@@ -58,11 +60,14 @@ final class NativeLibraryLoader {
 
     private static void initMValue() {
         try {
-            Constructor c = Class.forName("com.couchbase.lite.MValueDelegate").getDeclaredConstructor();
+            final Constructor c = Class.forName("com.couchbase.lite.MValueDelegate").getDeclaredConstructor();
             c.setAccessible(true);
             MValue.registerDelegate((MValue.Delegate) c.newInstance());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new IllegalStateException("Cannot initialize MValue delegate", e);
         }
     }
+
+    NativeLibraryLoader() { }
 }

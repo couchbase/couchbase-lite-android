@@ -19,7 +19,11 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.utils.DateUtils;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
 import com.couchbase.lite.internal.fleece.Encoder;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -27,56 +31,69 @@ import com.couchbase.lite.internal.fleece.MArray;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.utils.DateUtils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Array provides readonly access to array data.
  */
 public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
-    //---------------------------------------------
-    // Load LiteCore library and its dependencies
-    //---------------------------------------------
-    static {
-        NativeLibraryLoader.load();
+    private class ArrayIterator implements Iterator<Object> {
+        private final int count;
+        private int index;
+
+        ArrayIterator(int count) { this.count = count; }
+
+        @Override
+        public boolean hasNext() {
+            return index < count;
+        }
+
+        @Override
+        public Object next() {
+            return getValue(index++);
+        }
     }
 
     //---------------------------------------------
-    // member variables
+    // package level access
     //---------------------------------------------
+    static void throwRangeException(int index) {
+        throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
+    }
 
-    MArray _array;
-
-    protected Object _sharedLock;
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static { NativeLibraryLoader.load(); }
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+    protected final Object lock;
+    protected final MArray internalArray;
 
     Array() {
-        _array = new MArray();
-        setupSharedLock();
-    }
-
-    Array(MValue mv, MCollection parent) {
-        _array = new MArray();
-        _array.initInSlot(mv, parent);
-        setupSharedLock();
-    }
-
-    // to crete mutable copy
-    Array(MArray mArray, boolean isMutable) {
-        _array = new MArray();
-        _array.initAsCopyOf(mArray, isMutable);
-        setupSharedLock();
+        internalArray = new MArray();
+        lock = getSharedLock();
     }
 
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
+
+    Array(MValue mv, MCollection parent) {
+        internalArray = new MArray();
+        internalArray.initInSlot(mv, parent);
+        lock = getSharedLock();
+    }
+
+    // to crete mutable copy
+    Array(MArray mArray, boolean isMutable) {
+        internalArray = new MArray();
+        internalArray.initAsCopyOf(mArray, isMutable);
+        lock = getSharedLock();
+    }
 
     /**
      * Gets a number of the items in the array.
@@ -84,10 +101,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      * @return
      */
     @Override
-    public int count() {
-        synchronized (_sharedLock) {
-            return (int) _array.count();
-        }
+    public final int count() {
+        synchronized (lock) { return (int) internalArray.count(); }
     }
 
     /**
@@ -100,8 +115,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Object getValue(int index) {
-        synchronized (_sharedLock) {
-            return _get(_array, index).asNative(_array);
+        synchronized (lock) {
+            return getMValue(internalArray, index).asNative(internalArray);
         }
     }
 
@@ -113,8 +128,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public String getString(int index) {
-        synchronized (_sharedLock) {
-            Object obj = _get(_array, index).asNative(_array);
+        synchronized (lock) {
+            final Object obj = getMValue(internalArray, index).asNative(internalArray);
             return obj instanceof String ? (String) obj : null;
         }
     }
@@ -127,8 +142,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Number getNumber(int index) {
-        synchronized (_sharedLock) {
-            return CBLConverter.asNumber(_get(_array, index).asNative(_array));
+        synchronized (lock) {
+            return CBLConverter.asNumber(getMValue(internalArray, index).asNative(internalArray));
         }
     }
 
@@ -142,8 +157,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public int getInt(int index) {
-        synchronized (_sharedLock) {
-            return CBLConverter.asInteger(_get(_array, index), _array);
+        synchronized (lock) {
+            return CBLConverter.asInteger(getMValue(internalArray, index), internalArray);
         }
     }
 
@@ -157,8 +172,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public long getLong(int index) {
-        synchronized (_sharedLock) {
-            return CBLConverter.asLong(_get(_array, index), _array);
+        synchronized (lock) {
+            return CBLConverter.asLong(getMValue(internalArray, index), internalArray);
         }
     }
 
@@ -172,8 +187,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public float getFloat(int index) {
-        synchronized (_sharedLock) {
-            return CBLConverter.asFloat(_get(_array, index), _array);
+        synchronized (lock) {
+            return CBLConverter.asFloat(getMValue(internalArray, index), internalArray);
         }
     }
 
@@ -187,8 +202,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public double getDouble(int index) {
-        synchronized (_sharedLock) {
-            return CBLConverter.asDouble(_get(_array, index), _array);
+        synchronized (lock) {
+            return CBLConverter.asDouble(getMValue(internalArray, index), internalArray);
         }
     }
 
@@ -200,11 +215,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public boolean getBoolean(int index) {
-        synchronized (_sharedLock) {
-            Object value = _get(_array, index).asNative(_array);
-            return CBLConverter.asBoolean(value);
+        synchronized (lock) {
+            return CBLConverter.asBoolean(getMValue(internalArray, index).asNative(internalArray));
         }
-
     }
 
     /**
@@ -216,8 +229,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Blob getBlob(int index) {
-        synchronized (_sharedLock) {
-            return (Blob) _get(_array, index).asNative(_array);
+        synchronized (lock) {
+            return (Blob) getMValue(internalArray, index).asNative(internalArray);
         }
     }
 
@@ -245,8 +258,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Array getArray(int index) {
-        synchronized (_sharedLock) {
-            Object obj = _get(_array, index).asNative(_array);
+        synchronized (lock) {
+            final Object obj = getMValue(internalArray, index).asNative(internalArray);
             return obj instanceof Array ? (Array) obj : null;
         }
     }
@@ -259,11 +272,15 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Dictionary getDictionary(int index) {
-        synchronized (_sharedLock) {
-            Object obj = _get(_array, index).asNative(_array);
+        synchronized (lock) {
+            final Object obj = getMValue(internalArray, index).asNative(internalArray);
             return obj instanceof Dictionary ? (Dictionary) obj : null;
         }
     }
+
+    //-------------------------------------------------------------------------
+    // Implementation of FLEncodable
+    //-------------------------------------------------------------------------
 
     /**
      * Gets content of the current object as an List. The values contained in the returned
@@ -274,14 +291,19 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @NonNull
     @Override
     public List<Object> toList() {
-        synchronized (_sharedLock) {
-            int count = (int) _array.count();
-            List<Object> result = new ArrayList<>(count);
-            for (int index = 0; index < count; index++)
-                result.add(Fleece.toObject(_get(_array, index).asNative(_array)));
+        synchronized (lock) {
+            final int count = (int) internalArray.count();
+            final List<Object> result = new ArrayList<>(count);
+            for (int index = 0; index < count; index++) {
+                result.add(Fleece.toObject(getMValue(internalArray, index).asNative(internalArray)));
+            }
             return result;
         }
     }
+
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
 
     /**
      * Return a mutable copy of the array
@@ -290,53 +312,43 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @NonNull
     public MutableArray toMutable() {
-        synchronized (_sharedLock) {
-            return new MutableArray(_array, true);
+        synchronized (lock) {
+            return new MutableArray(internalArray, true);
         }
-    }
-
-    //-------------------------------------------------------------------------
-    // Implementation of FLEncodable
-    //-------------------------------------------------------------------------
-
-    /**
-     * encodeTo(FlEncoder) is internal method. Please don't use this method.
-     */
-    @NonNull
-    @Override
-    public void encodeTo(FLEncoder enc) {
-        Encoder encoder = new Encoder(enc);
-        _array.encodeTo(encoder);
-        encoder.release();
-    }
-
-    //---------------------------------------------
-    // Iterable implementation
-    //---------------------------------------------
-
-    @NonNull
-    @Override
-    public Iterator<Object> iterator() {
-        return new ArrayIterator();
     }
 
     //---------------------------------------------
     // Override
     //---------------------------------------------
 
+    /**
+     * encodeTo(FlEncoder) is internal method. Please don't use this method.
+     */
+    @Override
+    public void encodeTo(FLEncoder enc) {
+        final Encoder encoder = new Encoder(enc);
+        internalArray.encodeTo(encoder);
+        encoder.release();
+    }
+
+    @NonNull
+    @Override
+    public Iterator<Object> iterator() {
+        return new ArrayIterator(count());
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Array)) return false;
+        if (this == o) { return true; }
+        if (!(o instanceof Array)) { return false; }
 
-        Array a = (Array) o;
-        Iterator<Object> itr1 = iterator();
-        Iterator<Object> itr2 = a.iterator();
+        final Array a = (Array) o;
+        final Iterator<Object> itr1 = iterator();
+        final Iterator<Object> itr2 = a.iterator();
         while (itr1.hasNext() && itr2.hasNext()) {
-            Object o1 = itr1.next();
-            Object o2 = itr2.next();
-            if (!(o1 == null ? o2 == null : o1.equals(o2)))
-                return false;
+            final Object o1 = itr1.next();
+            final Object o2 = itr2.next();
+            if (!(o1 == null ? o2 == null : o1.equals(o2))) { return false; }
         }
         return !(itr1.hasNext() || itr2.hasNext());
     }
@@ -344,49 +356,24 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Override
     public int hashCode() {
         int h = 1;
-        for (Object o : this)
-            h = 31 * h + (o == null ? 0 : o.hashCode());
+        for (Object o : this) { h = 31 * h + (o == null ? 0 : o.hashCode()); }
         return h;
     }
 
-    //---------------------------------------------
-    // package level access
-    //---------------------------------------------
-    static MValue _get(MArray array, int index) {
-        MValue value = array.get(index);
-        if (value.isEmpty())
-            throwRangeException(index);
-        return value;
-    }
-
-    static String throwRangeException(int index) {
-        throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
-    }
-
     MCollection toMCollection() {
-        return _array;
+        return internalArray;
     }
 
-    private class ArrayIterator implements Iterator<Object> {
-        private int index = 0;
-        private int count = count();
-
-        @Override
-        public boolean hasNext() {
-            return index < count;
-        }
-
-        @Override
-        public Object next() {
-            return getValue(index++);
-        }
+    private Object getSharedLock() {
+        final MContext context = internalArray.getContext();
+        return ((context == null) || (context == MContext.NULL))
+            ? new Object()
+            : ((DocContext) context).getDatabase().getLock();
     }
 
-    private void setupSharedLock() {
-        MContext context = _array.getContext();
-        if (context != null && context != MContext.NULL)
-            _sharedLock = ((DocContext)context).getDatabase().getLock();
-        else
-            _sharedLock = new Object();
+    private MValue getMValue(MArray array, int index) {
+        final MValue value = array.get(index);
+        if (value.isEmpty()) { throwRangeException(index); }
+        return value;
     }
 }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 /**
  * A GroupBy represents the GROUP BY clause to group the query result.
  * The GROUP BY clause is normally used with aggregate functions (AVG, COUNT, MAX, MIN, SUM)
@@ -32,7 +33,7 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
-    private List<Expression> expressions;
+    private final List<Expression> expressions;
 
     //---------------------------------------------
     // Constructor
@@ -122,9 +123,8 @@ public final class GroupBy extends AbstractQuery implements HavingRouter, OrderB
     // Package level access
     //---------------------------------------------
     Object asJSON() {
-        List<Object> groupBy = new ArrayList<>();
-        for (Expression expression : expressions)
-            groupBy.add(expression.asJSON());
+        final List<Object> groupBy = new ArrayList<>();
+        for (Expression expression : expressions) { groupBy.add(expression.asJSON()); }
         return groupBy;
     }
 }

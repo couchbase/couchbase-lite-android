@@ -20,14 +20,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.lite.internal.core.C4QueryEnumerator;
-import com.couchbase.lite.internal.core.SharedKeys;
-import com.couchbase.lite.internal.fleece.FLArrayIterator;
-import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.fleece.MContext;
-import com.couchbase.lite.internal.fleece.MRoot;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +27,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import com.couchbase.lite.internal.core.C4QueryEnumerator;
+import com.couchbase.lite.internal.fleece.FLArrayIterator;
+import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.fleece.MContext;
+import com.couchbase.lite.internal.fleece.MRoot;
+import com.couchbase.lite.internal.utils.DateUtils;
+
 
 /**
  * Result represents a row of result set returned by a Query.
@@ -44,10 +44,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private ResultSet rs;
-    private List<FLValue> values;
-    private long missingColumns;
-    private MContext context;
+    private final ResultSet rs;
+    private final List<FLValue> values;
+    private final long missingColumns;
+    private final MContext context;
 
     //---------------------------------------------
     // constructors
@@ -100,7 +100,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public String getString(int index) {
         check(index);
-        Object obj = fleeceValueToObject(index);
+        final Object obj = fleeceValueToObject(index);
         return obj instanceof String ? (String) obj : null;
     }
 
@@ -125,7 +125,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public int getInt(int index) {
         check(index);
-        FLValue flValue = values.get(index);
+        final FLValue flValue = values.get(index);
         return flValue != null ? (int) flValue.asInt() : 0;
     }
 
@@ -138,7 +138,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public long getLong(int index) {
         check(index);
-        FLValue flValue = values.get(index);
+        final FLValue flValue = values.get(index);
         return flValue != null ? flValue.asInt() : 0L;
     }
 
@@ -151,7 +151,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public float getFloat(int index) {
         check(index);
-        FLValue flValue = values.get(index);
+        final FLValue flValue = values.get(index);
         return flValue != null ? flValue.asFloat() : 0.0F;
     }
 
@@ -164,7 +164,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public double getDouble(int index) {
         check(index);
-        FLValue flValue = values.get(index);
+        final FLValue flValue = values.get(index);
         return flValue != null ? flValue.asDouble() : 0.0;
     }
 
@@ -177,8 +177,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public boolean getBoolean(int index) {
         check(index);
-        FLValue flValue = values.get(index);
-        return flValue != null ? flValue.asBool() : false;
+        final FLValue flValue = values.get(index);
+        return flValue != null && flValue.asBool();
     }
 
     /**
@@ -190,7 +190,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public Blob getBlob(int index) {
         check(index);
-        Object obj = fleeceValueToObject(index);
+        final Object obj = fleeceValueToObject(index);
         return obj instanceof Blob ? (Blob) obj : null;
     }
 
@@ -215,7 +215,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public Array getArray(int index) {
         check(index);
-        Object obj = fleeceValueToObject(index);
+        final Object obj = fleeceValueToObject(index);
         return obj instanceof Array ? (Array) obj : null;
     }
 
@@ -228,7 +228,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public Dictionary getDictionary(int index) {
         check(index);
-        Object obj = fleeceValueToObject(index);
+        final Object obj = fleeceValueToObject(index);
         return obj instanceof Dictionary ? (Dictionary) obj : null;
     }
 
@@ -241,10 +241,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public List<Object> toList() {
-        List<Object> array = new ArrayList<>();
+        final List<Object> array = new ArrayList<>();
         for (int i = 0; i < count(); i++) {
-            FLValue value = values.get(i);
-            array.add(value.asObject());
+            array.add(values.get(i).asObject());
         }
         return array;
     }
@@ -271,10 +270,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Object getValue(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getValue(index) : null;
     }
 
@@ -287,10 +285,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public String getString(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getString(index) : null;
     }
 
@@ -303,10 +300,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Number getNumber(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getNumber(index) : null;
     }
 
@@ -319,10 +315,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public int getInt(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getInt(index) : 0;
     }
 
@@ -335,10 +330,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public long getLong(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getLong(index) : 0L;
     }
 
@@ -351,10 +345,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public float getFloat(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getFloat(index) : 0.0f;
     }
 
@@ -367,10 +360,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public double getDouble(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getDouble(index) : 0.0;
     }
 
@@ -383,11 +375,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public boolean getBoolean(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
-        return index >= 0 ? getBoolean(index) : false;
+        final int index = indexForColumnName(key);
+        return index >= 0 && getBoolean(index);
     }
 
     /**
@@ -399,10 +390,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Blob getBlob(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getBlob(index) : null;
     }
 
@@ -415,10 +405,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Date getDate(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getDate(index) : null;
     }
 
@@ -431,10 +420,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Array getArray(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getArray(index) : null;
     }
 
@@ -447,10 +435,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Dictionary getDictionary(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        int index = indexForColumnName(key);
+        final int index = indexForColumnName(key);
         return index >= 0 ? getDictionary(index) : null;
     }
 
@@ -464,12 +451,11 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public Map<String, Object> toMap() {
-        List<Object> values = toList();
-        Map<String, Object> dict = new HashMap<>();
+        final List<Object> values = toList();
+        final Map<String, Object> dict = new HashMap<>();
         for (String name : rs.getColumnNames().keySet()) {
-            int index = indexForColumnName(name);
-            if (index >= 0)
-                dict.put(name, values.get(index));
+            final int index = indexForColumnName(name);
+            if (index >= 0) { dict.put(name, values.get(index)); }
         }
         return dict;
     }
@@ -482,8 +468,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public boolean contains(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
         return indexForColumnName(key) >= 0;
     }
@@ -509,35 +494,33 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
 
     // - (NSInteger) indexForColumnName: (NSString*)name
     private int indexForColumnName(String name) {
-        Integer index = rs.getColumnNames().get(name);
-        if (index == null) return -1;
-        boolean hasValue = (missingColumns & (1 << index.intValue())) == 0;
-        return hasValue ? index.intValue() : -1;
+        final Integer index = rs.getColumnNames().get(name);
+        if (index == null) { return -1; }
+        return ((missingColumns & (1 << index.intValue())) == 0) ? index.intValue() : -1;
     }
 
     // - (id) fleeceValueToObjectAtIndex: (NSUInteger)index
     private Object fleeceValueToObject(int index) {
         check(index);
-        FLValue value = values.get(index);
-        if (value == null) return null;
-        MRoot root = new MRoot(context, value, false);
+        final FLValue value = values.get(index);
+        if (value == null) { return null; }
+        final MRoot root = new MRoot(context, value, false);
         synchronized (rs.getQuery().getDatabase().getLock()) {
             return root.asNative();
         }
     }
 
-    List<FLValue> extractColumns(FLArrayIterator columns) {
-        int count = rs.getColumnNames().size();
-        List<FLValue> values = new ArrayList<>();
-        for (int i = 0; i < count; i++)
-            values.add(columns.getValueAt(i));
+    private List<FLValue> extractColumns(FLArrayIterator columns) {
+        final int count = rs.getColumnNames().size();
+        final List<FLValue> values = new ArrayList<>();
+        for (int i = 0; i < count; i++) { values.add(columns.getValueAt(i)); }
         return values;
     }
 
     private void check(int index) {
         if (index < 0 || index >= count()) {
-            String msg = String.format(Locale.ENGLISH, "length=%d; index=%d", count(), index);
-            throw new ArrayIndexOutOfBoundsException(msg);
+            throw new ArrayIndexOutOfBoundsException(
+                String.format(Locale.ENGLISH, "length=%d; index=%d", count(), index));
         }
     }
 }

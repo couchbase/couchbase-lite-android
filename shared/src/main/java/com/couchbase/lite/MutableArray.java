@@ -20,12 +20,13 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import java.util.Date;
+import java.util.List;
+
 import com.couchbase.lite.internal.fleece.MArray;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MValue;
 
-import java.util.Date;
-import java.util.List;
 
 /**
  * MutableArray provides access to array data.
@@ -80,10 +81,9 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray setData(List<Object> data) {
-        synchronized (_sharedLock) {
-            _array.clear();
-            for (Object obj : data)
-                _array.append(Fleece.toCBLObject(obj));
+        synchronized (lock) {
+            internalArray.clear();
+            for (Object obj : data) { internalArray.append(Fleece.toCBLObject(obj)); }
             return this;
         }
     }
@@ -98,10 +98,11 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray setValue(int index, Object value) {
-        synchronized (_sharedLock) {
-            if (Fleece.valueWouldChange(value, _array.get(index), _array))
-                if (!_array.set(index, Fleece.toCBLObject(value)))
-                    throwRangeException(index);
+        synchronized (lock) {
+            if (Fleece.valueWouldChange(value, internalArray.get(index), internalArray)
+                && (!internalArray.set(index, Fleece.toCBLObject(value)))) {
+                throwRangeException(index);
+            }
             return this;
         }
     }
@@ -258,8 +259,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray addValue(Object value) {
-        synchronized (_sharedLock) {
-            _array.append(Fleece.toCBLObject(value));
+        synchronized (lock) {
+            internalArray.append(Fleece.toCBLObject(value));
             return this;
         }
     }
@@ -406,9 +407,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray insertValue(int index, Object value) {
-        synchronized (_sharedLock) {
-            if (!_array.insert(index, Fleece.toCBLObject(value)))
-                throwRangeException(index);
+        synchronized (lock) {
+            if (!internalArray.insert(index, Fleece.toCBLObject(value))) { throwRangeException(index); }
             return this;
         }
     }
@@ -565,9 +565,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray remove(int index) {
-        synchronized (_sharedLock) {
-            if (!_array.remove(index))
-                throwRangeException(index);
+        synchronized (lock) {
+            if (!internalArray.remove(index)) { throwRangeException(index); }
             return this;
         }
     }

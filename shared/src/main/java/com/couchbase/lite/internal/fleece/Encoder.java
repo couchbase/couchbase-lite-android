@@ -17,191 +17,14 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-import com.couchbase.lite.LiteCoreException;
-
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 
 public class Encoder {
-    long _handle = 0; // hold pointer to Encoder*
-    boolean _managed;
-    FLEncoder _flEncoder;
-
-    public Encoder() {
-        this(init(), false);
-    }
-
-    public Encoder(FLEncoder enc) {
-        this(initWithFLEncoder(enc._handle), false);
-        _flEncoder = enc;
-    }
-
-    Encoder(long handle, boolean managed) {
-        if (handle == 0)
-            throw new IllegalArgumentException();
-        this._handle = handle;
-        this._managed = managed;
-    }
-
-    public void free() {
-        if (_handle != 0L && !_managed) {
-            free(_handle);
-            _handle = 0L;
-        }
-    }
-
-    public void release() {
-        if (_handle != 0L && !_managed) {
-            release(_handle);
-            _handle = 0L;
-        }
-    }
-
-    public FLEncoder getFLEncoder() {
-        if (_flEncoder == null)
-            _flEncoder = new FLEncoder(getFLEncoder(_handle), true);
-        return _flEncoder;
-    }
-
-    public boolean writeNull() {
-        return writeNull(_handle);
-    }
-
-    public boolean beginDict(long reserve) {
-        return beginDict(_handle, reserve);
-    }
-
-    public boolean endDict() {
-        return endDict(_handle);
-    }
-
-    public boolean beginArray(long reserve) {
-        return beginArray(_handle, reserve);
-    }
-
-    public boolean endArray() {
-        return endArray(_handle);
-    }
-
-    public boolean writeKey(String slice) {
-        return writeKey(_handle, slice);
-    }
-
-    public boolean writeValue(FLValue flValue) {
-        return writeValue(_handle, flValue.getHandle());
-    }
-
-    public boolean writeValue(FLArray flValue) {
-        return writeValue(_handle, flValue.getHandle());
-    }
-
-    public boolean writeValue(FLDict flValue) {
-        return writeValue(_handle, flValue.getHandle());
-    }
-
-    public boolean write(Map map) {
-        if (map != null) {
-            beginDict(map.size());
-            Iterator keys = map.keySet().iterator();
-            while (keys.hasNext()) {
-                String key = (String) keys.next();
-                writeKey(key);
-                writeObject(map.get(key));
-            }
-        } else
-            beginDict(0);
-        return endDict();
-
-    }
-
-    public boolean write(List list) {
-        if (list != null) {
-            beginArray(list.size());
-            for (Object item : list) {
-                writeObject(item);
-            }
-        } else
-            beginArray(0);
-        return endArray();
-    }
-
-    // C/Fleece+CoreFoundation.mm
-    // bool FLEncoder_WriteNSObject(FLEncoder encoder, id obj)
-    public boolean writeObject(Object value) {
-        // null
-        if (value == null)
-            return writeNull(_handle);
-
-            // boolean
-        else if (value instanceof Boolean)
-            return writeBool(_handle, (Boolean) value);
-
-            // Number
-        else if (value instanceof Number) {
-            // Integer
-            if (value instanceof Integer)
-                return writeInt(_handle, ((Integer) value).longValue());
-
-                // Long
-            else if (value instanceof Long)
-                return writeInt(_handle, ((Long) value).longValue());
-
-                // Short
-            else if (value instanceof Short)
-                return writeInt(_handle, ((Short) value).longValue());
-
-                // Double
-            else if (value instanceof Double)
-                return writeDouble(_handle, ((Double) value).doubleValue());
-
-                // Float
-            else
-                return writeFloat(_handle, ((Float) value).floatValue());
-        }
-
-        // String
-        else if (value instanceof String)
-            return writeString(_handle, (String) value);
-
-            // byte[]
-        else if (value instanceof byte[])
-            return writeData(_handle, (byte[]) value);
-
-            // List
-        else if (value instanceof List)
-            return write((List) value);
-
-            // Map
-        else if (value instanceof Map)
-            return write((Map) value);
-
-            // FLEncodable
-        else if (value instanceof FLEncodable) {
-            ((FLEncodable) value).encodeTo(getFLEncoder());
-            return true;
-        }
-
-        return false;
-    }
-
-    public AllocSlice finish() throws LiteCoreException {
-        return new AllocSlice(finish(_handle), false);
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
-    }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
     static native long init();
 
     static native long initWithFLEncoder(long enc);
@@ -239,4 +62,172 @@ public class Encoder {
     static native boolean endDict(long handle);
 
     static native long finish(long handle);
+
+    private long handle; // hold pointer to Encoder*
+    private FLEncoder flEncoder;
+
+    private final boolean managed;
+
+    public Encoder() {
+        this(init(), false);
+    }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
+    public Encoder(FLEncoder enc) {
+        this(initWithFLEncoder(enc.handle), false);
+        flEncoder = enc;
+    }
+
+    Encoder(long handle, boolean managed) {
+        if (handle == 0) { throw new IllegalArgumentException(); }
+        this.handle = handle;
+        this.managed = managed;
+    }
+
+    public void release() {
+        if (handle != 0L && !managed) {
+            release(handle);
+            handle = 0L;
+        }
+    }
+
+    public boolean writeNull() {
+        return writeNull(handle);
+    }
+
+    public boolean beginDict(long reserve) {
+        return beginDict(handle, reserve);
+    }
+
+    public boolean endDict() {
+        return endDict(handle);
+    }
+
+    public boolean beginArray(long reserve) {
+        return beginArray(handle, reserve);
+    }
+
+    public boolean endArray() {
+        return endArray(handle);
+    }
+
+    public boolean writeKey(String slice) {
+        return writeKey(handle, slice);
+    }
+
+    public boolean writeValue(FLValue flValue) {
+        return writeValue(handle, flValue.getHandle());
+    }
+
+    public boolean writeValue(FLArray flValue) {
+        return writeValue(handle, flValue.getHandle());
+    }
+
+    public boolean writeValue(FLDict flValue) {
+        return writeValue(handle, flValue.getHandle());
+    }
+
+    @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
+    @SuppressWarnings("unchecked")
+    public boolean write(Map map) {
+        if (map == null) { beginDict(0); }
+        else {
+            beginDict(map.size());
+            // getting an entrySet is unsupported for FleeceDicts
+            for (String key : (Set<String>) map.keySet()) {
+                writeKey(key);
+                writeObject(map.get(key));
+            }
+        }
+
+        return endDict();
+    }
+
+    public boolean write(List list) {
+        if (list == null) { beginArray(0); }
+        else {
+            beginArray(list.size());
+            for (Object item : list) {
+                writeObject(item);
+            }
+        }
+        return endArray();
+    }
+
+    // C/Fleece+CoreFoundation.mm
+    // bool FLEncoder_WriteNSObject(FLEncoder encoder, id obj)
+    public boolean writeObject(Object value) {
+        // null
+        if (value == null) { return writeNull(handle); }
+
+        // boolean
+        else if (value instanceof Boolean) { return writeBool(handle, (Boolean) value); }
+
+        // Number
+        else if (value instanceof Number) {
+            // Integer
+            if (value instanceof Integer) { return writeInt(handle, ((Integer) value).longValue()); }
+
+            // Long
+            else if (value instanceof Long) { return writeInt(handle, ((Long) value).longValue()); }
+
+            // Short
+            else if (value instanceof Short) { return writeInt(handle, ((Short) value).longValue()); }
+
+            // Double
+            else if (value instanceof Double) { return writeDouble(handle, ((Double) value).doubleValue()); }
+
+            // Float
+            else { return writeFloat(handle, ((Float) value).floatValue()); }
+        }
+
+        // String
+        else if (value instanceof String) { return writeString(handle, (String) value); }
+
+        // byte[]
+        else if (value instanceof byte[]) { return writeData(handle, (byte[]) value); }
+
+        // List
+        else if (value instanceof List) { return write((List) value); }
+
+        // Map
+        else if (value instanceof Map) { return write((Map) value); }
+
+        // FLEncodable
+        else if (value instanceof FLEncodable) {
+            ((FLEncodable) value).encodeTo(getFLEncoder());
+            return true;
+        }
+
+        return false;
+    }
+
+    public AllocSlice finish() {
+        return new AllocSlice(finish(handle), false);
+    }
+
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
+
+    private void free() {
+        if (handle != 0L && !managed) {
+            free(handle);
+            handle = 0L;
+        }
+    }
+
+    private FLEncoder getFLEncoder() {
+        if (flEncoder == null) { flEncoder = new FLEncoder(getFLEncoder(handle), true); }
+        return flEncoder;
+    }
 }

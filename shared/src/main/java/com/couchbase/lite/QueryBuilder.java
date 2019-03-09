@@ -19,17 +19,8 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 public class QueryBuilder {
-    //---------------------------------------------
-    // Constructor
-    //---------------------------------------------
-    private QueryBuilder() {
-    }
-
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
-
     /**
      * Create a SELECT statement instance that you can use further
      * (e.g. calling the from() function) to construct the complete query statement.
@@ -39,10 +30,13 @@ public class QueryBuilder {
      */
     @NonNull
     public static Select select(@NonNull SelectResult... results) {
-        if (results == null)
-            throw new IllegalArgumentException("results cannot be null.");
+        if (results == null) { throw new IllegalArgumentException("results cannot be null."); }
         return new Select(false, results);
     }
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
 
     /**
      * Create a SELECT DISTINCT statement instance that you can use further
@@ -53,8 +47,13 @@ public class QueryBuilder {
      */
     @NonNull
     public static Select selectDistinct(@NonNull SelectResult... results) {
-        if (results == null)
-            throw new IllegalArgumentException("results cannot be null.");
+        if (results == null) { throw new IllegalArgumentException("results cannot be null."); }
         return new Select(true, results);
+    }
+
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+    private QueryBuilder() {
     }
 }

@@ -19,14 +19,15 @@ package com.couchbase.lite.internal.fleece;
 
 import com.couchbase.lite.LiteCoreException;
 
+
 public class MRoot extends MCollection {
-    private MValue _slot;
+    private final MValue slot;
 
     /* Constructors */
 
     public MRoot(MContext context, FLValue value, boolean isMutable) {
         super(context, isMutable);
-        _slot = new MValue(value);
+        slot = new MValue(value);
     }
 
     public MRoot(MContext context, boolean isMutable) {
@@ -44,21 +45,22 @@ public class MRoot extends MCollection {
     /* Properties */
 
     public boolean isMutated() {
-        return _slot.isMutated();
+        return slot.isMutated();
     }
 
     /* Public Methods */
 
     public Object asNative() {
-        return _slot.asNative(this);
+        return slot.asNative(this);
     }
 
     public AllocSlice encode() throws LiteCoreException {
-        Encoder encoder = new Encoder(new FLEncoder());
+        final Encoder encoder = new Encoder(new FLEncoder());
         try {
-            _slot.encodeTo(encoder);
+            slot.encodeTo(encoder);
             return encoder.finish();
-        } finally {
+        }
+        finally {
             encoder.release();
         }
     }
@@ -67,6 +69,6 @@ public class MRoot extends MCollection {
 
     @Override
     public void encodeTo(Encoder enc) {
-        _slot.encodeTo(enc);
+        slot.encodeTo(enc);
     }
 }
