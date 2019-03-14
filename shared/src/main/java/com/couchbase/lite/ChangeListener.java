@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-public interface ChangeListener<ChangeType> {
-    void changed(@NonNull ChangeType change);
+
+public interface ChangeListener<T> {
+    void changed(@NonNull T change);
 }

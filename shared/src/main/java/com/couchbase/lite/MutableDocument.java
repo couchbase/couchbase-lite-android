@@ -19,13 +19,14 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.core.C4Constants;
-import com.couchbase.lite.internal.core.C4Document;
-
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+
+import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.core.C4Document;
+
 
 /**
  * A Couchbase Lite Document. A document has key/value properties like a Map.
@@ -35,6 +36,10 @@ public final class MutableDocument extends Document implements MutableDictionary
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+
+    private static String createUUID() {
+        return UUID.randomUUID().toString().toLowerCase(Locale.ENGLISH);
+    }
 
     /**
      * Creates a new Document object with a new random UUID. The created document will be
@@ -54,7 +59,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param id the document ID.
      */
     public MutableDocument(String id) {
-        super(null, id != null ? id : createUUID(), (C4Document)null);
+        super(null, id != null ? id : createUUID(), (C4Document) null);
     }
 
     /**
@@ -88,14 +93,17 @@ public final class MutableDocument extends Document implements MutableDictionary
         setData(data);
     }
 
+    //---------------------------------------------
+    // public API methods
+    //---------------------------------------------
+
     MutableDocument(Document doc, Dictionary dict) {
         super(doc.getDatabase(), doc.getId(), doc.getC4doc());
-        if (dict != null)
-            _dict = dict.toMutable();
+        if (dict != null) { internalDict = dict.toMutable(); }
     }
 
     //---------------------------------------------
-    // public API methods
+    // DictionaryInterface implementation
     //---------------------------------------------
 
     /**
@@ -106,12 +114,8 @@ public final class MutableDocument extends Document implements MutableDictionary
     @NonNull
     @Override
     public MutableDocument toMutable() {
-        return new MutableDocument(this, _dict);
+        return new MutableDocument(this, internalDict);
     }
-
-    //---------------------------------------------
-    // DictionaryInterface implementation
-    //---------------------------------------------
 
     /**
      * Set a dictionary as a content. Allowed value types are List, Date, Map, Number, null, String,
@@ -125,7 +129,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     @NonNull
     @Override
     public MutableDocument setData(Map<String, Object> data) {
-        ((MutableDictionary) _dict).setData(data);
+        ((MutableDictionary) internalDict).setData(data);
         return this;
     }
 
@@ -141,7 +145,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     @NonNull
     @Override
     public MutableDocument setValue(@NonNull String key, Object value) {
-        ((MutableDictionary) _dict).setValue(key, value);
+        ((MutableDictionary) internalDict).setValue(key, value);
         return this;
     }
 
@@ -297,7 +301,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     @NonNull
     @Override
     public MutableDocument remove(@NonNull String key) {
-        ((MutableDictionary) _dict).remove(key);
+        ((MutableDictionary) internalDict).remove(key);
         return this;
     }
 
@@ -310,8 +314,12 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @Override
     public MutableArray getArray(@NonNull String key) {
-        return ((MutableDictionary) _dict).getArray(key);
+        return ((MutableDictionary) internalDict).getArray(key);
     }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
 
     /**
      * Get a property's value as a Dictionary, which is a mapping object of an dictionary value.
@@ -322,12 +330,8 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @Override
     public MutableDictionary getDictionary(@NonNull String key) {
-        return ((MutableDictionary) _dict).getDictionary(key);
+        return ((MutableDictionary) internalDict).getDictionary(key);
     }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
 
     @Override
     boolean isMutable() {
@@ -339,11 +343,7 @@ public final class MutableDocument extends Document implements MutableDictionary
         return super.generation() + (isChanged() ? 1 : 0);
     }
 
-    boolean isChanged() {
-        return ((MutableDictionary) _dict).isChanged();
-    }
-
-    static String createUUID() {
-        return UUID.randomUUID().toString().toLowerCase(Locale.ENGLISH);
+    private boolean isChanged() {
+        return ((MutableDictionary) internalDict).isChanged();
     }
 }

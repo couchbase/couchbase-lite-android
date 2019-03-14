@@ -19,7 +19,10 @@ package com.couchbase.lite.internal.fleece;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+
 public class MValue implements Encodable {
+    public static final MValue EMPTY = new MValue(true);
+
     public interface Delegate {
         Object toNative(MValue mv, MCollection parent, AtomicBoolean cacheIt);
 
@@ -27,100 +30,89 @@ public class MValue implements Encodable {
 
         void encodeNative(Encoder encoder, Object object);
     }
-
-    private static Delegate _delegate;
-
-    public static final MValue EMPTY = new MValue(true);
-
-    private boolean _isEmpty;
-
-    private Object _nativeObject;
-
-    private FLValue _value;
-
-    /* Delegate */
+    private static Delegate delegate;
 
     public static void registerDelegate(Delegate delegate) {
-        if (delegate == null)
-            throw new IllegalArgumentException("delegate cannot be null.");
-        _delegate = delegate;
+        if (delegate == null) { throw new IllegalArgumentException("delegate cannot be null."); }
+        MValue.delegate = delegate;
     }
 
+    private static void checkDelegate() {
+        if (delegate == null) { throw new IllegalStateException("No MValue delegation defined"); }
+    }
+    private boolean empty;
+
+    /* Delegate */
+    private Object nativeObject;
+
     /* Constructors */
+    private FLValue value;
 
     public MValue(boolean isEmpty) {
-        _isEmpty = isEmpty;
+        this.empty = isEmpty;
     }
 
     public MValue(Object value) {
-        _nativeObject = value;
-    }
-
-    public MValue(FLValue value) {
-        _value = value;
+        nativeObject = value;
     }
 
     /* Properties */
 
+    public MValue(FLValue value) {
+        this.value = value;
+    }
+
     public boolean isEmpty() {
-        return _isEmpty;
+        return empty;
     }
 
     public boolean isMutated() {
-        return _value == null;
-    }
-
-    public FLValue getValue() {
-        return _value;
+        return value == null;
     }
 
     /* Public Methods */
 
-    public Object asNative(MCollection parent) {
-        if (_nativeObject != null || _value == null)
-            return _nativeObject;
-
-        AtomicBoolean cacheIt = new AtomicBoolean(false);
-        Object obj = toNative(this, parent, cacheIt);
-        if (cacheIt.get())
-            _nativeObject = obj;
-        return obj;
+    public FLValue getValue() {
+        return value;
     }
 
-    public void mutate() {
-        if (_nativeObject == null)
-            throw new IllegalStateException("Native object is null.");
-        _value = null;
+    public Object asNative(MCollection parent) {
+        if (nativeObject != null || value == null) { return nativeObject; }
+
+        final AtomicBoolean cacheIt = new AtomicBoolean(false);
+        final Object obj = toNative(this, parent, cacheIt);
+        if (cacheIt.get()) { nativeObject = obj; }
+        return obj;
     }
 
     /* Private Methods */
 
-    private static void checkDelegate() {
-        if (_delegate == null)
-            throw new IllegalStateException("No MValue delegation defined");
+    public void mutate() {
+        if (nativeObject == null) { throw new IllegalStateException("Native object is null."); }
+        value = null;
     }
 
     private Object toNative(MValue mv, MCollection parent, AtomicBoolean cacheIt) {
         checkDelegate();
-        return _delegate.toNative(mv, parent, cacheIt);
+        return delegate.toNative(mv, parent, cacheIt);
     }
 
     private MCollection collectionFromNative(Object obj) {
         checkDelegate();
-        return _delegate.collectionFromNative(obj);
+        return delegate.collectionFromNative(obj);
     }
 
     private void encodeNative(Encoder encoder, Object object) {
         checkDelegate();
-        _delegate.encodeNative(encoder, object);
+        delegate.encodeNative(encoder, object);
     }
 
     private void nativeChangeSlot(MValue newSlot) {
-        MCollection collection = collectionFromNative(newSlot);
-        if (collection != null)
-            collection.setSlot(newSlot, this);
+        final MCollection collection = collectionFromNative(newSlot);
+        if (collection != null) { collection.setSlot(newSlot, this); }
     }
 
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         nativeChangeSlot(null);
@@ -129,13 +121,11 @@ public class MValue implements Encodable {
 
     @Override
     public void encodeTo(Encoder enc) {
-        if (_isEmpty)
-            throw new IllegalStateException("MValue is empty.");
+        if (empty) { throw new IllegalStateException("MValue is empty."); }
 
-        if (_value != null)
-            enc.writeValue(_value);
+        if (value != null) { enc.writeValue(value); }
         else {
-            encodeNative(enc, _nativeObject);
+            encodeNative(enc, nativeObject);
         }
     }
 }

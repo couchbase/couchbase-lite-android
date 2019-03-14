@@ -19,27 +19,37 @@ package com.couchbase.lite.internal.core;
 
 import com.couchbase.lite.LiteCoreException;
 
+
 /**
  * An open stream for writing data to a blob.
  */
 public class C4BlobWriteStream {
     //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+    static native void write(long writeStream, byte[] bytes) throws LiteCoreException;
+
+    static native long computeBlobKey(long writeStream) throws LiteCoreException;
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+
+    static native void install(long writeStream) throws LiteCoreException;
+
+    static native void close(long writeStream);
+    //-------------------------------------------------------------------------
     // Member Variables
     //-------------------------------------------------------------------------
-    private long handle = 0L; // hold pointer to C4BlobWriteStream
+    private long handle; // hold pointer to C4BlobWriteStream
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
     C4BlobWriteStream(long handle) {
-        if (handle == 0)
-            throw new IllegalArgumentException("handle is 0");
+        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
         this.handle = handle;
     }
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
 
     /**
      * Writes data to a stream.
@@ -80,20 +90,10 @@ public class C4BlobWriteStream {
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         close();
         super.finalize();
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-    static native void write(long writeStream, byte[] bytes) throws LiteCoreException;
-
-    static native long computeBlobKey(long writeStream) throws LiteCoreException;
-
-    static native void install(long writeStream) throws LiteCoreException;
-
-    static native void close(long writeStream);
 }

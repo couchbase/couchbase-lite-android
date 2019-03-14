@@ -21,20 +21,20 @@ import android.support.annotation.NonNull;
 
 import java.util.HashSet;
 
- public final class Run {
+
+public final class Run {
     private static final HashSet<String> Instances = new HashSet<>();
 
-    @NonNull
     public static synchronized void once(@NonNull String tag, @NonNull Runnable action) {
-        if(tag == null) {
+        if (tag == null) {
             throw new IllegalArgumentException("tag cannot be null");
         }
 
-        if(action == null) {
+        if (action == null) {
             throw new IllegalArgumentException("action cannot be null");
         }
 
-        if(Instances.contains(tag)) {
+        if (Instances.contains(tag)) {
             return;
         }
 

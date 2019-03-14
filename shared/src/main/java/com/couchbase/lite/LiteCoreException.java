@@ -17,7 +17,14 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
+
 public class LiteCoreException extends Exception {
+    // NOTE called to throw LiteCoreException from native code to Java
+    public static void throwException(int domain, int code, String msg) throws LiteCoreException {
+        throw new LiteCoreException(domain, code, msg);
+    }
     public final int domain; // TODO: Should be an enum
     public final int code;
 
@@ -25,11 +32,6 @@ public class LiteCoreException extends Exception {
         super(message);
         this.domain = domain;
         this.code = code;
-    }
-
-    // NOTE called to throw LiteCoreException from native code to Java
-    public static void throwException(int domain, int code, String msg) throws LiteCoreException {
-        throw new LiteCoreException(domain, code, msg);
     }
 
     public int getDomain() {
@@ -40,12 +42,13 @@ public class LiteCoreException extends Exception {
         return code;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "LiteCoreException{" +
-                "domain=" + domain +
-                ", code=" + code +
-                ", msg=" + super.getMessage() +
-                '}';
+            "domain=" + domain +
+            ", code=" + code +
+            ", msg=" + super.getMessage() +
+            '}';
     }
 }

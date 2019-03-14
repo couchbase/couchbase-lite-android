@@ -22,23 +22,24 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * A meta property expression.
  */
 public class MetaExpression extends Expression {
     private final String keyPath;
+    private final String fromAlias; // Data Source Alias
     private String columnName;
-    private final String from; // Data Source Alias
 
     private MetaExpression(String keyPath, String from) {
         this.keyPath = keyPath;
-        this.from = from;
+        this.fromAlias = from;
     }
 
     MetaExpression(String keyPath, String columnName, String from) {
         this.keyPath = keyPath;
         this.columnName = columnName;
-        this.from = from;
+        this.fromAlias = from;
     }
 
     //---------------------------------------------
@@ -65,18 +66,16 @@ public class MetaExpression extends Expression {
 
     @Override
     Object asJSON() {
-        List<Object> json = new ArrayList<>();
-        if (from != null)
-            json.add("." + from + "." + keyPath);
-        else
-            json.add("." + keyPath);
+        final List<Object> json = new ArrayList<>();
+        if (fromAlias != null) { json.add("." + fromAlias + "." + keyPath); }
+        else { json.add("." + keyPath); }
         return json;
     }
 
     String getColumnName() {
         if (columnName == null) {
-            String[] pathes = keyPath.split("\\.");
-            columnName = pathes[pathes.length - 1];
+            final String[] paths = keyPath.split("\\.");
+            columnName = paths[paths.length - 1];
         }
         return columnName;
     }

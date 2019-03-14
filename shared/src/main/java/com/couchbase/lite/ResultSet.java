@@ -20,14 +20,14 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.core.C4QueryEnumerator;
-import com.couchbase.lite.LiteCoreException;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import com.couchbase.lite.internal.core.C4QueryEnumerator;
+import com.couchbase.lite.internal.support.Log;
+
 
 /**
  * A result set representing the _query result. The result set is an iterator of
@@ -42,10 +42,10 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private AbstractQuery query;
+    private final AbstractQuery query;
+    private final Map<String, Integer> columnNames;
+    private final ResultContext context;
     private C4QueryEnumerator c4enum;
-    private Map<String, Integer> columnNames;
-    private ResultContext context;
     private boolean isAllEnumerated;
 
     //---------------------------------------------
@@ -74,23 +74,23 @@ public class ResultSet implements Iterable<Result> {
      * if there are no more rows, or ResultSet is freed already.
      */
     public Result next() {
-        if (query == null)
-            throw new IllegalStateException("_query variable is null");
+        if (query == null) { throw new IllegalStateException("_query variable is null"); }
 
         synchronized (getDatabase().getLock()) {
             try {
-                if (c4enum == null)
-                    return null;
+                if (c4enum == null) { return null; }
                 else if (isAllEnumerated) {
                     Log.w(DOMAIN, "All query results have already been enumerated.");
-                    return  null;
-                }  else if (!c4enum.next()) {
+                    return null;
+                }
+                else if (!c4enum.next()) {
                     Log.i(DOMAIN, "End of query enumeration");
                     isAllEnumerated = true;
                     return null;
-                } else
-                    return currentObject();
-            } catch (LiteCoreException e) {
+                }
+                else { return currentObject(); }
+            }
+            catch (LiteCoreException e) {
                 Log.w(DOMAIN, "Query enumeration error: %s", e.toString());
                 return null;
             }
@@ -107,10 +107,9 @@ public class ResultSet implements Iterable<Result> {
      */
     @NonNull
     public List<Result> allResults() {
-        List<Result> results = new ArrayList<>();
+        final List<Result> results = new ArrayList<>();
         Result result;
-        while ((result = next()) != null)
-            results.add(result);
+        while ((result = next()) != null) { results.add(result); }
         return results;
     }
 
@@ -135,6 +134,7 @@ public class ResultSet implements Iterable<Result> {
     // protected methods
     //---------------------------------------------
 
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         free();
@@ -156,14 +156,14 @@ public class ResultSet implements Iterable<Result> {
     }
 
     ResultSet refresh() throws CouchbaseLiteException {
-        if (query == null)
-            throw new IllegalStateException("_query variable is null");
+        if (query == null) { throw new IllegalStateException("_query variable is null"); }
 
         synchronized (getDatabase().getLock()) {
             try {
-                C4QueryEnumerator newEnum = c4enum.refresh();
+                final C4QueryEnumerator newEnum = c4enum.refresh();
                 return newEnum != null ? new ResultSet(query, newEnum, columnNames) : null;
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
         }

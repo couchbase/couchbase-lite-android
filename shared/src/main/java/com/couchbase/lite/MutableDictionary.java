@@ -19,12 +19,13 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import java.util.Date;
+import java.util.Map;
+
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MDict;
 import com.couchbase.lite.internal.fleece.MValue;
 
-import java.util.Date;
-import java.util.Map;
 
 /**
  * Dictionary provides access to dictionary data.
@@ -37,9 +38,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     /**
      * Initialize a new empty Dictionary object.
      */
-    public MutableDictionary() {
-        super();
-    }
+    public MutableDictionary() { }
 
     /**
      * Initializes a new CBLDictionary object with dictionary content. Allowed value types are List,
@@ -48,10 +47,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      *
      * @param data the dictionary object.
      */
-    public MutableDictionary(Map<String, Object> data) {
-        super();
-        setData(data);
-    }
+    public MutableDictionary(Map<String, Object> data) { setData(data); }
 
     // to create copy of dictionary
     MutableDictionary(MDict mDict, boolean isMutable) {
@@ -78,10 +74,13 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @NonNull
     @Override
     public MutableDictionary setData(Map<String, Object> data) {
-        synchronized (_sharedLock) {
-            _dict.clear();
-            for (Map.Entry<String, Object> entry : data.entrySet())
-                _dict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
+        synchronized (lock) {
+            internalDict.clear();
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                internalDict.set(
+                    entry.getKey(),
+                    new MValue(Fleece.toCBLObject(entry.getValue())));
+            }
             return this;
         }
     }
@@ -98,14 +97,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @NonNull
     @Override
     public MutableDictionary setValue(@NonNull String key, Object value) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            MValue oldValue = _dict.get(key);
+        synchronized (lock) {
+            final MValue oldValue = internalDict.get(key);
             value = Fleece.toCBLObject(value);
-            if (Fleece.valueWouldChange(value, oldValue, _dict))
-                _dict.set(key, new MValue(value));
+            if (Fleece.valueWouldChange(value, oldValue, internalDict)) { internalDict.set(key, new MValue(value)); }
             return this;
         }
     }
@@ -262,11 +259,10 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @NonNull
     @Override
     public MutableDictionary remove(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            _dict.remove(key);
+        synchronized (lock) {
+            internalDict.remove(key);
             return this;
         }
     }
@@ -297,13 +293,8 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
 
 
     protected boolean isChanged() {
-        synchronized (_sharedLock) {
-            return _dict.isMutated();
+        synchronized (lock) {
+            return internalDict.isMutated();
         }
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
     }
 }

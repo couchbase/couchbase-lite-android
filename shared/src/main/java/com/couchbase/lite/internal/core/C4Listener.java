@@ -21,62 +21,16 @@ import com.couchbase.lite.LiteCoreException;
 
 
 public class C4Listener {
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
-    private long handle = 0L; // hold pointer to C4Listener
+    public static int getAvailableAPIs() {
+        return availableAPIs();
+    }
 
     //-------------------------------------------------------------------------
     // public static methods
     //-------------------------------------------------------------------------
 
-    public static int getAvailableAPIs() {
-        return availableAPIs();
-    }
-
     public static String getURINameFromPath(String path) {
         return uriNameFromPath(path);
-    }
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-    public C4Listener(C4ListenerConfig config) throws LiteCoreException {
-        if (config == null)
-            throw new IllegalArgumentException();
-
-        handle = start(
-                config.getPort(),
-                config.getApis(),
-                config.getDirectory(),
-                config.isAllowCreateDBs(),
-                config.isAllowDeleteDBs(),
-                config.isAllowPush(),
-                config.isAllowPull());
-    }
-
-    public void free() {
-        if (handle != 0L) {
-            free(handle);
-            handle = 0L;
-        }
-    }
-
-    public boolean shareDB(String name, C4Database db) {
-        return shareDB(handle, name, db.getHandle());
-    }
-
-    public boolean unshareDB(String name) {
-        return unshareDB(handle, name);
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
     }
 
     //-------------------------------------------------------------------------
@@ -84,12 +38,13 @@ public class C4Listener {
     //-------------------------------------------------------------------------
     static native int availableAPIs();
 
-    static native long start(int port,
-                             int apis,
-                             String directory,
-                             boolean allowCreateDBs,
-                             boolean allowDeleteDBs,
-                             boolean allowPush, boolean allowPull) throws LiteCoreException;
+    static native long start(
+        int port,
+        int apis,
+        String directory,
+        boolean allowCreateDBs,
+        boolean allowDeleteDBs,
+        boolean allowPush, boolean allowPull) throws LiteCoreException;
 
     static native void free(long listener);
 
@@ -108,4 +63,49 @@ public class C4Listener {
      * for use in an HTTP URI path.
      */
     static native String uriNameFromPath(String path);
+    //-------------------------------------------------------------------------
+    // Member Variables
+    //-------------------------------------------------------------------------
+    private long handle; // hold pointer to C4Listener
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+    public C4Listener(C4ListenerConfig config) throws LiteCoreException {
+        if (config == null) { throw new IllegalArgumentException(); }
+
+        handle = start(
+            config.getPort(),
+            config.getApis(),
+            config.getDirectory(),
+            config.isAllowCreateDBs(),
+            config.isAllowDeleteDBs(),
+            config.isAllowPush(),
+            config.isAllowPull());
+    }
+
+    private void free() {
+        if (handle != 0L) {
+            free(handle);
+            handle = 0L;
+        }
+    }
+
+    public boolean shareDB(String name, C4Database db) {
+        return shareDB(handle, name, db.getHandle());
+    }
+
+    public boolean unshareDB(String name) {
+        return unshareDB(handle, name);
+    }
+
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
 }

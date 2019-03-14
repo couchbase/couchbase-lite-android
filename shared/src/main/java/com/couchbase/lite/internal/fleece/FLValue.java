@@ -17,120 +17,28 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-import com.couchbase.lite.LiteCoreException;
-
 import java.util.List;
 import java.util.Map;
 
-import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLArray;
-import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLBoolean;
-import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLData;
-import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLDict;
-import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLNull;
-import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLNumber;
-import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLString;
+import com.couchbase.lite.LiteCoreException;
+
 
 public class FLValue {
     //-------------------------------------------------------------------------
     // private variables
     //-------------------------------------------------------------------------
 
-    private long handle = 0L; // pointer to FLValue
+    public static FLValue fromData(AllocSlice slice) {
+        final long value = fromData(slice.handle);
+        return value != 0 ? new FLValue(value) : null;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
 
-    public static FLValue fromData(AllocSlice slice) {
-        long value = fromData(slice._handle);
-        return value != 0 ? new FLValue(value) : null;
-    }
-
     public static FLValue fromData(byte[] data) {
         return new FLValue(fromTrustedData(data));
-    }
-
-    public FLValue(long handle) {
-        if (handle == 0L) throw new IllegalArgumentException("handle is 0L.");
-        this.handle = handle;
-    }
-
-    public int getType() {
-        return getType(handle);
-    }
-
-    public boolean asBool() {
-        return asBool(handle);
-    }
-
-    public long asUnsigned() {
-        return asUnsigned(handle);
-    }
-
-    public long asInt() {
-        return asInt(handle);
-    }
-
-    public byte[] asData() {
-        return asData(handle);
-    }
-
-    public float asFloat() {
-        return asFloat(handle);
-    }
-
-    public double asDouble() {
-        return asDouble(handle);
-    }
-
-    public String asString() {
-        return asString(handle);
-    }
-
-    public FLDict asFLDict() {
-        return new FLDict(asDict(handle));
-    }
-
-    public FLArray asFLArray() {
-        return new FLArray(asArray(handle));
-    }
-
-    public Map<String, Object> asDict() {
-        return asFLDict().asDict();
-    }
-
-    public List<Object> asArray() {
-        return asFLArray().asArray();
-    }
-
-    public Object asObject() {
-        switch (getType(handle)) {
-            case kFLNull:
-                return null;
-            case kFLBoolean:
-                return Boolean.valueOf(asBool());
-            case kFLNumber:
-                if (isInteger()) {
-                    if (isUnsigned())
-                        return Long.valueOf(asUnsigned());
-                    return Long.valueOf(asInt());
-                } else if (isDouble()) {
-                    return Double.valueOf(asDouble());
-                } else {
-                    return Float.valueOf(asFloat());
-                }
-            case kFLString:
-                return asString();
-            case kFLData:
-                return asData();
-            case kFLArray:
-                return asArray();
-            case kFLDict: {
-                return asDict();
-            }
-            default:
-                return null;
-        }
     }
 
     public static Object toObject(FLValue flValue) {
@@ -140,46 +48,6 @@ public class FLValue {
     public static String json5ToJson(String json5) throws LiteCoreException {
         return JSON5ToJSON(json5);
     }
-
-    public boolean isNumber() {
-        return getType() == kFLNumber;
-    }
-
-    public boolean isInteger() {
-        return isInteger(handle);
-    }
-
-    public boolean isDouble() {
-        return isDouble(handle);
-    }
-
-    public boolean isUnsigned() {
-        return isUnsigned(handle);
-    }
-
-    public String toStr() {
-        return toString(handle);
-    }
-
-    public String toJSON() {
-        return toJSON(handle);
-    }
-
-    public String toJSON5() {
-        return toJSON5(handle);
-    }
-
-    //-------------------------------------------------------------------------
-    // package level access
-    //-------------------------------------------------------------------------
-
-    long getHandle() {
-        return handle;
-    }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
 
     static native long fromData(long slice);
 
@@ -304,6 +172,7 @@ public class FLValue {
      * @return JSON String
      * @throws LiteCoreException
      */
+    @SuppressWarnings({"MethodName", "PMD.MethodNamingConventions"})
     static native String JSON5ToJSON(String json5) throws LiteCoreException;
 
     static native String toString(long handle);
@@ -311,5 +180,119 @@ public class FLValue {
     static native String toJSON(long handle);
 
     static native String toJSON5(long handle);
+    private long handle; // pointer to FLValue
+
+    public FLValue(long handle) {
+        if (handle == 0L) { throw new IllegalArgumentException("handle is 0L."); }
+        this.handle = handle;
+    }
+
+    public int getType() {
+        return getType(handle);
+    }
+
+    public boolean asBool() {
+        return asBool(handle);
+    }
+
+    public long asUnsigned() { return asUnsigned(handle); }
+
+    public long asInt() {
+        return asInt(handle);
+    }
+
+    public byte[] asData() {
+        return asData(handle);
+    }
+
+    public float asFloat() {
+        return asFloat(handle);
+    }
+
+    public double asDouble() {
+        return asDouble(handle);
+    }
+
+    public String asString() {
+        return asString(handle);
+    }
+
+    public FLDict asFLDict() {
+        return new FLDict(asDict(handle));
+    }
+
+    public FLArray asFLArray() {
+        return new FLArray(asArray(handle));
+    }
+
+    public Map<String, Object> asDict() {
+        return asFLDict().asDict();
+    }
+
+    public List<Object> asArray() {
+        return asFLArray().asArray();
+    }
+
+    public Object asObject() {
+        switch (getType(handle)) {
+            case FLConstants.FLValueType.kFLNull:
+                return null;
+            case FLConstants.FLValueType.kFLBoolean:
+                return Boolean.valueOf(asBool());
+            case FLConstants.FLValueType.kFLNumber:
+                if (isInteger()) {
+                    if (isUnsigned()) { return Long.valueOf(asUnsigned()); }
+                    return Long.valueOf(asInt());
+                }
+                else if (isDouble()) {
+                    return Double.valueOf(asDouble());
+                }
+                else {
+                    return Float.valueOf(asFloat());
+                }
+            case FLConstants.FLValueType.kFLString:
+                return asString();
+            case FLConstants.FLValueType.kFLData:
+                return asData();
+            case FLConstants.FLValueType.kFLArray:
+                return asArray();
+            case FLConstants.FLValueType.kFLDict:
+                return asDict();
+            default:
+                return null;
+        }
+    }
+
+    public boolean isNumber() {
+        return getType() == FLConstants.FLValueType.kFLNumber;
+    }
+
+    public boolean isInteger() {
+        return isInteger(handle);
+    }
+
+    public boolean isDouble() {
+        return isDouble(handle);
+    }
+
+    public boolean isUnsigned() {
+        return isUnsigned(handle);
+    }
+
+    public String toStr() {
+        return toString(handle);
+    }
+
+    public String toJSON() {
+        return toJSON(handle);
+    }
+
+    public String toJSON5() {
+        return toJSON5(handle);
+    }
+
+    long getHandle() {
+        return handle;
+    }
 }
 

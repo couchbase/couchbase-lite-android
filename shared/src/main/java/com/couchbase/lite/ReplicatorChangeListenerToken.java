@@ -19,13 +19,13 @@ package com.couchbase.lite;
 
 import java.util.concurrent.Executor;
 
+
 final class ReplicatorChangeListenerToken implements ListenerToken {
-    private Executor executor;
     private final ReplicatorChangeListener listener;
+    private Executor executor;
 
     ReplicatorChangeListenerToken(Executor executor, ReplicatorChangeListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("a listener parameter is null");
+        if (listener == null) { throw new IllegalArgumentException("a listener parameter is null"); }
         this.executor = executor;
         this.listener = listener;
     }
@@ -40,17 +40,16 @@ final class ReplicatorChangeListenerToken implements ListenerToken {
     }
 
     Executor getExecutor() {
-        return executor != null ? executor : DefaultExecutor.instance();
+        return executor != null ? executor : DefaultExecutor.getInstance();
     }
 }
 
 final class DocumentReplicationListenerToken implements ListenerToken {
-    private Executor executor;
     private final DocumentReplicationListener listener;
+    private Executor executor;
 
     DocumentReplicationListenerToken(Executor executor, DocumentReplicationListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("a listener parameter is null");
+        if (listener == null) { throw new IllegalArgumentException("a listener parameter is null"); }
         this.executor = executor;
         this.listener = listener;
     }
@@ -64,7 +63,7 @@ final class DocumentReplicationListenerToken implements ListenerToken {
         });
     }
 
-    Executor getExecutor() {
-        return executor != null ? executor : DefaultExecutor.instance();
+    private Executor getExecutor() {
+        return executor != null ? executor : DefaultExecutor.getInstance();
     }
 }

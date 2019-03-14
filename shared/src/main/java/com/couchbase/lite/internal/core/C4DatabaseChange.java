@@ -18,11 +18,11 @@
 package com.couchbase.lite.internal.core;
 
 public class C4DatabaseChange {
-    private String docID = null;
-    private String revID = null;
-    private long sequence = 0L;
-    private long bodySize = 0L;
-    private boolean external = false;
+    private String docID;
+    private String revID;
+    private long sequence;
+    private long bodySize;
+    private boolean external;
 
     public String getDocID() {
         return docID;

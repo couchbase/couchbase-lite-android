@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * QueryChange contains the information about the query result changes reported
  * by a query object.
@@ -27,9 +28,9 @@ public final class QueryChange {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Query query;
-    private ResultSet rs;
-    private Throwable error;
+    private final Query query;
+    private final ResultSet rs;
+    private final Throwable error;
 
     //---------------------------------------------
     // constructors

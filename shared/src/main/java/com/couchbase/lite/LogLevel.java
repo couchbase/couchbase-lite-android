@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 
+
 /**
  * Log level. The default log level for all domains is warning.
  * The log levels here are tentative and subject to change.

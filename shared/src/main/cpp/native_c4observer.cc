@@ -71,8 +71,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
         if (!cls_C4DocObs)
             return false;
 
-        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback",
-                                                     "(JLjava/lang/String;J)V");
+        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JLjava/lang/String;J)V");
         if (!m_C4DocObs_callback)
             return false;
     }
@@ -165,12 +164,9 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges(JNIEnv *env,
 
     jobjectArray array = env->NewObjectArray(nChanges, cls_C4DBChange, NULL);
     for (size_t i = 0; i < nChanges; i++) {
-        jobject obj = env->NewObject(cls_C4DBChange,
-                                     m_C4DBChange_init);
-        env->SetObjectField(obj, f_C4DBChange_docID,
-                            toJString(env, c4changes[i].docID));
-        env->SetObjectField(obj, f_C4DBChange_revID,
-                            toJString(env, c4changes[i].revID));
+        jobject obj = env->NewObject(cls_C4DBChange, m_C4DBChange_init);
+        env->SetObjectField(obj, f_C4DBChange_docID, toJString(env, c4changes[i].docID));
+        env->SetObjectField(obj, f_C4DBChange_revID, toJString(env, c4changes[i].revID));
         env->SetLongField(obj, f_C4DBChange_sequence, c4changes[i].sequence);
         env->SetLongField(obj, f_C4DBChange_bodySize, c4changes[i].bodySize);
         env->SetBooleanField(obj, f_C4DBChange_external, external);

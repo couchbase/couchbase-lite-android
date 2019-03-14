@@ -20,9 +20,8 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.core.C4Error;
-
 import java.util.List;
+
 
 /**
  * Document replicated update of a replicator.
@@ -32,8 +31,8 @@ public final class DocumentReplication {
     // member variables
     //---------------------------------------------
     private final Replicator replicator;
-    private boolean pushing = false;
-    private List<ReplicatedDocument> documents;
+    private final List<ReplicatedDocument> documents;
+    private boolean pushing;
 
     //---------------------------------------------
     // Constructors

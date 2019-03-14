@@ -2,8 +2,9 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.lite.internal.core.C4Socket;
+import com.couchbase.lite.internal.replicator.CBLWebSocket;
+
 
 public final class Replicator extends AbstractReplicator {
     /**

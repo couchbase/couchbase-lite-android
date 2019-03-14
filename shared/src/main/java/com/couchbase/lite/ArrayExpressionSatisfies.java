@@ -22,43 +22,24 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * The Satisfies class represents the SATISFIES clause object in a quantified operator
  * (ANY/ANY AND EVERY/EVERY <variable name> IN <expr> SATISFIES <expr>). The SATISFIES clause
  * is used for specifying an expression that will be used to evaluate each item in the array.
  */
 public final class ArrayExpressionSatisfies {
-    private ArrayExpression.QuantifiesType type;
-    private VariableExpression variable;
-    private Expression inExpression;
-
-    ArrayExpressionSatisfies(ArrayExpression.QuantifiesType type, VariableExpression variable, Expression inExpression) {
-        this.type = type;
-        this.variable = variable;
-        this.inExpression = inExpression;
-    }
-
-    /**
-     * Creates a complete quantified operator with the given satisfies expression.
-     *
-     * @param expression Parameter expression: The satisfies expression used for evaluating each item in the array.
-     * @return The quantified expression.
-     */
-    @NonNull
-    public Expression satisfies(@NonNull Expression expression) {
-        if (expression == null) {
-            throw new IllegalArgumentException("expression cannot be null.");
-        }
-        return new QuantifiedExpression(type, variable, inExpression, expression);
-    }
-
     private static final class QuantifiedExpression extends Expression {
-        private ArrayExpression.QuantifiesType type;
-        private VariableExpression variable;
-        private Expression inExpression;
-        private Expression satisfiedExpression;
+        private final ArrayExpression.QuantifiesType type;
+        private final VariableExpression variable;
+        private final Expression inExpression;
+        private final Expression satisfiedExpression;
 
-        QuantifiedExpression(ArrayExpression.QuantifiesType type, VariableExpression variable, Expression inExpression, Expression satisfiesExpression) {
+        QuantifiedExpression(
+            ArrayExpression.QuantifiesType type,
+            VariableExpression variable,
+            Expression inExpression,
+            Expression satisfiesExpression) {
             this.type = type;
             this.variable = variable;
             this.inExpression = inExpression;
@@ -67,7 +48,7 @@ public final class ArrayExpressionSatisfies {
 
         @Override
         Object asJSON() {
-            List<Object> json = new ArrayList<>(4);
+            final List<Object> json = new ArrayList<>(4);
 
             // type
             switch (type) {
@@ -93,5 +74,31 @@ public final class ArrayExpressionSatisfies {
 
             return json;
         }
+    }
+    private final ArrayExpression.QuantifiesType type;
+    private final VariableExpression variable;
+    private final Expression inExpression;
+
+    ArrayExpressionSatisfies(
+        ArrayExpression.QuantifiesType type,
+        VariableExpression variable,
+        Expression inExpression) {
+        this.type = type;
+        this.variable = variable;
+        this.inExpression = inExpression;
+    }
+
+    /**
+     * Creates a complete quantified operator with the given satisfies expression.
+     *
+     * @param expression Parameter expression: The satisfies expression used for evaluating each item in the array.
+     * @return The quantified expression.
+     */
+    @NonNull
+    public Expression satisfies(@NonNull Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null.");
+        }
+        return new QuantifiedExpression(type, variable, inExpression, expression);
     }
 }

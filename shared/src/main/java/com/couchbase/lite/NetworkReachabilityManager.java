@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+
 /**
  * This uses system api (on Android, uses the Context) to listen for network reachability
  * change events and notifies all NetworkReachabilityListeners that have registered themselves.
@@ -29,11 +30,8 @@ import java.util.Set;
  */
 abstract class NetworkReachabilityManager {
 
-    private Set<NetworkReachabilityListener> listeners;
-
-    NetworkReachabilityManager() {
-        listeners = Collections.synchronizedSet(new HashSet<NetworkReachabilityListener>());
-    }
+    private final Set<NetworkReachabilityListener> listeners
+        = Collections.synchronizedSet(new HashSet<NetworkReachabilityListener>());
 
     /**
      * Add Network Reachability Listener
@@ -41,8 +39,7 @@ abstract class NetworkReachabilityManager {
     void addNetworkReachabilityListener(NetworkReachabilityListener listener) {
         synchronized (listeners) {
             listeners.add(listener);
-            if (listeners.size() == 1)
-                startListening();
+            if (listeners.size() == 1) { startListening(); }
         }
     }
 
@@ -52,8 +49,7 @@ abstract class NetworkReachabilityManager {
     void removeNetworkReachabilityListener(NetworkReachabilityListener listener) {
         synchronized (listeners) {
             listeners.remove(listener);
-            if (listeners.size() == 0)
-                stopListening();
+            if (listeners.size() == 0) { stopListening(); }
         }
     }
 
@@ -62,10 +58,9 @@ abstract class NetworkReachabilityManager {
      */
     void notifyListenersNetworkReachable() {
         // NOTE: synchronized(listener) causes deadlock with listeners and Replicator.lock.
-        Set<NetworkReachabilityListener> copy = new HashSet<>(listeners);
+        final Set<NetworkReachabilityListener> copy = new HashSet<>(listeners);
         for (NetworkReachabilityListener listener : copy) {
-            if (listener != null)
-                listener.networkReachable();
+            if (listener != null) { listener.networkReachable(); }
         }
     }
 
@@ -74,10 +69,9 @@ abstract class NetworkReachabilityManager {
      */
     void notifyListenersNetworkUneachable() {
         // NOTE: synchronized(listener) causes deadlock with listeners and Replicator.lock.
-        Set<NetworkReachabilityListener> copy = new HashSet<>(listeners);
+        final Set<NetworkReachabilityListener> copy = new HashSet<>(listeners);
         for (NetworkReachabilityListener listener : copy) {
-            if (listener != null)
-                listener.networkUnreachable();
+            if (listener != null) { listener.networkUnreachable(); }
         }
     }
 

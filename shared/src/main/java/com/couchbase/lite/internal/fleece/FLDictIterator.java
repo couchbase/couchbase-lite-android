@@ -19,58 +19,6 @@ package com.couchbase.lite.internal.fleece;
 
 
 public class FLDictIterator {
-    private long handle = 0; // hold pointer to FLDictIterator
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-    public FLDictIterator() {
-        handle = init();
-    }
-
-    public void begin(FLDict dict) {
-        begin(dict.getHandle(), handle);
-    }
-
-    public String getKeyString() {
-        return getKeyString(handle);
-    }
-
-    public FLValue getValue() {
-        long hValue = getValue(handle);
-        return hValue != 0L ? new FLValue(hValue) : null;
-    }
-
-    public boolean next() {
-        return next(handle);
-    }
-
-    public long getCount() {
-        return getCount(handle);
-    }
-
-    public void free() {
-        if (handle != 0L) {
-            free(handle);
-            handle = 0L;
-        }
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
-    }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-
     /**
      * Create FLDictIterator instance
      *
@@ -122,4 +70,55 @@ public class FLDictIterator {
      * @param itr (FLDictIterator *)
      */
     static native void free(long itr);
+    private long handle; // hold pointer to FLDictIterator
+
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+    public FLDictIterator() {
+        handle = init();
+    }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
+    public void begin(FLDict dict) {
+        begin(dict.getHandle(), handle);
+    }
+
+    public String getKeyString() {
+        return getKeyString(handle);
+    }
+
+    public FLValue getValue() {
+        final long hValue = getValue(handle);
+        return hValue != 0L ? new FLValue(hValue) : null;
+    }
+
+    public boolean next() {
+        return next(handle);
+    }
+
+    public long getCount() {
+        return getCount(handle);
+    }
+
+    public void free() {
+        if (handle != 0L) {
+            free(handle);
+            handle = 0L;
+        }
+    }
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
 }

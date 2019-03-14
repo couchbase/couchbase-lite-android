@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+
 /**
  * Having represents a HAVING clause of the query statement used for filtering the aggregated values
  * from the the GROUP BY clause.
@@ -29,7 +30,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
-    private Expression expression;
+    private final Expression expression;
 
     //---------------------------------------------
     // Constructor

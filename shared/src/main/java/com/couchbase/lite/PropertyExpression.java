@@ -22,34 +22,43 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * Property expression
  */
 public final class PropertyExpression extends Expression {
-    final static String kCBLAllPropertiesName = "";
+    static final String kCBLAllPropertiesName = "";
 
+    static PropertyExpression allFrom(String from) {
+        // Use data source alias name as the column name if specified:
+        return new PropertyExpression(kCBLAllPropertiesName, (from != null ? from : kCBLAllPropertiesName), from);
+    }
     private final String keyPath;
+    private final String fromAlias; // Data Source Alias
     private String columnName;
-    private final String from; // Data Source Alias
 
     PropertyExpression(String keyPath) {
         this.keyPath = keyPath;
-        this.from = null;
+        this.fromAlias = null;
     }
 
     private PropertyExpression(String keyPath, String from) {
         this.keyPath = keyPath;
-        this.from = from;
-    }
-
-    private PropertyExpression(String keyPath, String columnName, String from) {
-        this.keyPath = keyPath;
-        this.columnName = columnName;
-        this.from = from;
+        this.fromAlias = from;
     }
 
     //---------------------------------------------
     // public level access
+    //---------------------------------------------
+
+    private PropertyExpression(String keyPath, String columnName, String from) {
+        this.keyPath = keyPath;
+        this.columnName = columnName;
+        this.fromAlias = from;
+    }
+
+    //---------------------------------------------
+    // package level access
     //---------------------------------------------
 
     /**
@@ -63,30 +72,18 @@ public final class PropertyExpression extends Expression {
         return new PropertyExpression(this.keyPath, alias);
     }
 
-    //---------------------------------------------
-    // package level access
-    //---------------------------------------------
-
-    static PropertyExpression allFrom(String from) {
-        // Use data source alias name as the column name if specified:
-        String colName = from != null ? from : kCBLAllPropertiesName;
-        return new PropertyExpression(kCBLAllPropertiesName, colName, from);
-    }
-
     @Override
     Object asJSON() {
-        List<Object> json = new ArrayList<>();
-        if (from != null)
-            json.add("." + from + "." + keyPath);
-        else
-            json.add("." + keyPath);
+        final List<Object> json = new ArrayList<>();
+        if (fromAlias != null) { json.add("." + fromAlias + "." + keyPath); }
+        else { json.add("." + keyPath); }
         return json;
     }
 
     String getColumnName() {
         if (columnName == null) {
-            String[] pathes = keyPath.split("\\.");
-            columnName = pathes[pathes.length - 1];
+            final String[] paths = keyPath.split("\\.");
+            columnName = paths[paths.length - 1];
         }
         return columnName;
     }

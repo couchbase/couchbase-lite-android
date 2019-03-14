@@ -19,21 +19,18 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.core.C4Document;
-import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.fleece.FLDict;
-import com.couchbase.lite.internal.fleece.FLEncoder;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.fleece.MRoot;
-
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.couchbase.lite.internal.core.C4Constants.C4DocumentFlags.kDocDeleted;
-import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevIsConflict;
+import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.core.C4Document;
+import com.couchbase.lite.internal.fleece.FLDict;
+import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.MRoot;
+
 
 /**
  * Readonly version of the Document.
@@ -42,71 +39,61 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
     // Load LiteCore library and its dependencies
     //---------------------------------------------
-    static {
-        NativeLibraryLoader.load();
-    }
+    static { NativeLibraryLoader.load(); }
 
+
+    private final Object lock = new Object(); // lock for thread-safety
+    // access from MutableDocument
+    Dictionary internalDict;
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Database _database;
-    private String _id;
-    private C4Document _c4doc;
-    private MRoot _root;
-    private LiteCoreException encodingError;
+    private FLDict data;
+    private Database database;
+    private C4Document c4doc;
+    private MRoot root;
 
-    // access from MutableDocument
-    FLDict _data;
-    Dictionary _dict;
+    private final String id;
 
-    private final Object lock = new Object(); // lock for thread-safety
+    Document(Database database, String id, C4Document c4doc) {
+        this.database = database;
+        this.id = id;
+        setC4Document(c4doc);
+    }
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    Document(Database database,
-             String id,
-             C4Document c4doc) {
-        this._database = database;
-        this._id = id;
-        setC4Document(c4doc);
-    }
-
-    Document(Database database,
-             String id,
-             boolean includeDeleted) throws CouchbaseLiteException {
+    Document(Database database, String id, boolean includeDeleted) throws CouchbaseLiteException {
         this(database, id, (C4Document) null);
-        C4Document doc;
+        final C4Document doc;
         try {
-            if (_database == null || _database.getC4Database() == null)
-                throw new IllegalStateException();
-            doc = _database.getC4Database().get(getId(), true);
-        } catch (LiteCoreException e) {
+            if (this.database == null || this.database.getC4Database() == null) { throw new IllegalStateException(); }
+            doc = this.database.getC4Database().get(getId(), true);
+        }
+        catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
         }
 
-        if (!includeDeleted && (doc.getFlags() & kDocDeleted) != 0) {
+        if (!includeDeleted && (doc.getFlags() & C4Constants.C4DocumentFlags.kDocDeleted) != 0) {
             doc.retain();
             doc.release(); // doc is not retained before set.
             throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
         }
 
-        // NOTE: _c4doc should not be null.
+        // NOTE: c4doc should not be null.
         setC4Document(doc);
     }
 
-    Document(Database database,
-             String id,
-             FLDict body) {
+    Document(
+        Database database,
+        String id,
+        FLDict body) {
         this(database, id, (C4Document) null);
-        this._data = body;
+        this.data = body;
         updateDictionary();
     }
-
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
 
     /**
      * return the document's ID.
@@ -115,8 +102,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @NonNull
     public String getId() {
-        return _id;
+        return id;
     }
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
 
     /**
      * Return the sequence number of the document in the database.
@@ -129,7 +120,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     public long getSequence() {
         synchronized (lock) {
-            return _c4doc != null ? _c4doc.getSelectedSequence() : 0;
+            return c4doc != null ? c4doc.getSelectedSequence() : 0;
         }
     }
 
@@ -143,10 +134,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return new MutableDocument(this, null);
     }
 
-    //---------------------------------------------
-    // API - Implemenents ReadOnlyDictionaryInterface
-    //---------------------------------------------
-
     /**
      * Gets a number of the entries in the dictionary.
      *
@@ -154,8 +141,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public int count() {
-        return _dict.count();
+        return internalDict.count();
     }
+
+    //---------------------------------------------
+    // API - Implemenents ReadOnlyDictionaryInterface
+    //---------------------------------------------
 
     /**
      * Get an List containing all keys, or an empty List if the document has no properties.
@@ -165,9 +156,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @NonNull
     @Override
     public List<String> getKeys() {
-        return _dict.getKeys();
+        return internalDict.getKeys();
     }
-
 
     /**
      * Gets a property's value as an object. The object types are Blob, Array,
@@ -179,7 +169,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public Object getValue(@NonNull String key) {
-        return _dict.getValue(key);
+        return internalDict.getValue(key);
     }
 
     /**
@@ -191,7 +181,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public String getString(@NonNull String key) {
-        return _dict.getString(key);
+        return internalDict.getString(key);
     }
 
     /**
@@ -203,7 +193,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public Number getNumber(@NonNull String key) {
-        return _dict.getNumber(key);
+        return internalDict.getNumber(key);
     }
 
     /**
@@ -216,7 +206,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public int getInt(@NonNull String key) {
-        return _dict.getInt(key);
+        return internalDict.getInt(key);
     }
 
     /**
@@ -229,7 +219,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public long getLong(@NonNull String key) {
-        return _dict.getLong(key);
+        return internalDict.getLong(key);
     }
 
     /**
@@ -242,7 +232,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public float getFloat(@NonNull String key) {
-        return _dict.getFloat(key);
+        return internalDict.getFloat(key);
     }
 
     /**
@@ -255,7 +245,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public double getDouble(@NonNull String key) {
-        return _dict.getDouble(key);
+        return internalDict.getDouble(key);
     }
 
     /**
@@ -267,7 +257,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public boolean getBoolean(@NonNull String key) {
-        return _dict.getBoolean(key);
+        return internalDict.getBoolean(key);
     }
 
     /**
@@ -279,7 +269,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public Blob getBlob(@NonNull String key) {
-        return _dict.getBlob(key);
+        return internalDict.getBlob(key);
     }
 
     /**
@@ -295,7 +285,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public Date getDate(@NonNull String key) {
-        return _dict.getDate(key);
+        return internalDict.getDate(key);
     }
 
     /**
@@ -307,7 +297,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public Array getArray(@NonNull String key) {
-        return _dict.getArray(key);
+        return internalDict.getArray(key);
     }
 
     /**
@@ -320,7 +310,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public Dictionary getDictionary(@NonNull String key) {
-        return _dict.getDictionary(key);
+        return internalDict.getDictionary(key);
     }
 
     /**
@@ -332,7 +322,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @NonNull
     @Override
     public Map<String, Object> toMap() {
-        return _dict.toMap();
+        return internalDict.toMap();
     }
 
     /**
@@ -345,12 +335,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public boolean contains(@NonNull String key) {
-        return _dict.contains(key);
+        return internalDict.contains(key);
     }
-
-    //---------------------------------------------
-    // Iterable implementation
-    //---------------------------------------------
 
     /**
      * Gets  an iterator over the keys of the document's properties
@@ -364,46 +350,44 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     //---------------------------------------------
-    // Override
+    // Iterable implementation
     //---------------------------------------------
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Document)) return false;
+        if (this == o) { return true; }
+        if (!(o instanceof Document)) { return false; }
 
-        Document doc = (Document) o;
+        final Document doc = (Document) o;
 
         // Step 1: Check Database
-        if (_database != null ? !_database.equalsWithPath(doc._database) : doc._database != null)
-            return false;
+        if (database != null ? !database.equalsWithPath(doc.database) : doc.database != null) { return false; }
 
         // Step 2: Check document ID
-        // NOTE _id never null?
-        if (!_id.equals(doc._id))
-            return false;
+        // NOTE id never null?
+        if (!id.equals(doc.id)) { return false; }
 
         // Step 3: Check content
-        // NOTE: _dict never null??
-        if (!_dict.equals(doc._dict))
-            return false;
+        // NOTE: internalDict never null??
+        if (!internalDict.equals(doc.internalDict)) { return false; }
 
         return true;
     }
 
+    //---------------------------------------------
+    // Override
+    //---------------------------------------------
+
     @Override
     public int hashCode() {
-        // NOTE _id and _dict never null
-        int result = _database != null && _database.getPath() != null ? _database.getPath().hashCode() : 0;
-        result = 31 * result + _id.hashCode();
-        result = 31 * result + _dict.hashCode();
+        // NOTE id and internalDict never null
+        int result = database != null && database.getPath() != null ? database.getPath().hashCode() : 0;
+        result = 31 * result + id.hashCode();
+        result = 31 * result + internalDict.hashCode();
         return result;
     }
 
-    //---------------------------------------------
-    // protected level access
-    //---------------------------------------------
-
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         free();
@@ -414,36 +398,16 @@ public class Document implements DictionaryInterface, Iterable<String> {
     // Package level access
     //---------------------------------------------
 
-    void free() {
-        _root = null;
-        if (_c4doc != null) {
-            _c4doc.release(); // _c4doc should be retained.
-            _c4doc = null;
-        }
-    }
-
-    // Sets _c4doc and updates my root dictionary
-    void setC4Document(C4Document c4doc) {
-        synchronized (lock) {
-            replaceC4Document(c4doc);
-            _data = null;
-            if (c4doc != null) {
-                if (c4doc != null && !c4doc.deleted())
-                    _data = c4doc.getSelectedBody2();
-            }
-            updateDictionary();
-        }
-    }
 
     void replaceC4Document(C4Document c4doc) {
         synchronized (lock) {
-            C4Document oldDoc = this._c4doc;
-            this._c4doc = c4doc;
-            if (oldDoc != this._c4doc) {
-                if (this._c4doc != null)
-                    this._c4doc.retain();
-                if (oldDoc != null)
+            final C4Document oldDoc = this.c4doc;
+            this.c4doc = c4doc;
+            if (oldDoc != this.c4doc) {
+                if (this.c4doc != null) { this.c4doc.retain(); }
+                if (oldDoc != null) {
                     oldDoc.release();  // oldDoc should be retained.
+                }
             }
         }
     }
@@ -454,27 +418,15 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     boolean isEmpty() {
-        return _dict.isEmpty();
-    }
-
-    void updateDictionary() {
-        if (_data != null) {
-            _root = new MRoot(new DocContext(_database, _c4doc), _data.toFLValue(), isMutable());
-            synchronized (_database.getLock()) {
-                _dict = (Dictionary) _root.asNative();
-            }
-        } else {
-            _root = null;
-            _dict = isMutable() ? new MutableDictionary() : new Dictionary();
-        }
+        return internalDict.isEmpty();
     }
 
     Database getDatabase() {
-        return _database;
+        return database;
     }
 
     void setDatabase(Database database) {
-        this._database = database;
+        this.database = database;
     }
 
     /**
@@ -483,7 +435,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return true if exists, false otherwise.
      */
     boolean exists() {
-        return _c4doc != null ? _c4doc.exists() : false;
+        return c4doc != null && c4doc.exists();
     }
 
     // Document overrides this
@@ -494,73 +446,47 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
-    /**
-     * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
-     */
-    long generationFromRevID(String revID) {
-        long generation = 0;
-        long length = Math.min(revID == null ? 0 : revID.length(), 9);
-        for (int i = 0; i < length; ++i) {
-            char c = revID.charAt(i);
-            if (Character.isDigit(c))
-                generation = 10 * generation + Character.getNumericValue(c);
-            else if (c == '-')
-                return generation;
-            else
-                break;
-        }
-        return 0;
-    }
-
     C4Document getC4doc() {
         synchronized (lock) {
-            return _c4doc;
+            return c4doc;
         }
     }
 
     boolean selectConflictingRevision() throws LiteCoreException {
         synchronized (lock) {
             boolean foundConflict = false;
-            if (_c4doc != null) {
+            if (c4doc != null) {
                 while (!foundConflict) {
                     try {
-                        _c4doc.selectNextLeafRevision(true, true);
-                    } catch (LiteCoreException e) {
-                        // NOTE: other platforms checks if return value from c4doc_selectNextLeafRevision() is false
-                        if (e.code == 0)
-                            break;
-                        else
-                            throw e;
+                        c4doc.selectNextLeafRevision(true, true);
                     }
-                    foundConflict = _c4doc.isSelectedRevFlags(kRevIsConflict);
+                    catch (LiteCoreException e) {
+                        // NOTE: other platforms checks if return value from c4doc_selectNextLeafRevision() is false
+                        if (e.code == 0) { break; }
+                        else { throw e; }
+                    }
+                    foundConflict = c4doc.isSelectedRevFlags(C4Constants.C4RevisionFlags.kRevIsConflict);
                 }
             }
-            if (foundConflict)
-                setC4Document(_c4doc);
+            if (foundConflict) { setC4Document(c4doc); }
             return foundConflict;
         }
     }
 
     String getRevID() {
         synchronized (lock) {
-            return _c4doc != null ? _c4doc.getSelectedRevID() : null;
+            return c4doc != null ? c4doc.getSelectedRevID() : null;
         }
     }
 
     FLSliceResult encode() throws LiteCoreException {
-        encodingError = null;
-        FLEncoder encoder = getDatabase().getC4Database().getSharedFleeceEncoder();
+        final FLEncoder encoder = getDatabase().getC4Database().getSharedFleeceEncoder();
         try {
             encoder.setExtraInfo(this);
-            _dict.encodeTo(encoder);
-            if (encodingError != null) {
-                encoder.reset();
-                LiteCoreException ex = encodingError;
-                encodingError = null;
-                throw ex;
-            }
+            internalDict.encodeTo(encoder);
             return encoder.finish2();
-        } finally {
+        }
+        finally {
             encoder.setExtraInfo(null);
         }
     }
@@ -576,7 +502,52 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     boolean isDeleted() {
         synchronized (lock) {
-            return _c4doc != null && _c4doc != null ? _c4doc.deleted() : false;
+            return (c4doc != null) && c4doc.deleted();
+        }
+    }
+    // Sets c4doc and updates my root dictionary
+    private void setC4Document(C4Document c4doc) {
+        synchronized (lock) {
+            replaceC4Document(c4doc);
+            data = null;
+            if (c4doc != null && !c4doc.deleted()) { data = c4doc.getSelectedBody2(); }
+            updateDictionary();
+        }
+    }
+
+    private void updateDictionary() {
+        if (data != null) {
+            root = new MRoot(new DocContext(database, c4doc), data.toFLValue(), isMutable());
+            synchronized (database.getLock()) {
+                internalDict = (Dictionary) root.asNative();
+            }
+        }
+        else {
+            root = null;
+            internalDict = isMutable() ? new MutableDictionary() : new Dictionary();
+        }
+    }
+
+    /**
+     * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
+     */
+    private long generationFromRevID(String revID) {
+        long generation = 0;
+        final long length = Math.min(revID == null ? 0 : revID.length(), 9);
+        for (int i = 0; i < length; ++i) {
+            final char c = revID.charAt(i);
+            if (Character.isDigit(c)) { generation = 10 * generation + Character.getNumericValue(c); }
+            else if (c == '-') { return generation; }
+            else { break; }
+        }
+        return 0;
+    }
+
+    private void free() {
+        root = null;
+        if (c4doc != null) {
+            c4doc.release(); // c4doc should be retained.
+            c4doc = null;
         }
     }
 }

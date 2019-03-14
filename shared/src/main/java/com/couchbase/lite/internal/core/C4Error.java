@@ -18,9 +18,9 @@
 package com.couchbase.lite.internal.core;
 
 public class C4Error {
-    private int domain = 0;        // C4Error.domain
-    private int code = 0;          // C4Error.code
-    private int internalInfo = 0;  // C4Error.internal_info
+    private int domain;        // C4Error.domain
+    private int code;          // C4Error.code
+    private int internalInfo;  // C4Error.internal_info
 
     public C4Error() {
         domain = 0;        // C4Error.domain
@@ -49,9 +49,9 @@ public class C4Error {
     @Override
     public String toString() {
         return "C4Error{" +
-                "domain=" + domain +
-                ", code=" + code +
-                ", internalInfo=" + internalInfo +
-                '}';
+            "domain=" + domain +
+            ", code=" + code +
+            ", internalInfo=" + internalInfo +
+            '}';
     }
 }

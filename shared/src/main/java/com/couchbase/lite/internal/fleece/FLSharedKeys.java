@@ -18,13 +18,13 @@
 package com.couchbase.lite.internal.fleece;
 
 public class FLSharedKeys {
-    final long handle; // hold pointer to FLSharedKeys
+    private final long handle; // hold pointer to FLSharedKeys
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
     public FLSharedKeys(long handle) {
-        if (handle == 0L) throw new IllegalStateException();
+        if (handle == 0L) { throw new IllegalStateException(); }
         this.handle = handle;
     }
 

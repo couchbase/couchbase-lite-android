@@ -20,6 +20,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Based IndexBuilder used for building database index objects.
  */
@@ -52,5 +53,4 @@ abstract class AbstractIndexBuilder {
         }
         return new FullTextIndex(items);
     }
-
 }

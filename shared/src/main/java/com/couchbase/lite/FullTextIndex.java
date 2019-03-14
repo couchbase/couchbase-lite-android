@@ -24,14 +24,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+
 /**
  * Index for Full-Text search
  */
 public final class FullTextIndex extends AbstractIndex {
 
-    private List<FullTextIndexItem> indexItems;
-    private String language = getDefaultLanguage();
-    private boolean ignoreAccents = false;
+    private static String getDefaultLanguage() {
+        return Locale.getDefault().getLanguage();
+    }
+
+    private final List<FullTextIndexItem> indexItems;
+    private String textLanguage = getDefaultLanguage();
+    private boolean shouldIgnoreAccents = false;
 
     FullTextIndex(FullTextIndexItem... indexItems) {
         this.indexItems = Arrays.asList(indexItems);
@@ -45,7 +50,7 @@ public final class FullTextIndex extends AbstractIndex {
      */
     @NonNull
     public FullTextIndex setLanguage(String language) {
-        this.language = language;
+        this.textLanguage = language;
         return this;
     }
 
@@ -54,7 +59,7 @@ public final class FullTextIndex extends AbstractIndex {
      */
     @NonNull
     public FullTextIndex ignoreAccents(boolean ignoreAccents) {
-        this.ignoreAccents = ignoreAccents;
+        this.shouldIgnoreAccents = ignoreAccents;
         return this;
     }
 
@@ -65,23 +70,18 @@ public final class FullTextIndex extends AbstractIndex {
 
     @Override
     String language() {
-        return language;
+        return textLanguage;
     }
 
     @Override
     boolean ignoreAccents() {
-        return ignoreAccents;
+        return shouldIgnoreAccents;
     }
 
     @Override
     List<Object> items() {
-        List<Object> items = new ArrayList<>();
-        for (FullTextIndexItem item : indexItems)
-            items.add(item.expression.asJSON());
+        final List<Object> items = new ArrayList<>();
+        for (FullTextIndexItem item : indexItems) { items.add(item.expression.asJSON()); }
         return items;
-    }
-
-    private static String getDefaultLanguage() {
-        return Locale.getDefault().getLanguage();
     }
 }

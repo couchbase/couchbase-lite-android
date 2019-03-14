@@ -24,36 +24,49 @@ public class FLSliceResult {
     // Member variables
     //-------------------------------------------------------------------------
 
-    private long handle = 0; // hold pointer to FLSliceResult
+    static native long init();
 
-    private boolean retain = false;
+    static native void free(long slice);
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
+
+    static native byte[] getBuf(long slice);
+
+    static native long getSize(long slice);
+    private long handle; // hold pointer to FLSliceResult
+    private boolean shouldRetain;
 
     public FLSliceResult() {
         this.handle = init();
     }
 
     public FLSliceResult(long handle) {
-        if (handle == 0)
-            throw new IllegalArgumentException("handle is 0");
+        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
         this.handle = handle;
     }
 
     public void free() {
-        if (!retain && handle != 0L) {
+        if (!shouldRetain && handle != 0L) {
             free(handle);
             handle = 0L;
         }
     }
 
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+
     // Use when the native data needs to be retained and will be freed later in the native code
     public FLSliceResult retain() {
-        retain = true;
+        shouldRetain = true;
         return this;
     }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
 
     public long getHandle() {
         return handle;
@@ -67,26 +80,10 @@ public class FLSliceResult {
         return getSize(handle);
     }
 
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         free();
         super.finalize();
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    static native long init();
-
-    static native void free(long slice);
-
-    static native byte[] getBuf(long slice);
-
-    static native long getSize(long slice);
-
 }

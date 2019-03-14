@@ -17,6 +17,9 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
+
 /**
  * The listener interface for receiving Database change events.
  */
@@ -27,5 +30,5 @@ public interface DatabaseChangeListener extends ChangeListener<DatabaseChange> {
      * @param change the database change information
      */
     @Override
-    void changed(DatabaseChange change);
+    void changed(@NonNull DatabaseChange change);
 }

@@ -20,6 +20,7 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+
 /**
  * Configuration for opening a database.
  */
@@ -60,9 +61,8 @@ public final class DatabaseConfiguration extends AbstractDatabaseConfiguration {
     //---------------------------------------------
 
     DatabaseConfiguration readonlyCopy() {
-        DatabaseConfiguration config = new DatabaseConfiguration(this);
+        final DatabaseConfiguration config = new DatabaseConfiguration(this);
         config.setReadonly(true);
         return config;
     }
-
 }

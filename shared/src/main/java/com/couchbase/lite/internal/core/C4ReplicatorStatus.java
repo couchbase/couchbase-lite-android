@@ -19,13 +19,17 @@
 package com.couchbase.lite.internal.core;
 
 
+/**
+ * WARNING!
+ * This class and its members are referenced by name, from native code.
+ */
 public class C4ReplicatorStatus {
     public interface C4ReplicatorActivityLevel {
-        int kC4Stopped = 0;
-        int kC4Offline = 1;
-        int kC4Connecting = 2;
-        int kC4Idle = 3;
-        int kC4Busy = 4;
+        int C4_STOPPED = 0;
+        int C4_OFFLINE = 1;
+        int C4_CONNECTING = 2;
+        int C4_IDLE = 3;
+        int C4_BUSY = 4;
     }
 
     private int activityLevel = -1;      // C4ReplicatorActivityLevel
@@ -36,9 +40,7 @@ public class C4ReplicatorStatus {
     private int errorCode = 0;           // C4Error.code
     private int errorInternalInfo = 0;   // C4Error.internal_info
 
-    public C4ReplicatorStatus() {
-
-    }
+    public C4ReplicatorStatus() { }
 
     public C4ReplicatorStatus(int activityLevel) {
         this.activityLevel = activityLevel;
@@ -50,9 +52,10 @@ public class C4ReplicatorStatus {
         this.errorCode = errorCode;
     }
 
-    public C4ReplicatorStatus(int activityLevel, long progressUnitsCompleted,
-                              long progressUnitsTotal, long progressDocumentCount,
-                              int errorDomain, int errorCode, int errorInternalInfo) {
+    public C4ReplicatorStatus(
+        int activityLevel, long progressUnitsCompleted,
+        long progressUnitsTotal, long progressDocumentCount,
+        int errorDomain, int errorCode, int errorInternalInfo) {
         this.activityLevel = activityLevel;
         this.progressUnitsCompleted = progressUnitsCompleted;
         this.progressUnitsTotal = progressUnitsTotal;
@@ -101,18 +104,18 @@ public class C4ReplicatorStatus {
     @Override
     public String toString() {
         return "C4ReplicatorStatus{" +
-                "activityLevel=" + activityLevel +
-                ", progressUnitsCompleted=" + progressUnitsCompleted +
-                ", progressUnitsTotal=" + progressUnitsTotal +
-                ", progressDocumentCount=" + progressDocumentCount +
-                ", errorDomain=" + errorDomain +
-                ", errorCode=" + errorCode +
-                ", errorInternalInfo=" + errorInternalInfo +
-                '}';
+            "activityLevel=" + activityLevel +
+            ", progressUnitsCompleted=" + progressUnitsCompleted +
+            ", progressUnitsTotal=" + progressUnitsTotal +
+            ", progressDocumentCount=" + progressDocumentCount +
+            ", errorDomain=" + errorDomain +
+            ", errorCode=" + errorCode +
+            ", errorInternalInfo=" + errorInternalInfo +
+            '}';
     }
 
     public C4ReplicatorStatus copy() {
         return new C4ReplicatorStatus(activityLevel, progressUnitsCompleted, progressUnitsTotal,
-                progressDocumentCount, errorDomain, errorCode, errorInternalInfo);
+            progressDocumentCount, errorDomain, errorCode, errorInternalInfo);
     }
 }

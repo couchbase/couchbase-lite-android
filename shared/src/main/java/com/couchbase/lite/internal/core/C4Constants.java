@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+@SuppressWarnings("ConstantName")
 public interface C4Constants {
     ////////////////////////////////////
     // c4Base.h

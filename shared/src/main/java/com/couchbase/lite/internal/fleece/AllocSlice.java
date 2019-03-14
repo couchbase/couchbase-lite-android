@@ -17,9 +17,18 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+
 public class AllocSlice {
-    long _handle = 0;         // hold pointer to alloc_slice*
-    boolean _retain = false;  // true -> not release native object, false -> release by free()
+    static native long init(byte[] bytes);
+
+    static native void free(long slice);
+
+    static native byte[] getBuf(long slice);
+
+    static native long getSize(long slice);
+
+    private boolean shouldRetain;  // true -> not release native object, false -> release by free()
+    long handle;         // hold pointer to alloc_slice*
 
     //-------------------------------------------------------------------------
     // public methods
@@ -29,54 +38,46 @@ public class AllocSlice {
     }
 
     public AllocSlice(long handle, boolean retain) {
-        if (handle == 0)
-            throw new IllegalArgumentException("handle is 0");
-        this._handle = handle;
-        this._retain = retain;
-    }
-
-    public void free() {
-        if (_handle != 0L && !_retain) {
-            free(_handle);
-            _handle = 0L;
-        }
+        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
+        this.handle = handle;
+        this.shouldRetain = retain;
     }
 
     public long getHandle() {
-        return _handle;
-    }
-
-    public byte[] getBuf() {
-        return getBuf(_handle);
-    }
-
-    public long getSize() {
-        return getSize(_handle);
-    }
-
-    public AllocSlice retain() {
-        _retain = true;
-        return this;
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
+        return handle;
     }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    static native long init(byte[] bytes);
+    public byte[] getBuf() {
+        return getBuf(handle);
+    }
 
-    static native void free(long slice);
+    public long getSize() {
+        return getSize(handle);
+    }
 
-    static native byte[] getBuf(long slice);
+    public AllocSlice retain() {
+        shouldRetain = true;
+        return this;
+    }
 
-    static native long getSize(long slice);
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
+
+    private void free() {
+        if (handle != 0L && !shouldRetain) {
+            free(handle);
+            handle = 0L;
+        }
+    }
 }

@@ -20,8 +20,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.utils.DateUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -30,15 +28,67 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.couchbase.lite.internal.utils.DateUtils;
+
+
 /**
  * An expression used for constructing a query statement.
  */
 public abstract class Expression {
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-    Expression() {
+    static final class ValueExpression extends Expression {
+        private Object value;
 
+        ValueExpression(Object value) {
+            if (!isSupportedType(value)) {
+                throw new IllegalArgumentException("The given value's type is not supported.");
+            }
+            this.value = value;
+        }
+
+        @Override
+        Object asJSON() {
+            return asJSON(value);
+        }
+
+        private boolean isSupportedType(Object value) {
+            return (value == null
+                || value instanceof String
+                || value instanceof Number   // including int, long, float, double
+                || value instanceof Boolean
+                || value instanceof Date
+                || value instanceof Map
+                || value instanceof List
+                || value instanceof Expression);
+        }
+
+        @SuppressWarnings("unchecked")
+        private Object asJSON(Object value) {
+            if (value instanceof Date) { return DateUtils.toJson((Date) value); }
+            else if (value instanceof Map) { return mapAsJSON((Map<String, Object>) value); }
+            else if (value instanceof List) { return listAsJSON((List<Object>) value); }
+            else if (value instanceof Expression) { return ((Expression) value).asJSON(); }
+            else {
+                if (!isSupportedType(value)) {
+                    throw new IllegalArgumentException("The value type is not supported: " + value);
+                }
+                return value;
+            }
+        }
+
+        private Object mapAsJSON(Map<String, Object> map) {
+            final Map<String, Object> json = new HashMap<>();
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                json.put(entry.getKey(), asJSON(entry.getValue()));
+            }
+            return json;
+        }
+
+        private Object listAsJSON(List<Object> list) {
+            final List<Object> json = new ArrayList<>();
+            json.add("[]"); // Array Operation
+            for (Object obj : list) { json.add(asJSON(obj)); }
+            return json;
+        }
     }
 
     //---------------------------------------------
@@ -46,6 +96,252 @@ public abstract class Expression {
     //---------------------------------------------
 
     // Value:
+
+    static final class AggregateExpression extends Expression {
+        private final List<Expression> expressions;
+
+        AggregateExpression(List<Expression> expressions) {
+            this.expressions = expressions;
+        }
+
+        public List<Expression> getExpressions() {
+            return expressions;
+        }
+
+        @Override
+        Object asJSON() {
+            final List<Object> json = new ArrayList<>();
+            json.add("[]");
+            for (Expression expr : expressions) { json.add(expr.asJSON()); }
+            return json;
+        }
+    }
+
+    static final class BinaryExpression extends Expression {
+        enum OpType {
+            Add, Between, Divide, EqualTo, GreaterThan, GreaterThanOrEqualTo,
+            In, Is, IsNot, LessThan, LessThanOrEqualTo, Like,
+            Modulus, Multiply, NotEqualTo, Subtract, RegexLike,
+        }
+
+        private final Expression lhs;
+        private final Expression rhs;
+        private final OpType type;
+
+        BinaryExpression(Expression lhs, Expression rhs, OpType type) {
+            this.lhs = lhs;
+            this.rhs = rhs;
+            this.type = type;
+        }
+
+        @Override
+        Object asJSON() {
+            final List<Object> json = new ArrayList<>();
+            switch (type) {
+                case Add:
+                    json.add("+");
+                    break;
+                case Between:
+                    json.add("BETWEEN");
+                    break;
+                case Divide:
+                    json.add("/");
+                    break;
+                case EqualTo:
+                    json.add("=");
+                    break;
+                case GreaterThan:
+                    json.add(">");
+                    break;
+                case GreaterThanOrEqualTo:
+                    json.add(">=");
+                    break;
+                case In:
+                    json.add("IN");
+                    break;
+                case Is:
+                    json.add("IS");
+                    break;
+                case IsNot:
+                    json.add("IS NOT");
+                    break;
+                case LessThan:
+                    json.add("<");
+                    break;
+                case LessThanOrEqualTo:
+                    json.add("<=");
+                    break;
+                case Like:
+                    json.add("LIKE");
+                    break;
+                case Modulus:
+                    json.add("%");
+                    break;
+                case Multiply:
+                    json.add("*");
+                    break;
+                case NotEqualTo:
+                    json.add("!=");
+                    break;
+                case RegexLike:
+                    json.add("regexp_like()");
+                    break;
+                case Subtract:
+                    json.add("-");
+                    break;
+            }
+
+            json.add(lhs.asJSON());
+
+            if (type == OpType.Between) {
+                // "between"'s RHS is an aggregate of the min and max, but the min and max need to be
+                // written out as parameters to the BETWEEN operation:
+                final List<Expression> rangeExprs = ((AggregateExpression) rhs).getExpressions();
+                json.add(rangeExprs.get(0).asJSON());
+                json.add(rangeExprs.get(1).asJSON());
+            }
+            else { json.add(rhs.asJSON()); }
+
+            return json;
+        }
+    }
+
+    static final class CompoundExpression extends Expression {
+        enum OpType {
+            And,
+            Or,
+            Not
+        }
+
+        private OpType type;
+        private List<Expression> subexpressions;
+
+        CompoundExpression(List<Expression> subexpressions, OpType type) {
+            if (subexpressions == null) { throw new AssertionError("subexpressions cannot be null."); }
+            this.type = type;
+            this.subexpressions = subexpressions;
+        }
+
+        @Override
+        Object asJSON() {
+            final List<Object> json = new ArrayList<>();
+            switch (type) {
+                case And:
+                    json.add("AND");
+                    break;
+                case Or:
+                    json.add("OR");
+                    break;
+                case Not:
+                    json.add("NOT");
+                    break;
+            }
+            for (Expression expr : subexpressions) { json.add(expr.asJSON()); }
+            return json;
+        }
+    }
+
+    static final class UnaryExpression extends Expression {
+        enum OpType {
+            Missing,
+            NotMissing,
+            NotNull,
+            Null
+        }
+
+        private Expression operand;
+        private OpType type;
+
+        UnaryExpression(Expression operand, OpType type) {
+            if (operand == null) { throw new AssertionError("operand cannot be null."); }
+            this.operand = operand;
+            this.type = type;
+        }
+
+        @Override
+        Object asJSON() {
+            final List<Object> values;
+            final Object opd = operand.asJSON();
+            switch (type) {
+                case Missing:
+                    values = new ArrayList<>();
+                    values.add("MISSING");
+                    return Arrays.asList("IS", opd, values);
+
+                case NotMissing:
+                    values = new ArrayList<>();
+                    values.add("MISSING");
+                    return Arrays.asList("IS NOT", opd, values);
+
+                case Null:
+                    return Arrays.asList("IS", opd, null);
+
+                case NotNull:
+                    return Arrays.asList("IS NOT", opd, null);
+
+                default:
+                    return Arrays.asList(); // should't happend
+            }
+        }
+    }
+
+    static final class ParameterExpression extends Expression {
+        private final String name;
+
+        ParameterExpression(String name) {
+            this.name = name;
+        }
+
+        @Override
+        Object asJSON() {
+            final List<Object> json = new ArrayList<>();
+            json.add("$" + name);
+            return json;
+        }
+    }
+
+    static final class CollationExpression extends Expression {
+        private final Expression operand;
+        private final Collation collation;
+
+        CollationExpression(Expression operand, Collation collation) {
+            this.operand = operand;
+            this.collation = collation;
+        }
+
+        @Override
+        Object asJSON() {
+            final List<Object> json = new ArrayList<>(3);
+            json.add("COLLATE");
+            json.add(collation.asJSON());
+            json.add(operand.asJSON());
+            return json;
+        }
+    }
+
+    static final class FunctionExpression extends Expression {
+        //---------------------------------------------
+        // member variables
+        //---------------------------------------------
+        private String func;
+        private List<Expression> params;
+
+        //---------------------------------------------
+        // Constructors
+        //---------------------------------------------
+        FunctionExpression(String func, List<Expression> params) {
+            this.func = func;
+            this.params = params;
+        }
+
+        @Override
+        Object asJSON() {
+            final List<Object> json = new ArrayList<>();
+            json.add(func);
+            for (Expression expr : params) { json.add(expr.asJSON()); }
+            return json;
+        }
+    }
 
     /**
      * Create value expression with given value
@@ -148,6 +444,7 @@ public abstract class Expression {
 
     /**
      * Creates value expression with the given map.
+     *
      * @param value the map value
      * @return the value expression.
      */
@@ -158,6 +455,7 @@ public abstract class Expression {
 
     /**
      * Create value expression with the given list.
+     *
      * @param value the list value.
      * @return the value expression.
      */
@@ -231,6 +529,11 @@ public abstract class Expression {
         }
         return negated(expression);
     }
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    Expression() { }
 
     /**
      * Create a multiply expression to multiply the current expression by the given expression.
@@ -377,6 +680,8 @@ public abstract class Expression {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.EqualTo);
     }
 
+    // Null or Missing:
+
     /**
      * Create a NOT equal to expression that evaluates whether or not the current expression
      * is not equal to the given expression.
@@ -406,6 +711,8 @@ public abstract class Expression {
         }
         return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OpType.And);
     }
+
+    // Collation:
 
     /**
      * Create a logical OR expression that performs logical OR operation with
@@ -495,12 +802,9 @@ public abstract class Expression {
         if (expression1 == null || expression2 == null) {
             throw new IllegalArgumentException("expression1 or expression2 cannot be null.");
         }
-        Expression aggr = new AggregateExpression(Arrays.asList(expression1, expression2));
+        final Expression aggr = new AggregateExpression(Arrays.asList(expression1, expression2));
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.Between);
     }
-
-    // Null or Missing:
-
 
     /**
      * Creates an IS NULL OR MISSING expression that evaluates whether or not the current
@@ -511,7 +815,7 @@ public abstract class Expression {
     @NonNull
     public Expression isNullOrMissing() {
         return new UnaryExpression(this, UnaryExpression.OpType.Null)
-                .or(new UnaryExpression(this, UnaryExpression.OpType.Missing));
+            .or(new UnaryExpression(this, UnaryExpression.OpType.Missing));
     }
 
     /**
@@ -524,8 +828,6 @@ public abstract class Expression {
     public Expression notNullOrMissing() {
         return negated(isNullOrMissing());
     }
-
-    // Collation:
 
     /**
      * Creates a Collate expression with the given Collation specification. Commonly
@@ -555,7 +857,7 @@ public abstract class Expression {
         if (expressions == null) {
             throw new IllegalArgumentException("expressions cannot be null.");
         }
-        Expression aggr = new AggregateExpression(Arrays.asList(expressions));
+        final Expression aggr = new AggregateExpression(Arrays.asList(expressions));
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.In);
     }
 
@@ -566,317 +868,4 @@ public abstract class Expression {
     }
 
     abstract Object asJSON();
-
-    static final class ValueExpression extends Expression {
-        private Object value;
-
-        ValueExpression(Object value) {
-            if (!isSupportedType(value))
-                throw new IllegalArgumentException("The given value's type is not supported.");
-            this.value = value;
-        }
-
-        @Override
-        Object asJSON() {
-            return asJSON(value);
-        }
-
-        private boolean isSupportedType(Object value) {
-            return (value == null
-                    || value instanceof String
-                    || value instanceof Number   // including int, long, float, double
-                    || value instanceof Boolean
-                    || value instanceof Date
-                    || value instanceof Map
-                    || value instanceof List
-                    || value instanceof Expression);
-        }
-
-        private Object asJSON(Object value) {
-            if (value instanceof Date)
-                return DateUtils.toJson((Date) value);
-            else if (value instanceof Map)
-                return mapAsJSON((Map) value);
-            else if (value instanceof List)
-                return listAsJSON((List) value);
-            else if (value instanceof Expression)
-                return ((Expression)value).asJSON();
-            else {
-                if (!isSupportedType(value))
-                    throw new IllegalArgumentException("The value type is not supported: " + value);
-                return value;
-            }
-        }
-
-        private Object mapAsJSON(Map<String, Object> map) {
-            Map<String, Object> json = new HashMap<String, Object>();
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                String key = entry.getKey();
-                json.put(entry.getKey(), asJSON(entry.getValue()));
-            }
-            return json;
-        }
-
-        private Object listAsJSON(List<Object> list) {
-            List<Object> json = new ArrayList<Object>();
-            json.add("[]"); // Array Operation
-            for (Object obj : list) {
-                json.add(asJSON(obj));
-            }
-            return json;
-        }
-    }
-
-    static final class AggregateExpression extends Expression {
-        private List<Expression> expressions;
-
-        AggregateExpression(List<Expression> expressions) {
-            this.expressions = expressions;
-        }
-
-        public List<Expression> getExpressions() {
-            return expressions;
-        }
-
-        @Override
-        Object asJSON() {
-            List<Object> json = new ArrayList<Object>();
-            json.add("[]");
-            for (Expression expr : expressions)
-                json.add(expr.asJSON());
-            return json;
-        }
-    }
-
-    static final class BinaryExpression extends Expression {
-        enum OpType {
-            Add, Between, Divide, EqualTo, GreaterThan, GreaterThanOrEqualTo,
-            In, Is, IsNot, LessThan, LessThanOrEqualTo, Like,
-            Modulus, Multiply, NotEqualTo, Subtract, RegexLike,
-        }
-
-        private Expression lhs;
-        private Expression rhs;
-        private OpType type;
-
-        BinaryExpression(Expression lhs, Expression rhs, OpType type) {
-            this.lhs = lhs;
-            this.rhs = rhs;
-            this.type = type;
-        }
-
-        @Override
-        Object asJSON() {
-            List<Object> json = new ArrayList<Object>();
-            switch (type) {
-                case Add:
-                    json.add("+");
-                    break;
-                case Between:
-                    json.add("BETWEEN");
-                    break;
-                case Divide:
-                    json.add("/");
-                    break;
-                case EqualTo:
-                    json.add("=");
-                    break;
-                case GreaterThan:
-                    json.add(">");
-                    break;
-                case GreaterThanOrEqualTo:
-                    json.add(">=");
-                    break;
-                case In:
-                    json.add("IN");
-                    break;
-                case Is:
-                    json.add("IS");
-                    break;
-                case IsNot:
-                    json.add("IS NOT");
-                    break;
-                case LessThan:
-                    json.add("<");
-                    break;
-                case LessThanOrEqualTo:
-                    json.add("<=");
-                    break;
-                case Like:
-                    json.add("LIKE");
-                    break;
-                case Modulus:
-                    json.add("%");
-                    break;
-                case Multiply:
-                    json.add("*");
-                    break;
-                case NotEqualTo:
-                    json.add("!=");
-                    break;
-                case RegexLike:
-                    json.add("regexp_like()");
-                    break;
-                case Subtract:
-                    json.add("-");
-                    break;
-            }
-
-            json.add(lhs.asJSON());
-
-            if (type == OpType.Between) {
-                // "between"'s RHS is an aggregate of the min and max, but the min and max need to be
-                // written out as parameters to the BETWEEN operation:
-                List<Expression> rangeExprs = ((AggregateExpression) rhs).getExpressions();
-                json.add(rangeExprs.get(0).asJSON());
-                json.add(rangeExprs.get(1).asJSON());
-            } else
-                json.add(rhs.asJSON());
-
-            return json;
-        }
-    }
-
-    static final class CompoundExpression extends Expression {
-        enum OpType {
-            And,
-            Or,
-            Not
-        }
-
-        private OpType type;
-        private List<Expression> subexpressions;
-
-        CompoundExpression(List<Expression> subexpressions, OpType type) {
-            if (subexpressions == null)
-                throw new AssertionError("subexpressions cannot be null.");
-            this.type = type;
-            this.subexpressions = subexpressions;
-        }
-
-        @Override
-        Object asJSON() {
-            List<Object> json = new ArrayList<Object>();
-            switch (type) {
-                case And:
-                    json.add("AND");
-                    break;
-                case Or:
-                    json.add("OR");
-                    break;
-                case Not:
-                    json.add("NOT");
-                    break;
-            }
-            for (Expression expr : subexpressions)
-                json.add(expr.asJSON());
-            return json;
-        }
-    }
-
-    static final class UnaryExpression extends Expression {
-        enum OpType {
-            Missing,
-            NotMissing,
-            NotNull,
-            Null
-        }
-
-        private Expression operand;
-        private OpType type;
-
-        UnaryExpression(Expression operand, OpType type) {
-            if (operand == null)
-                throw new AssertionError("operand cannot be null.");
-            this.operand = operand;
-            this.type = type;
-        }
-
-        @Override
-        Object asJSON() {
-            Object opd = operand.asJSON();
-            switch (type) {
-                case Missing: {
-                    List<Object> values = new ArrayList<>();
-                    values.add("MISSING");
-                    return Arrays.asList("IS", opd, values);
-                }
-                case NotMissing: {
-                    List<Object> values = new ArrayList<>();
-                    values.add("MISSING");
-                    return Arrays.asList("IS NOT", opd, values);
-                }
-                case Null: {
-                    return Arrays.asList("IS", opd, null);
-                }
-                case NotNull: {
-                    return Arrays.asList("IS NOT", opd, null);
-                }
-                default:
-                    return Arrays.asList(); // should't happend
-            }
-        }
-    }
-
-    static final class ParameterExpression extends Expression {
-        private String name;
-
-        ParameterExpression(String name) {
-            this.name = name;
-        }
-
-        @Override
-        Object asJSON() {
-            List<Object> json = new ArrayList<>();
-            json.add("$" + name);
-            return json;
-        }
-    }
-
-    static final class CollationExpression extends Expression {
-        private Expression operand;
-        private Collation collation;
-
-        CollationExpression(Expression operand, Collation collation) {
-            this.operand = operand;
-            this.collation = collation;
-        }
-
-        @Override
-        Object asJSON() {
-            List<Object> json = new ArrayList<>(3);
-            json.add("COLLATE");
-            json.add(collation.asJSON());
-            json.add(operand.asJSON());
-            return json;
-        }
-    }
-
-    static final class FunctionExpression extends Expression {
-        //---------------------------------------------
-        // member variables
-        //---------------------------------------------
-        private String func = null;
-        private List<Expression> params = null;
-
-        //---------------------------------------------
-        // Constructors
-        //---------------------------------------------
-        FunctionExpression(String func, List<Expression> params) {
-            this.func = func;
-            this.params = params;
-        }
-
-        //---------------------------------------------
-        // public level access
-        //---------------------------------------------
-        @Override
-        Object asJSON() {
-            List<Object> json = new ArrayList<>();
-            json.add(func);
-            for (Expression expr : params)
-                json.add(expr.asJSON());
-            return json;
-        }
-    }
 }

@@ -19,6 +19,7 @@ package com.couchbase.lite.internal.core;
 
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 
+
 public final class SharedKeys {
 
     //---------------------------------------------
@@ -43,5 +44,4 @@ public final class SharedKeys {
     public FLSharedKeys getFLSharedKeys() {
         return flSharedKeys;
     }
-
 }

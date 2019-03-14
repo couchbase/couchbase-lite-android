@@ -22,6 +22,7 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * An Ordering represents a single ordering component in the query ORDER BY clause.
  */
@@ -35,7 +36,7 @@ public abstract class Ordering {
      * descending order. The default order is ascending.
      */
     public static class SortOrder extends Ordering {
-        private Expression expression;
+        private final Expression expression;
         private boolean isAscending;
 
         SortOrder(Expression expression) {
@@ -66,10 +67,9 @@ public abstract class Ordering {
         }
 
         Object asJSON() {
-            if (isAscending)
-                return expression.asJSON();
+            if (isAscending) { return expression.asJSON(); }
 
-            List<Object> json = new ArrayList<Object>();
+            final List<Object> json = new ArrayList<>();
             json.add("DESC");
             json.add(expression.asJSON());
             return json;
@@ -78,14 +78,6 @@ public abstract class Ordering {
 
     //---------------------------------------------
     // Constructor
-    //---------------------------------------------
-
-    Ordering() {
-
-    }
-
-    //---------------------------------------------
-    // API - public static methods
     //---------------------------------------------
 
     /**
@@ -102,6 +94,10 @@ public abstract class Ordering {
         }
         return expression(Expression.property(property));
     }
+
+    //---------------------------------------------
+    // API - public static methods
+    //---------------------------------------------
 
     /**
      * Create a SortOrder, inherited from the OrderBy class, object by the given expression.

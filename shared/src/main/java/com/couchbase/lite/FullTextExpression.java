@@ -21,60 +21,17 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+
 /**
  * Full-text expression
  */
 public final class FullTextExpression {
-    //---------------------------------------------
-    // member variables
-    //---------------------------------------------
-    private String name = null;
-
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-    private FullTextExpression(String name) {
-        this.name = name;
-    }
-
-    //---------------------------------------------
-    // public level access
-    //---------------------------------------------
-
-    /**
-     * Creates a full-text expression with the given full-text index name.
-     *
-     * @param name The full-text index name.
-     * @return The full-text expression.
-     */
-    @NonNull
-    public static FullTextExpression index(@NonNull String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null.");
-        }
-        return new FullTextExpression(name);
-    }
-
-    /**
-     * Creates a full-text match expression with the given search text.
-     *
-     * @param query The search text
-     * @return The full-text match expression
-     */
-    @NonNull
-    public Expression match(@NonNull String query) {
-        if (query == null) {
-            throw new IllegalArgumentException("query is null.");
-        }
-        return new FullTextMatchExpression(this.name, query);
-    }
-
     static final class FullTextMatchExpression extends Expression {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
-        private String indexName = null;
-        private String text = null;
+        private String indexName;
+        private String text;
 
         //---------------------------------------------
         // Constructors
@@ -92,5 +49,45 @@ public final class FullTextExpression {
         Object asJSON() {
             return Arrays.asList("MATCH", indexName, text);
         }
+    }
+
+    /**
+     * Creates a full-text expression with the given full-text index name.
+     *
+     * @param name The full-text index name.
+     * @return The full-text expression.
+     */
+    @NonNull
+    public static FullTextExpression index(@NonNull String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("name is null.");
+        }
+        return new FullTextExpression(name);
+    }
+
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+    private String name;
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    private FullTextExpression(String name) {
+        this.name = name;
+    }
+
+    /**
+     * Creates a full-text match expression with the given search text.
+     *
+     * @param query The search text
+     * @return The full-text match expression
+     */
+    @NonNull
+    public Expression match(@NonNull String query) {
+        if (query == null) {
+            throw new IllegalArgumentException("query is null.");
+        }
+        return new FullTextMatchExpression(this.name, query);
     }
 }

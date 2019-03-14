@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * The listener interface for receiving Live Query change events.
  */

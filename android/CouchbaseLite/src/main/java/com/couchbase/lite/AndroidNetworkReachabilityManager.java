@@ -26,6 +26,7 @@ import android.net.NetworkInfo;
 
 import com.couchbase.lite.internal.support.Log;
 
+
 /**
  * NOTE: https://developer.android.com/training/basics/network-ops/managing.html
  */
@@ -33,9 +34,20 @@ final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager
 
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
+    private class NetworkReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction()) || !listening) { return; }
+            final boolean online = isOnline(context);
+            Log.v(DOMAIN, "NetworkReceiver.onReceive() Online -> " + online);
+            if (online) { notifyListenersNetworkReachable(); }
+            else { notifyListenersNetworkUneachable(); }
+        }
+    }
+
+    private final Context context;
+    private final NetworkReceiver receiver;
     private boolean listening;
-    private Context context;
-    private NetworkReceiver receiver;
 
     AndroidNetworkReachabilityManager(Context context) {
         this.listening = false;
@@ -50,7 +62,7 @@ final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager
     @Override
     void startListening() {
         if (!listening) {
-            IntentFilter filter = new IntentFilter();
+            final IntentFilter filter = new IntentFilter();
             filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
             Log.v(DOMAIN, "%s: startListening() registering %s with context %s", this, receiver, context);
             context.registerReceiver(receiver, filter);
@@ -66,33 +78,27 @@ final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager
     void stopListening() {
         if (listening) {
             try {
-                Log.v(DOMAIN, "%s: stopListening() unregistering %s with context %s", this, receiver, context);
+                Log.v(
+                    DOMAIN,
+                    "%s: stopListening() unregistering %s with context %s", this, receiver, context);
                 context.unregisterReceiver(receiver);
-            } catch (Exception e) {
-                Log.e(DOMAIN, "%s: stopListening() exception unregistering %s with context %s", e, this, receiver, context);
+            }
+            catch (Exception e) {
+                Log.e(
+                    DOMAIN,
+                    "%s: stopListening() exception unregistering %s with context %s",
+                    e,
+                    this,
+                    receiver,
+                    context);
             }
             listening = false;
         }
     }
 
     private boolean isOnline(Context ctx) {
-        ConnectivityManager cm = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        final NetworkInfo networkInfo
+            = ((ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
-    }
-
-    private class NetworkReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (!action.equals(ConnectivityManager.CONNECTIVITY_ACTION) || listening == false)
-                return;
-            boolean bOnline = isOnline(context);
-            Log.v(DOMAIN, "NetworkReceiver.onReceive() Online -> " + bOnline);
-            if (bOnline)
-                notifyListenersNetworkReachable();
-            else
-                notifyListenersNetworkUneachable();
-        }
     }
 }

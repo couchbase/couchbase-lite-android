@@ -13,5 +13,4 @@ public final class C4Prediction {
     static native void registerModel(String name, C4PredictiveModel model);
 
     static native void unregisterModel(String name);
-
 }

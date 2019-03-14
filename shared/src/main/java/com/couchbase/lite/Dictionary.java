@@ -19,7 +19,12 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.utils.DateUtils;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import com.couchbase.lite.internal.fleece.Encoder;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -27,51 +32,47 @@ import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MDict;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.utils.DateUtils;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Dictionary provides readonly access to dictionary data.
  */
 public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<String> {
-    //---------------------------------------------
-    // Load LiteCore library and its dependencies
-    //---------------------------------------------
-    static {
-        NativeLibraryLoader.load();
+    /**
+     * @param dict
+     * @param key
+     * @return pointer to MValue
+     */
+    private static MValue getMValue(MDict dict, String key) {
+        return dict.get(key);
     }
 
     //-------------------------------------------------------------------------
     // member variables
     //-------------------------------------------------------------------------
-
-    MDict _dict;
-
-    protected Object _sharedLock;
+    protected final Object lock;
+    protected final MDict internalDict;
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
     Dictionary() {
-        _dict = new MDict();
-        setupSharedLock();
+        internalDict = new MDict();
+        lock = getSharedLock();
     }
 
     Dictionary(MValue mv, MCollection parent) {
-        _dict = new MDict();
-        _dict.initInSlot(mv, parent);
-        setupSharedLock();
+        internalDict = new MDict();
+        internalDict.initInSlot(mv, parent);
+        lock = getSharedLock();
     }
 
     Dictionary(MDict mDict, boolean isMutable) {
-        _dict = new MDict();
-        _dict.initAsCopyOf(mDict, isMutable);
-        setupSharedLock();
+        internalDict = new MDict();
+        internalDict.initAsCopyOf(mDict, isMutable);
+        lock = getSharedLock();
     }
 
     //-------------------------------------------------------------------------
@@ -89,26 +90,17 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public int count() {
-        synchronized (_sharedLock) {
-            return (int) _dict.count();
+        synchronized (lock) {
+            return (int) internalDict.count();
         }
     }
 
     @NonNull
     @Override
     public List<String> getKeys() {
-        synchronized (_sharedLock) {
-            return _dict.getKeys();
+        synchronized (lock) {
+            return internalDict.getKeys();
         }
-    }
-
-    /**
-     * @param dict
-     * @param key
-     * @return pointer to MValue
-     */
-    static MValue _get(MDict dict, String key) {
-        return dict.get(key);
     }
 
     /**
@@ -121,11 +113,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Object getValue(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            return _get(_dict, key).asNative(_dict);
+        synchronized (lock) {
+            return getMValue(internalDict, key).asNative(internalDict);
         }
     }
 
@@ -137,11 +128,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public String getString(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            Object obj = _get(_dict, key).asNative(_dict);
+        synchronized (lock) {
+            final Object obj = getMValue(internalDict, key).asNative(internalDict);
             return obj instanceof String ? (String) obj : null;
         }
     }
@@ -154,11 +144,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Number getNumber(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            Object obj = _get(_dict, key).asNative(_dict);
+        synchronized (lock) {
+            final Object obj = getMValue(internalDict, key).asNative(internalDict);
             return CBLConverter.asNumber(obj);
         }
     }
@@ -173,11 +162,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public int getInt(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            return CBLConverter.asInteger(_get(_dict, key), _dict);
+        synchronized (lock) {
+            return CBLConverter.asInteger(getMValue(internalDict, key), internalDict);
         }
     }
 
@@ -191,11 +179,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public long getLong(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            return CBLConverter.asLong(_get(_dict, key), _dict);
+        synchronized (lock) {
+            return CBLConverter.asLong(getMValue(internalDict, key), internalDict);
         }
     }
 
@@ -209,11 +196,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public float getFloat(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            return CBLConverter.asFloat(_get(_dict, key), _dict);
+        synchronized (lock) {
+            return CBLConverter.asFloat(getMValue(internalDict, key), internalDict);
         }
     }
 
@@ -227,11 +213,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public double getDouble(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            return CBLConverter.asDouble(_get(_dict, key), _dict);
+        synchronized (lock) {
+            return CBLConverter.asDouble(getMValue(internalDict, key), internalDict);
         }
     }
 
@@ -244,11 +229,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public boolean getBoolean(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            Object obj = _get(_dict, key).asNative(_dict);
+        synchronized (lock) {
+            final Object obj = getMValue(internalDict, key).asNative(internalDict);
             return CBLConverter.asBoolean(obj);
         }
     }
@@ -262,11 +246,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Blob getBlob(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            Object obj = _get(_dict, key).asNative(_dict);
+        synchronized (lock) {
+            final Object obj = getMValue(internalDict, key).asNative(internalDict);
             return obj instanceof Blob ? (Blob) obj : null;
         }
     }
@@ -284,8 +267,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Date getDate(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
         return DateUtils.fromJson(getString(key));
     }
@@ -299,11 +281,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Array getArray(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            Object obj = _get(_dict, key).asNative(_dict);
+        synchronized (lock) {
+            final Object obj = getMValue(internalDict, key).asNative(internalDict);
             return obj instanceof Array ? (Array) obj : null;
         }
     }
@@ -317,11 +298,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Dictionary getDictionary(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            Object obj = _get(_dict, key).asNative(_dict);
+        synchronized (lock) {
+            final Object obj = getMValue(internalDict, key).asNative(internalDict);
             return obj instanceof Dictionary ? (Dictionary) obj : null;
         }
     }
@@ -332,12 +312,13 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      *
      * @return the Map object representing the content of the current object in the JSON format.
      */
+    @NonNull
     @Override
     public Map<String, Object> toMap() {
-        synchronized (_sharedLock) {
-            Map<String, Object> result = new HashMap<>();
-            for (String key : _dict) {
-                result.put(key, Fleece.toObject(_get(_dict, key).asNative(_dict)));
+        synchronized (lock) {
+            final Map<String, Object> result = new HashMap<>();
+            for (String key : internalDict) {
+                result.put(key, Fleece.toObject(getMValue(internalDict, key).asNative(internalDict)));
             }
             return result;
         }
@@ -345,18 +326,18 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
     /**
      * Tests whether a property exists or not.
-     * This can be less expensive than getValue(String), because it does not have to allocate an Object for the property value.
+     * This can be less expensive than getValue(String), because it does not have to allocate an Object for the
+     * property value.
      *
      * @param key the key
      * @return the boolean value representing whether a property exists or not.
      */
     @Override
     public boolean contains(@NonNull String key) {
-        if (key == null)
-            throw new IllegalArgumentException("key cannot be null.");
+        if (key == null) { throw new IllegalArgumentException("key cannot be null."); }
 
-        synchronized (_sharedLock) {
-            return !_get(_dict, key).isEmpty();
+        synchronized (lock) {
+            return !getMValue(internalDict, key).isEmpty();
         }
     }
 
@@ -367,29 +348,24 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @NonNull
     public MutableDictionary toMutable() {
-        synchronized (_sharedLock) {
-            return new MutableDictionary(_dict, true);
+        synchronized (lock) {
+            return new MutableDictionary(internalDict, true);
         }
+    }
+
+    /**
+     * encodeTo(FlEncoder) is internal method. Please don't use this method.
+     */
+    @Override
+    public void encodeTo(FLEncoder enc) {
+        final Encoder encoder = new Encoder(enc);
+        internalDict.encodeTo(encoder);
+        encoder.release();
     }
 
     //-------------------------------------------------------------------------
     // Implementation of FLEncodable
     //-------------------------------------------------------------------------
-
-    /**
-     * encodeTo(FlEncoder) is internal method. Please don't use this method.
-     */
-    @NonNull
-    @Override
-    public void encodeTo(FLEncoder enc) {
-        Encoder encoder = new Encoder(enc);
-        _dict.encodeTo(encoder);
-        encoder.release();
-    }
-
-    //---------------------------------------------
-    // Iterable implementation
-    //---------------------------------------------
 
     @NonNull
     @Override
@@ -398,40 +374,37 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     }
 
     //---------------------------------------------
-    // Override
+    // Iterable implementation
     //---------------------------------------------
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Dictionary)) return false;
+        if (this == o) { return true; }
+        if (!(o instanceof Dictionary)) { return false; }
 
-        Dictionary m = (Dictionary) o;
+        final Dictionary m = (Dictionary) o;
 
-        if (m.count() != count()) return false;
-        Iterator<String> i = iterator();
-        while (i.hasNext()) {
-            String key = i.next();
-            Object value = getValue(key);
+        if (m.count() != count()) { return false; }
+        for (String key : this) {
+            final Object value = getValue(key);
             if (value == null) {
-                if (!(m.getValue(key) == null && m.contains(key)))
-                    return false;
-            } else {
-                if (!value.equals(m.getValue(key)))
-                    return false;
+                if (!(m.getValue(key) == null && m.contains(key))) { return false; }
+            }
+            else {
+                if (!value.equals(m.getValue(key))) { return false; }
             }
         }
         return true;
     }
 
+    //---------------------------------------------
+    // Override
+    //---------------------------------------------
+
     @Override
     public int hashCode() {
         int h = 0;
-        Iterator<String> i = iterator();
-        while (i.hasNext()) {
-            String key = i.next();
-            h += hashCode(key, getValue(key));
-        }
+        for (String key : this) { h += hashCode(key, getValue(key)); }
         return h;
     }
 
@@ -439,37 +412,38 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // protected level access
     //---------------------------------------------
 
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-    }
-
     protected boolean isEmpty() {
         return count() == 0;
+    }
+
+    private Object getSharedLock() {
+        final MContext context = internalDict.getContext();
+        return ((context == null) || (context == MContext.NULL))
+            ? new Object()
+            : ((DocContext) context).getDatabase().getLock();
     }
 
     //---------------------------------------------
     // private
     //---------------------------------------------
 
-    private void setupSharedLock() {
-        MContext context = _dict.getContext();
-        if (context != null && context != MContext.NULL)
-            _sharedLock = ((DocContext)context).getDatabase().getLock();
-        else
-            _sharedLock = new Object();
-    }
-
     // hashCode for pair of key and value
     private int hashCode(String key, Object value) {
         return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
+    }
+
+    MCollection toMCollection() {
+        return internalDict;
     }
 
     //---------------------------------------------
     // package level access
     //---------------------------------------------
 
-    MCollection toMCollection() {
-        return _dict;
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
     }
 }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 /**
  * A Joins component represents a collection of the joins clauses of the query statement.
  */
@@ -31,7 +32,7 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
     // member variables
     //---------------------------------------------
 
-    private List<Join> joins;
+    private final List<Join> joins;
 
     //---------------------------------------------
     // Constructors
@@ -122,9 +123,8 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
     //---------------------------------------------
 
     Object asJSON() {
-        List<Object> json = new ArrayList<>();
-        for (Join join : joins)
-            json.add(join.asJSON());
+        final List<Object> json = new ArrayList<>();
+        for (Join join : joins) { json.add(join.asJSON()); }
         return json;
     }
 }

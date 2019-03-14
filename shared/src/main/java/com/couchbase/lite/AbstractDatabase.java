@@ -19,31 +19,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.support.Run;
-import com.couchbase.lite.internal.utils.ExecutorUtils;
-import com.couchbase.lite.internal.utils.JsonUtils;
-import com.couchbase.lite.internal.core.C4BlobStore;
-import com.couchbase.lite.internal.core.C4Constants;
-import com.couchbase.lite.internal.core.C4Constants.C4DatabaseFlags;
-import com.couchbase.lite.internal.core.C4Constants.C4DocumentVersioning;
-import com.couchbase.lite.internal.core.C4Constants.C4EncryptionAlgorithm;
-import com.couchbase.lite.internal.core.C4Constants.C4ErrorDomain;
-import com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags;
-import com.couchbase.lite.internal.core.C4Constants.LiteCoreError;
-import com.couchbase.lite.internal.core.C4Database;
-import com.couchbase.lite.internal.core.C4DatabaseChange;
-import com.couchbase.lite.internal.core.C4DatabaseObserver;
-import com.couchbase.lite.internal.core.C4DatabaseObserverListener;
-import com.couchbase.lite.internal.core.C4Document;
-import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.core.SharedKeys;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.utils.FileUtils;
-
-import org.json.JSONException;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,11 +33,35 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.couchbase.lite.CBLError.Code.CBLErrorCantOpenFile;
-import static com.couchbase.lite.CBLError.Code.CBLErrorNotADatabaseFile;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.json.JSONException;
+
+import com.couchbase.lite.core.CBLVersion;
+import com.couchbase.lite.internal.core.C4BlobStore;
+import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.core.C4Constants.C4DatabaseFlags;
+import com.couchbase.lite.internal.core.C4Constants.C4DocumentVersioning;
+import com.couchbase.lite.internal.core.C4Constants.C4EncryptionAlgorithm;
+import com.couchbase.lite.internal.core.C4Constants.C4ErrorDomain;
+import com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags;
+import com.couchbase.lite.internal.core.C4Constants.LiteCoreError;
+import com.couchbase.lite.internal.core.C4Database;
+import com.couchbase.lite.internal.core.C4DatabaseChange;
+import com.couchbase.lite.internal.core.C4DatabaseObserver;
+import com.couchbase.lite.internal.core.C4DatabaseObserverListener;
+import com.couchbase.lite.internal.core.C4Document;
+import com.couchbase.lite.internal.core.SharedKeys;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.support.Run;
+import com.couchbase.lite.internal.utils.ExecutorUtils;
+import com.couchbase.lite.internal.utils.JsonUtils;
+import com.couchbase.lite.utils.FileUtils;
+
 
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
@@ -72,49 +71,154 @@ abstract class AbstractDatabase {
     // Load LiteCore library and its dependencies
     //---------------------------------------------
 
-    static {
-        NativeLibraryLoader.load();
-        log = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
-        Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
-    }
+    /**
+     * Gets the logging controller for the Couchbase Lite library to configure the
+     * logging settings and add custom logging.
+     */
+    @NonNull
+    public static final com.couchbase.lite.Log LOG;
 
     //---------------------------------------------
     // Static variables
     //---------------------------------------------
-
-    protected static final LogDomain DOMAIN = LogDomain.DATABASE;
-    protected static final String DB_EXTENSION = "cblite2";
-    protected static final int MAX_CHANGES = 100;
+    private static final LogDomain DOMAIN = LogDomain.DATABASE;
+    private static final String DB_EXTENSION = "cblite2";
+    private static final int MAX_CHANGES = 100;
     // How long to wait after a database opens before expiring docs
-    protected static final long kHousekeepingDelayAfterOpening = 3;
+    private static final long HOUSEKEEPING_DELAY_AFTER_OPENING = 3;
 
-    protected static final int DEFAULT_DATABASE_FLAGS
-            = C4DatabaseFlags.kC4DB_Create
-            | C4DatabaseFlags.kC4DB_AutoCompact
-            | C4DatabaseFlags.kC4DB_SharedKeys;
+    private static final int DEFAULT_DATABASE_FLAGS
+        = C4DatabaseFlags.kC4DB_Create
+        | C4DatabaseFlags.kC4DB_AutoCompact
+        | C4DatabaseFlags.kC4DB_SharedKeys;
 
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
 
-    protected String name;
-    protected final DatabaseConfiguration config;
-    protected final boolean shellMode;
-    protected C4Database c4db;
-    protected ScheduledExecutorService queryExecutor; // Executor for LiveQuery. one per db.
-    protected ScheduledExecutorService postExecutor;  // Executor for posting Database/Document Change notification
-    protected ChangeNotifier<DatabaseChange> dbChangeNotifier;
-    protected C4DatabaseObserver c4DBObserver;
-    protected Map<String, DocumentChangeNotifier> docChangeNotifiers;
-    protected final SharedKeys sharedKeys;
-    protected Set<Replicator> activeReplications;
-    protected Set<LiveQuery> activeLiveQueries;
-    protected Timer purgeTimer;
-    protected final Object lock = new Object();     // Main database lock object for thread-safety
+    /**
+     * Deletes a database of the given name in the given directory.
+     *
+     * @param name      the database's name
+     * @param directory the path where the database is located.
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    public static void delete(@NonNull String name, @NonNull File directory) throws CouchbaseLiteException {
+        if (name == null) { throw new IllegalArgumentException("name cannot be null."); }
+        if (directory == null) { throw new IllegalArgumentException("directory cannot be null."); }
+        if (!exists(name, directory)) {
+            throw new CouchbaseLiteException(
+                CBLError.Domain.CBLErrorDomain,
+                CBLError.Code.CBLErrorNotFound);
+        }
+
+        final File path = getDatabasePath(directory, name);
+        try {
+            Log.i(DOMAIN, "delete(): path=%s", path.toString());
+            C4Database.deleteAtPath(path.getPath());
+        }
+        catch (LiteCoreException e) {
+            throw CBLStatus.convertException(e);
+        }
+    }
+
+    /**
+     * Checks whether a database of the given name exists in the given directory or not.
+     *
+     * @param name      the database's name
+     * @param directory the path where the database is located.
+     * @return true if exists, false otherwise.
+     */
+    public static boolean exists(@NonNull String name, @NonNull File directory) {
+        if (name == null) { throw new IllegalArgumentException("name cannot be null."); }
+        if (directory == null) { throw new IllegalArgumentException("directory cannot be null."); }
+        return getDatabasePath(directory, name).exists();
+    }
+
+    public static void copy(
+        @NonNull File path,
+        @NonNull String name,
+        @NonNull DatabaseConfiguration config)
+        throws CouchbaseLiteException {
+        if (path == null) { throw new IllegalArgumentException("path cannot be null."); }
+        if (name == null) { throw new IllegalArgumentException("name cannot be null."); }
+        if (config == null) { throw new IllegalArgumentException("config cannot be null."); }
+
+        String fromPath = path.getPath();
+        if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar) { fromPath += File.separator; }
+        String toPath = getDatabasePath(new File(config.getDirectory()), name).getPath();
+        if (toPath.charAt(toPath.length() - 1) != File.separatorChar) { toPath += File.separator; }
+
+        // Set the temp directory based on Database Configuration:
+        config.setTempDir();
+
+        try {
+            C4Database.copy(
+                fromPath,
+                toPath,
+                DEFAULT_DATABASE_FLAGS,
+                null,
+                C4DocumentVersioning.kC4RevisionTrees,
+                C4EncryptionAlgorithm.kC4EncryptionNone,
+                null);
+        }
+        catch (LiteCoreException e) {
+            FileUtils.deleteRecursive(toPath);
+            throw CBLStatus.convertException(e);
+        }
+    }
+
+    /**
+     * Set log level for the given log domain.
+     *
+     * @param domain The log domain
+     * @param level  The log level
+     * @deprecated As of 2.5 because it is being replaced with the
+     * {@link com.couchbase.lite.Log#getConsole() getConsole} method
+     * from the {@link #LOG log} property.  This method has
+     * been replaced with a no-op to preserve API compatibility.
+     */
+    @Deprecated
+    public static void setLogLevel(@NonNull LogDomain domain, @NonNull LogLevel level) {
+        if (domain == null) { throw new IllegalArgumentException("domain cannot be null."); }
+        if (level == null) { throw new IllegalArgumentException("level cannot be null."); }
+
+        Log.setLogLevel(domain, level);
+    }
+
+    private static File getDatabasePath(File dir, String name) {
+        name = name.replaceAll("/", ":");
+        name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
+        return new File(dir, name);
+    }
+
+    final Object lock = new Object();     // Main database lock object for thread-safety
+    final DatabaseConfiguration config;
+
+    private final SharedKeys sharedKeys;
+    private final boolean shellMode;
+
+    private ScheduledExecutorService queryExecutor; // Executor for LiveQuery. one per db.
+    private ScheduledExecutorService postExecutor;  // Executor for posting Database/Document Change notification
+    private ChangeNotifier<DatabaseChange> dbChangeNotifier;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+    private C4DatabaseObserver c4DbObserver;
+    private Map<String, DocumentChangeNotifier> docChangeNotifiers;
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
+    private Set<Replicator> activeReplications;
+
+    // Attributes:
+    private Set<LiveQuery> activeLiveQueries;
+    private Timer purgeTimer;
+    private String name;
+
+    protected C4Database c4db;
 
     /**
      * Construct a  AbstractDatabase with a given name and database config.
@@ -125,7 +229,7 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
     protected AbstractDatabase(@NonNull String name, @NonNull DatabaseConfiguration config)
-            throws CouchbaseLiteException {
+        throws CouchbaseLiteException {
         // Logging:
         Run.once("DATABASE_INIT_LOGGING", new Runnable() {
             @Override
@@ -134,18 +238,16 @@ abstract class AbstractDatabase {
                 Log.info(DOMAIN, CBLVersion.getUserAgent());
 
                 // Check file logging
-                if(Database.log.getFile().getConfig() == null) {
+                if (Database.LOG.getFile().getConfig() == null) {
                     Log.w(DOMAIN, "Database.log.getFile().getConfig() is null, meaning file " +
-                            "logging is disabled. Log files required for product support are " +
-                            "not being generated.");
+                        "logging is disabled. Log files required for product support are " +
+                        "not being generated.");
                 }
             }
         });
 
-        if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("id cannot be null.");
-        if (config == null)
-            throw new IllegalArgumentException("id cannot be null.");
+        if (name == null || name.length() == 0) { throw new IllegalArgumentException("id cannot be null."); }
+        if (config == null) { throw new IllegalArgumentException("id cannot be null."); }
 
         // Name:
         this.name = name;
@@ -170,9 +272,9 @@ abstract class AbstractDatabase {
     }
 
     /**
-     *  Initialize Database with a give C4Database object in the shell mode. The life of the
-     *  C4Database object will be managed by the caller. This is currently used for creating a
-     *  Dictionary as an input of the predict() method of the PredictiveModel.
+     * Initialize Database with a give C4Database object in the shell mode. The life of the
+     * C4Database object will be managed by the caller. This is currently used for creating a
+     * Dictionary as an input of the predict() method of the PredictiveModel.
      */
     AbstractDatabase(C4Database c4db) {
         this.c4db = c4db;
@@ -181,18 +283,7 @@ abstract class AbstractDatabase {
         this.sharedKeys = null;
     }
 
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
-
-    /**
-     * Gets the logging controller for the Couchbase Lite library to configure the
-     * logging settings and add custom logging.
-     */
-    @NonNull
-    public static final com.couchbase.lite.Log log;
-
-    // Attributes:
+    // GET EXISTING DOCUMENT
 
     /**
      * Return the database name
@@ -237,8 +328,6 @@ abstract class AbstractDatabase {
         return config.readonlyCopy();
     }
 
-    // GET EXISTING DOCUMENT
-
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
      * exist in the database, the value returned will be null.
@@ -247,14 +336,14 @@ abstract class AbstractDatabase {
      * @return the Document object
      */
     public Document getDocument(@NonNull String id) {
-        if (id == null)
-            throw new IllegalArgumentException("id cannot be null.");
+        if (id == null) { throw new IllegalArgumentException("id cannot be null."); }
 
         synchronized (lock) {
             mustBeOpen();
             try {
                 return new Document((Database) this, id, false);
-            } catch (CouchbaseLiteException ex) {
+            }
+            catch (CouchbaseLiteException ex) {
                 // only 404 - Not Found error throws CouchbaseLiteException
                 return null;
             }
@@ -285,11 +374,9 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException
      */
     public boolean save(@NonNull MutableDocument document, @NonNull ConcurrencyControl concurrencyControl)
-            throws CouchbaseLiteException {
-        if (document == null)
-            throw new IllegalArgumentException("document cannot be null.");
-        if (concurrencyControl == null)
-            throw new IllegalArgumentException("concurrencyControl cannot be null.");
+        throws CouchbaseLiteException {
+        if (document == null) { throw new IllegalArgumentException("document cannot be null."); }
+        if (concurrencyControl == null) { throw new IllegalArgumentException("concurrencyControl cannot be null."); }
 
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, false, concurrencyControl);
@@ -319,15 +406,15 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException
      */
     public boolean delete(@NonNull Document document, @NonNull ConcurrencyControl concurrencyControl)
-            throws CouchbaseLiteException {
-        if (document == null)
-            throw new IllegalArgumentException("document cannot be null.");
-        if (concurrencyControl == null)
-            throw new IllegalArgumentException("concurrencyControl cannot be null.");
+        throws CouchbaseLiteException {
+        if (document == null) { throw new IllegalArgumentException("document cannot be null."); }
+        if (concurrencyControl == null) { throw new IllegalArgumentException("concurrencyControl cannot be null."); }
 
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, true, concurrencyControl);
     }
+
+    // Batch operations:
 
     /**
      * Purges the given document from the database. This is more drastic than delete(Document),
@@ -336,12 +423,12 @@ abstract class AbstractDatabase {
      * @param document
      */
     public void purge(@NonNull Document document) throws CouchbaseLiteException {
-        if (document == null)
-            throw new IllegalArgumentException("document cannot be null.");
+        if (document == null) { throw new IllegalArgumentException("document cannot be null."); }
 
-        if (document.isNewDocument())
+        if (document.isNewDocument()) {
             throw new CouchbaseLiteException("Document doesn't exist in the database.",
-                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+                CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+        }
 
         synchronized (lock) {
             prepareDocument(document);
@@ -356,13 +443,17 @@ abstract class AbstractDatabase {
                     document.replaceC4Document(null);
                     commit = true;
                 }
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
-            } finally {
+            }
+            finally {
                 endTransaction(commit);
             }
         }
     }
+
+    // Compaction:
 
     /**
      * Purges the given document id for the document in database. This is more drastic than delete(Document),
@@ -371,8 +462,7 @@ abstract class AbstractDatabase {
      * @param id the document ID
      */
     public void purge(@NonNull String id) throws CouchbaseLiteException {
-        if (id == null)
-            throw new IllegalArgumentException("document id cannot be null.");
+        if (id == null) { throw new IllegalArgumentException("document id cannot be null."); }
 
         synchronized (lock) {
             boolean commit = false;
@@ -380,36 +470,41 @@ abstract class AbstractDatabase {
             try {
                 getC4Database().purgeDoc(id);
                 commit = true;
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
-            } finally {
+            }
+            finally {
                 endTransaction(commit);
             }
         }
     }
 
+    // Database changes:
+
     /**
      * Sets an expiration date on a document. After this time, the document
      * will be purged from the database.
-     * @param id The ID of the Document
+     *
+     * @param id         The ID of the Document
      * @param expiration Nullable expiration timestamp as a Date, set timestamp to null
-     * to remove expiration date time from doc.
-     * @throws  CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     *                   to remove expiration date time from doc.
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void setDocumentExpiration(@NonNull String id, Date expiration) throws CouchbaseLiteException {
-        if (id == null)
-            throw new IllegalArgumentException("document id cannot be null.");
+        if (id == null) { throw new IllegalArgumentException("document id cannot be null."); }
 
         synchronized (lock) {
             try {
                 if (expiration == null) {
                     getC4Database().setExpiration(id, 0);
-                } else {
-                    long timestamp = expiration.getTime();
-                    getC4Database().setExpiration(id, timestamp);
+                }
+                else {
+                    getC4Database().setExpiration(id, expiration.getTime());
                 }
                 scheduleDocumentExpiration(0);
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
         }
@@ -418,32 +513,28 @@ abstract class AbstractDatabase {
     /**
      * Returns the expiration time of the document. null will be returned if there is
      * no expiration time set
+     *
      * @param id The ID of the Document
      * @return Date a nullable expiration timestamp of the document or null if time not set.
-     * @throws  CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
-        if (id == null)
-            throw new IllegalArgumentException("document id cannot be null.");
+        if (id == null) { throw new IllegalArgumentException("document id cannot be null."); }
 
         synchronized (lock) {
             try {
-                if(getC4Database().get(id, true) == null) {
+                if (getC4Database().get(id, true) == null) {
                     throw new CouchbaseLiteException("Document doesn't exist in the database.",
-                            CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
                 }
-                long timestamp = getC4Database().getExpiration(id);
-                if (timestamp == 0) {
-                    return null;
-                }
-                return new Date(timestamp);
-            } catch (LiteCoreException e) {
+                final long timestamp = getC4Database().getExpiration(id);
+                return (timestamp == 0) ? null : new Date(timestamp);
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
         }
     }
-
-    // Batch operations:
 
     /**
      * Runs a group of database operations in a batch. Use this when performing bulk write operations
@@ -454,8 +545,7 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void inBatch(@NonNull Runnable runnable) throws CouchbaseLiteException {
-        if (runnable == null)
-            throw new IllegalArgumentException("runnable cannot be null.");
+        if (runnable == null) { throw new IllegalArgumentException("runnable cannot be null."); }
 
         synchronized (lock) {
             mustBeOpen();
@@ -466,13 +556,16 @@ abstract class AbstractDatabase {
                     try {
                         runnable.run();
                         commit = true;
-                    } catch (RuntimeException e) {
+                    }
+                    catch (RuntimeException e) {
                         throw new CouchbaseLiteException(e);
                     }
-                } finally {
+                }
+                finally {
                     getC4Database().endTransaction(commit);
                 }
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
         }
@@ -480,7 +573,7 @@ abstract class AbstractDatabase {
         postDatabaseChanged();
     }
 
-    // Compaction:
+    // Document changes:
 
     /**
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
@@ -490,13 +583,12 @@ abstract class AbstractDatabase {
             mustBeOpen();
             try {
                 getC4Database().compact();
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
         }
     }
-
-    // Database changes:
 
     /**
      * Set the given DatabaseChangeListener to the this database.
@@ -508,6 +600,8 @@ abstract class AbstractDatabase {
         return addChangeListener(null, listener);
     }
 
+    // Others:
+
     /**
      * Set the given DatabaseChangeListener to the this database with an executor on which the
      * the changes will be posted to the listener.
@@ -516,8 +610,7 @@ abstract class AbstractDatabase {
      */
     @NonNull
     public ListenerToken addChangeListener(Executor executor, @NonNull DatabaseChangeListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("listener cannot be null.");
+        if (listener == null) { throw new IllegalArgumentException("listener cannot be null."); }
 
         synchronized (lock) {
             mustBeOpen();
@@ -531,26 +624,26 @@ abstract class AbstractDatabase {
      * @param token
      */
     public void removeChangeListener(@NonNull ListenerToken token) {
-        if (token == null)
-            throw new IllegalArgumentException("token cannot be null.");
+        if (token == null) { throw new IllegalArgumentException("token cannot be null."); }
 
         synchronized (lock) {
             mustBeOpen();
-            if (token instanceof ChangeListenerToken && ((ChangeListenerToken) token).getKey() != null)
+            if (token instanceof ChangeListenerToken && ((ChangeListenerToken) token).getKey() != null) {
                 removeDocumentChangeListener((ChangeListenerToken) token);
-            else
-                removeDatabaseChangeListener(token);
+            }
+            else { removeDatabaseChangeListener(token); }
         }
     }
 
-    // Document changes:
+    // Maintenance operations:
 
     /**
      * Add the given DocumentChangeListener to the specified document.
      */
     @NonNull
-    public ListenerToken addDocumentChangeListener(@NonNull String id,
-                                                   @NonNull DocumentChangeListener listener) {
+    public ListenerToken addDocumentChangeListener(
+        @NonNull String id,
+        @NonNull DocumentChangeListener listener) {
         return addDocumentChangeListener(id, null, listener);
     }
 
@@ -559,21 +652,18 @@ abstract class AbstractDatabase {
      * the changes will be posted to the listener.
      */
     @NonNull
-    public ListenerToken addDocumentChangeListener(@NonNull String id,
-                                                   Executor executor,
-                                                   @NonNull DocumentChangeListener listener) {
-        if (id == null)
-            throw new IllegalArgumentException("id cannot be null.");
-        if (listener == null)
-            throw new IllegalArgumentException("listener cannot be null.");
+    public ListenerToken addDocumentChangeListener(
+        @NonNull String id,
+        Executor executor,
+        @NonNull DocumentChangeListener listener) {
+        if (id == null) { throw new IllegalArgumentException("id cannot be null."); }
+        if (listener == null) { throw new IllegalArgumentException("listener cannot be null."); }
 
         synchronized (lock) {
             mustBeOpen();
             return addDocumentChangeListener(executor, listener, id);
         }
     }
-
-    // Others:
 
     /**
      * Closes a database.
@@ -582,22 +672,22 @@ abstract class AbstractDatabase {
      */
     public void close() throws CouchbaseLiteException {
         synchronized (lock) {
-            if (c4db == null)
-                return;
+            if (c4db == null) { return; }
 
             Log.i(DOMAIN, "Closing %s at path %s", this, getC4Database().getPath());
 
             if (activeReplications.size() > 0) {
                 throw new CouchbaseLiteException(
-                        "Cannot close the database.  Please stop all of the replicators before closing the database.",
-                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+                    "Cannot close the database.  Please stop all of the replicators before closing the database.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
             }
 
 
             if (activeLiveQueries.size() > 0) {
                 throw new CouchbaseLiteException(
-                        "Cannot close the database.  Please remove all of the query listeners before closing the database.",
-                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+                    "Cannot close the database.  Please remove all of the query listeners before closing the database.",
+                    CBLError.Domain.CBLErrorDomain,
+                    CBLError.Code.CBLErrorBusy);
             }
 
             // cancel purge timer
@@ -615,6 +705,10 @@ abstract class AbstractDatabase {
         }
     }
 
+    // ---------------------------------------------
+    // API - public static methods
+    // ---------------------------------------------
+
     /**
      * Deletes a database.
      *
@@ -628,15 +722,17 @@ abstract class AbstractDatabase {
 
             if (activeReplications.size() > 0) {
                 throw new CouchbaseLiteException(
-                        "Cannot delete the database.  Please stop all of the replicators before closing the database.",
-                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+                    "Cannot delete the database.  Please stop all of the replicators before closing the database.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
             }
 
 
             if (activeLiveQueries.size() > 0) {
                 throw new CouchbaseLiteException(
-                        "Cannot delete the database.  Please remove all of the query listeners before closing the database.",
-                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+                    "Cannot delete the database.  Please remove all of the query listeners before closing the "
+                        + "database.",
+                    CBLError.Domain.CBLErrorDomain,
+                    CBLError.Code.CBLErrorBusy);
             }
 
             // cancel purge timer
@@ -654,38 +750,37 @@ abstract class AbstractDatabase {
         }
     }
 
-    // Maintenance operations:
-
+    @SuppressWarnings("unchecked")
     @NonNull
     public List<String> getIndexes() throws CouchbaseLiteException {
         synchronized (lock) {
             mustBeOpen();
-            try {
-                FLValue value = c4db.getIndexes();
-                return (List<String>) value.asObject();
-            } catch (LiteCoreException e) {
+            try { return (List<String>) c4db.getIndexes().asObject(); }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
         }
     }
 
     public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
-        if (name == null)
-            throw new IllegalArgumentException("name cannot be null.");
-        if (index == null)
-            throw new IllegalArgumentException("index cannot be null.");
+        if (name == null) { throw new IllegalArgumentException("name cannot be null."); }
+        if (index == null) { throw new IllegalArgumentException("index cannot be null."); }
         synchronized (lock) {
             mustBeOpen();
             try {
-                AbstractIndex abstractIndex = (AbstractIndex) index;
-                String json = JsonUtils.toJson(abstractIndex.items()).toString();
-                getC4Database().createIndex(name, json,
-                        abstractIndex.type().getValue(),
-                        abstractIndex.language(),
-                        abstractIndex.ignoreAccents());
-            } catch (LiteCoreException e) {
+                final AbstractIndex abstractIndex = (AbstractIndex) index;
+                final String json = JsonUtils.toJson(abstractIndex.items()).toString();
+                getC4Database().createIndex(
+                    name,
+                    json,
+                    abstractIndex.type().getValue(),
+                    abstractIndex.language(),
+                    abstractIndex.ignoreAccents());
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
-            } catch (JSONException e) {
+            }
+            catch (JSONException e) {
                 throw new CouchbaseLiteException(e);
             }
         }
@@ -696,112 +791,11 @@ abstract class AbstractDatabase {
             mustBeOpen();
             try {
                 c4db.deleteIndex(name);
-            } catch (LiteCoreException e) {
+            }
+            catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
         }
-    }
-
-    //---------------------------------------------
-    // API - public static methods
-    //---------------------------------------------
-
-    /**
-     * Deletes a database of the given name in the given directory.
-     *
-     * @param name      the database's name
-     * @param directory the path where the database is located.
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-    public static void delete(@NonNull String name, @NonNull File directory) throws CouchbaseLiteException {
-        if (name == null)
-            throw new IllegalArgumentException("name cannot be null.");
-        if (directory == null)
-            throw new IllegalArgumentException("directory cannot be null.");
-        if (!exists(name, directory))
-            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
-
-        File path = getDatabasePath(directory, name);
-        try {
-            Log.i(DOMAIN, "delete(): path=%s", path.toString());
-            C4Database.deleteAtPath(path.getPath());
-        } catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
-        }
-    }
-
-    /**
-     * Checks whether a database of the given name exists in the given directory or not.
-     *
-     * @param name      the database's name
-     * @param directory the path where the database is located.
-     * @return true if exists, false otherwise.
-     */
-    public static boolean exists(@NonNull String name, @NonNull File directory) {
-        if (name == null)
-            throw new IllegalArgumentException("name cannot be null.");
-        if (directory == null)
-            throw new IllegalArgumentException("directory cannot be null.");
-        return getDatabasePath(directory, name).exists();
-    }
-
-    public static void copy(@NonNull File path,
-                            @NonNull String name,
-                            @NonNull DatabaseConfiguration config)
-            throws CouchbaseLiteException {
-        if (path == null)
-            throw new IllegalArgumentException("path cannot be null.");
-        if (name == null)
-            throw new IllegalArgumentException("name cannot be null.");
-        if (config == null)
-            throw new IllegalArgumentException("config cannot be null.");
-
-        String fromPath = path.getPath();
-        if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar)
-            fromPath += File.separator;
-        String toPath = getDatabasePath(new File(config.getDirectory()), name).getPath();
-        if (toPath.charAt(toPath.length() - 1) != File.separatorChar)
-            toPath += File.separator;
-        int databaseFlags = DEFAULT_DATABASE_FLAGS;
-        int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
-        byte[] encryptionKey = null;
-
-        // Set the temp directory based on Database Configuration:
-        config.setTempDir();
-
-        try {
-            C4Database.copy(fromPath,
-                    toPath,
-                    databaseFlags,
-                    null,
-                    C4DocumentVersioning.kC4RevisionTrees,
-                    encryptionAlgorithm,
-                    encryptionKey);
-        } catch (LiteCoreException e) {
-            FileUtils.deleteRecursive(toPath);
-            throw CBLStatus.convertException(e);
-        }
-    }
-
-    /**
-     * Set log level for the given log domain.
-     *
-     * @deprecated As of 2.5 because it is being replaced with the
-     * {@link com.couchbase.lite.Log#getConsole() getConsole} method
-     * from the {@link #log log} property.  This method has
-     * been replaced with a no-op to preserve API compatibility.
-     *
-     * @param domain The log domain
-     * @param level  The log level
-     */
-    @Deprecated
-    public static void setLogLevel(@NonNull LogDomain domain, @NonNull LogLevel level) {
-        if (domain == null)
-            throw new IllegalArgumentException("domain cannot be null.");
-        if (level == null)
-            throw new IllegalArgumentException("level cannot be null.");
-
-        Log.setLogLevel(domain, level);
     }
 
     //---------------------------------------------
@@ -811,15 +805,18 @@ abstract class AbstractDatabase {
     @NonNull
     @Override
     public String toString() {
-        return "Database@" + Integer.toHexString(hashCode()) + "{" +
-                "name='" + name + '\'' +
-                '}';
+        return "Database@" + Integer.toHexString(hashCode()) + "{" + "name='" + name + '\'' + '}';
     }
 
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------
 
+    protected void mustBeOpen() {
+        if (c4db == null) { throw new IllegalStateException("Attempt to perform an operation on a closed database"); }
+    }
+
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         freeC4Observers();
@@ -835,15 +832,12 @@ abstract class AbstractDatabase {
     }
 
     boolean equalsWithPath(Database other) {
-        if (other == null) return false;
-        File path = getFilePath();
-        File otherPath = other.getFilePath();
-        if (path == null && otherPath == null)
-            return true;
-        else if ((path == null && otherPath != null) || (path != null && otherPath == null))
-            return false;
-        else
-            return path.equals(otherPath);
+        if (other == null) { return false; }
+        final File path = getFilePath();
+        final File otherPath = other.getFilePath();
+        if (path == null && otherPath == null) { return true; }
+        else if ((path == null) || (otherPath == null)) { return false; }
+        else { return path.equals(otherPath); }
     }
 
     C4BlobStore getBlobStore() throws LiteCoreException {
@@ -860,11 +854,6 @@ abstract class AbstractDatabase {
 
     //////// DATABASES:
 
-    void mustBeOpen() {
-        if (c4db == null)
-            throw new IllegalStateException("Attempt to perform an operation on a closed database");
-    }
-
     boolean isOpen() {
         return c4db != null;
     }
@@ -879,22 +868,6 @@ abstract class AbstractDatabase {
         mustBeOpen();
 
         return c4db;
-    }
-
-    void beginTransaction() throws CouchbaseLiteException {
-        try {
-            getC4Database().beginTransaction();
-        } catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
-        }
-    }
-
-    void endTransaction(boolean commit) throws CouchbaseLiteException {
-        try {
-            getC4Database().endTransaction(commit);
-        } catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
-        }
     }
 
     SharedKeys getSharedKeys() {
@@ -920,59 +893,56 @@ abstract class AbstractDatabase {
             beginTransaction();
             try {
                 // Read local document:
-                Document localDoc = new Document((Database) this, docID, true);
+                final Document localDoc = new Document((Database) this, docID, true);
 
                 // Read the conflicting remote revision:
-                Document remoteDoc = new Document((Database) this, docID, true);
+                final Document remoteDoc = new Document((Database) this, docID, true);
                 try {
                     if (!remoteDoc.selectConflictingRevision()) {
                         Log.w(DOMAIN, "Unable to select conflicting revision for '%s', skipping...", docID);
                         return;
                     }
-                } catch (LiteCoreException e) {
+                }
+                catch (LiteCoreException e) {
                     throw CBLStatus.convertException(e);
                 }
 
                 // Resolve conflict:
                 Log.v(DOMAIN, "Resolving doc '%s' (local=%s and remote=%s)", docID,
-                        localDoc.getRevID(), remoteDoc.getRevID());
-                Document resolvedDoc = resolveConflict(localDoc, remoteDoc);
+                    localDoc.getRevID(), remoteDoc.getRevID());
+                final Document resolvedDoc = resolveConflict(localDoc, remoteDoc);
 
                 // Save resolved document:
                 try {
                     saveResolvedDocument(resolvedDoc, localDoc, remoteDoc);
-                } catch (LiteCoreException e) {
+                }
+                catch (LiteCoreException e) {
                     throw CBLStatus.convertException(e);
                 }
 
                 commit = true;
-            } finally {
+            }
+            finally {
                 endTransaction(commit);
             }
         }
     }
 
     File getFilePath() {
-        String path = getPath();
+        final String path = getPath();
         return path != null ? new File(path) : null;
     }
 
     //////// Execution:
 
     void scheduleOnPostNotificationExecutor(@NonNull Runnable runnable, /* Milliseconds */ long delay) {
-        synchronized (postExecutor) {
-            if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
-                postExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
-            }
-        }
+        try { postExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS); }
+        catch (RejectedExecutionException ignore) { }
     }
 
     void scheduleOnQueryExecutor(@NonNull Runnable runnable, /* Milliseconds */ long delay) {
-        synchronized (queryExecutor) {
-            if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
-                queryExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
-            }
-        }
+        try { queryExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS); }
+        catch (RejectedExecutionException ignore) { }
     }
 
     //---------------------------------------------
@@ -985,83 +955,98 @@ abstract class AbstractDatabase {
 
     //////// DATABASES:
 
-    private void open() throws CouchbaseLiteException {
-        if (c4db != null)
-            return;
+    private void beginTransaction() throws CouchbaseLiteException {
+        try {
+            getC4Database().beginTransaction();
+        }
+        catch (LiteCoreException e) {
+            throw CBLStatus.convertException(e);
+        }
+    }
 
-        File dir = config.getDirectory() != null ? new File(config.getDirectory()) : getDefaultDirectory();
+    private void endTransaction(boolean commit) throws CouchbaseLiteException {
+        try {
+            getC4Database().endTransaction(commit);
+        }
+        catch (LiteCoreException e) {
+            throw CBLStatus.convertException(e);
+        }
+    }
+
+    private void open() throws CouchbaseLiteException {
+        if (c4db != null) { return; }
+
+        final File dir = config.getDirectory() != null ? new File(config.getDirectory()) : getDefaultDirectory();
         setupDirectory(dir);
 
-        File dbFile = getDatabasePath(dir, this.name);
-        int databaseFlags = getDatabaseFlags();
+        final File dbFile = getDatabasePath(dir, this.name);
+        final int databaseFlags = getDatabaseFlags();
 
         Log.i(DOMAIN, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
             c4db = new C4Database(
-                    dbFile.getPath(),
-                    databaseFlags,
-                    null,
-                    C4DocumentVersioning.kC4RevisionTrees,
-                    getEncryptionAlgorithm(),
-                    getEncryptionKey());
-        } catch (LiteCoreException e) {
-            if (e.code == CBLErrorNotADatabaseFile)
+                dbFile.getPath(),
+                databaseFlags,
+                null,
+                C4DocumentVersioning.kC4RevisionTrees,
+                getEncryptionAlgorithm(),
+                getEncryptionKey());
+        }
+        catch (LiteCoreException e) {
+            if (e.code == CBLError.Code.CBLErrorNotADatabaseFile) {
                 throw new CouchbaseLiteException("The provided encryption key was incorrect.", e,
-                        CBLError.Domain.CBLErrorDomain, e.code);
-            else if (e.code == CBLErrorCantOpenFile)
+                    CBLError.Domain.CBLErrorDomain, e.code);
+            }
+            else if (e.code == CBLError.Code.CBLErrorCantOpenFile) {
                 throw new CouchbaseLiteException("TUnable to create database directory.", e,
-                        CBLError.Domain.CBLErrorDomain, e.code);
-            else
-                throw CBLStatus.convertException(e);
+                    CBLError.Domain.CBLErrorDomain, e.code);
+            }
+            else { throw CBLStatus.convertException(e); }
         }
 
-        c4DBObserver = null;
+        c4DbObserver = null;
         dbChangeNotifier = null;
         docChangeNotifiers = new HashMap<>();
 
-        scheduleDocumentExpiration(kHousekeepingDelayAfterOpening);
+        scheduleDocumentExpiration(HOUSEKEEPING_DELAY_AFTER_OPENING);
     }
 
     private int getDatabaseFlags() {
-        int databaseFlags = DEFAULT_DATABASE_FLAGS;
-        return databaseFlags;
+        return DEFAULT_DATABASE_FLAGS;
     }
 
     private File getDefaultDirectory() {
         throw new UnsupportedOperationException("getDefaultDirectory() is not supported.");
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void setupDirectory(File dir) throws CouchbaseLiteException {
-        if (!dir.exists())
-            dir.mkdirs();
+        if (!dir.exists()) { dir.mkdirs(); }
         if (!dir.isDirectory()) {
             throw new CouchbaseLiteException(String.format(Locale.ENGLISH,
-                    "Unable to create directory for: %s.", dir));
+                "Unable to create directory for: %s.", dir));
         }
     }
-
-    private static File getDatabasePath(File dir, String name) {
-        name = name.replaceAll("/", ":");
-        name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
-        return new File(dir, name);
-    }
-
-    //////// DOCUMENTS:
 
     // --- C4Database
     private void closeC4DB() throws CouchbaseLiteException {
         try {
             getC4Database().close();
-        } catch (LiteCoreException e) {
+        }
+        catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
         }
     }
 
+    //////// DOCUMENTS:
+
     private void deleteC4DB() throws CouchbaseLiteException {
         try {
             getC4Database().delete();
-        } catch (LiteCoreException e) {
+        }
+        catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
         }
     }
@@ -1073,8 +1058,6 @@ abstract class AbstractDatabase {
         }
     }
 
-    // --- Notification: - C4DatabaseObserver/C4DocumentObserver
-
     // Database changes:
     private ListenerToken addDatabaseChangeListener(Executor executor, DatabaseChangeListener listener) {
         // NOTE: caller method is synchronized.
@@ -1085,6 +1068,8 @@ abstract class AbstractDatabase {
         return dbChangeNotifier.addChangeListener(executor, listener);
     }
 
+    // --- Notification: - C4DatabaseObserver/C4DocumentObserver
+
     private void removeDatabaseChangeListener(ListenerToken token) {
         // NOTE: caller method is synchronized.
         if (dbChangeNotifier.removeChangeListener(token) == 0) {
@@ -1094,25 +1079,26 @@ abstract class AbstractDatabase {
     }
 
     // Document changes:
-    private ListenerToken addDocumentChangeListener(Executor executor,
-                                                    DocumentChangeListener listener,
-                                                    String docID) {
+    private ListenerToken addDocumentChangeListener(
+        Executor executor,
+        DocumentChangeListener listener,
+        String docID) {
         // NOTE: caller method is synchronized.
         DocumentChangeNotifier docNotifier = docChangeNotifiers.get(docID);
         if (docNotifier == null) {
             docNotifier = new DocumentChangeNotifier((Database) this, docID);
             docChangeNotifiers.put(docID, docNotifier);
         }
-        ChangeListenerToken token = docNotifier.addChangeListener(executor, listener);
+        final ChangeListenerToken token = docNotifier.addChangeListener(executor, listener);
         token.setKey(docID);
         return token;
     }
 
     private void removeDocumentChangeListener(ChangeListenerToken token) {
         // NOTE: caller method is synchronized.
-        String docID = (String) token.getKey();
+        final String docID = (String) token.getKey();
         if (docChangeNotifiers.containsKey(docID)) {
-            DocumentChangeNotifier notifier = docChangeNotifiers.get(docID);
+            final DocumentChangeNotifier notifier = docChangeNotifiers.get(docID);
             if (notifier != null && notifier.removeChangeListener(token) == 0) {
                 notifier.stop();
                 docChangeNotifiers.remove(docID);
@@ -1121,7 +1107,7 @@ abstract class AbstractDatabase {
     }
 
     private void registerC4DBObserver() {
-        c4DBObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
+        c4DbObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
             @Override
             public void callback(C4DatabaseObserver observer, Object context) {
                 scheduleOnPostNotificationExecutor(new Runnable() {
@@ -1135,9 +1121,9 @@ abstract class AbstractDatabase {
     }
 
     private void freeC4DBObserver() {
-        if (c4DBObserver != null) {
-            c4DBObserver.free();
-            c4DBObserver = null;
+        if (c4DbObserver != null) {
+            c4DbObserver.free();
+            c4DbObserver = null;
         }
     }
 
@@ -1145,55 +1131,52 @@ abstract class AbstractDatabase {
         freeC4DBObserver();
 
         if (docChangeNotifiers != null) {
-            for (DocumentChangeNotifier notifier : docChangeNotifiers.values())
-                notifier.stop();
+            for (DocumentChangeNotifier notifier : docChangeNotifiers.values()) { notifier.stop(); }
             docChangeNotifiers.clear();
         }
     }
 
     private void postDatabaseChanged() {
         synchronized (lock) {
-            if (c4DBObserver == null || c4db == null || getC4Database().isInTransaction())
-                return;
+            if (c4DbObserver == null || c4db == null || getC4Database().isInTransaction()) { return; }
 
             boolean external = false;
             int nChanges;
             List<String> docIDs = new ArrayList<>();
             do {
                 // Read changes in batches of kMaxChanges:
-                C4DatabaseChange[] c4DBChanges = c4DBObserver.getChanges(MAX_CHANGES);
-                nChanges = c4DBChanges.length;
-                boolean newExternal = nChanges > 0 ? c4DBChanges[0].isExternal() : false;
-                if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || docIDs.size() > 1000) {
-                    if (docIDs.size() > 0) {
-                        DatabaseChange change = new DatabaseChange((Database) this, docIDs);
-                        dbChangeNotifier.postChange(change);
-                        docIDs = new ArrayList<>();
-                    }
+                final C4DatabaseChange[] c4DbChanges = c4DbObserver.getChanges(MAX_CHANGES);
+                nChanges = (c4DbChanges == null) ? 0 : c4DbChanges.length;
+                final boolean newExternal = nChanges > 0 && c4DbChanges[0].isExternal();
+                if (((nChanges <= 0) || (external != newExternal) || (docIDs.size() > 1000)) && (docIDs.size() > 0)) {
+                    dbChangeNotifier.postChange(new DatabaseChange((Database) this, docIDs));
+                    docIDs = new ArrayList<>();
                 }
+
                 external = newExternal;
-                for (int i = 0; i < nChanges; i++)
-                    docIDs.add(c4DBChanges[i].getDocID());
-            } while (nChanges > 0);
+                for (int i = 0; i < nChanges; i++) { docIDs.add(c4DbChanges[i].getDocID()); }
+            }
+            while (nChanges > 0);
         }
     }
 
     private void prepareDocument(Document document) throws CouchbaseLiteException {
         mustBeOpen();
 
-        if (document.getDatabase() == null)
-            document.setDatabase((Database) this);
-        else if (document.getDatabase() != this)
+        if (document.getDatabase() == null) { document.setDatabase((Database) this); }
+        else if (document.getDatabase() != this) {
             throw new CouchbaseLiteException("Cannot operate on a document from another database.",
-                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidParameter);
+                CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidParameter);
+        }
     }
 
     // The main save method.
     private boolean save(Document document, boolean deletion, ConcurrencyControl concurrencyControl)
-            throws CouchbaseLiteException {
-        if (deletion && !document.exists())
+        throws CouchbaseLiteException {
+        if (deletion && !document.exists()) {
             throw new CouchbaseLiteException("Cannot delete a document that has not yet been saved.",
-                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+                CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+        }
 
         C4Document curDoc = null;
         C4Document newDoc = null;
@@ -1206,23 +1189,28 @@ abstract class AbstractDatabase {
                 try {
                     newDoc = save(document, null, deletion);
                     commit = true;
-                } catch (LiteCoreException e) {
-                    if (!(e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict))
+                }
+                catch (LiteCoreException e) {
+                    if (!(e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict)) {
                         throw CBLStatus.convertException(e);
+                    }
                 }
 
                 if (newDoc == null) {
                     // Handle conflict:
-                    if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT))
+                    if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT)) {
                         return false; // document is conflicted and return false because of OPTIMISTIC
+                    }
 
                     try {
                         curDoc = getC4Database().get(document.getId(), true);
-                    } catch (LiteCoreException e) {
-                        if (deletion && e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound)
+                    }
+                    catch (LiteCoreException e) {
+                        if (deletion
+                            && e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound) {
                             return true;
-                        else
-                            throw CBLStatus.convertException(e);
+                        }
+                        else { throw CBLStatus.convertException(e); }
                     }
 
                     if (deletion && curDoc.deleted()) {
@@ -1235,23 +1223,27 @@ abstract class AbstractDatabase {
                     // NOTE: curDoc null check is done in prev try-catch blcok
                     try {
                         newDoc = save(document, curDoc, deletion);
-                    } catch (LiteCoreException e) {
+                    }
+                    catch (LiteCoreException e) {
                         throw CBLStatus.convertException(e);
                     }
                 }
 
                 document.replaceC4Document(newDoc);
                 commit = true;
-            } finally {
+            }
+            finally {
                 if (curDoc != null) {
                     curDoc.retain();
                     curDoc.release(); // curDoc is not retained
                 }
                 try {
-                    endTransaction(commit);// true: commit the transaction, false: abort the transaction
-                } catch (CouchbaseLiteException e) {
-                    if (newDoc != null)
+                    endTransaction(commit); // true: commit the transaction, false: abort the transaction
+                }
+                catch (CouchbaseLiteException e) {
+                    if (newDoc != null) {
                         newDoc.release(); // newDoc is already retained
+                    }
                     throw e;
                 }
             }
@@ -1260,84 +1252,75 @@ abstract class AbstractDatabase {
     }
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL.
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     private C4Document save(Document document, C4Document base, boolean deletion)
-            throws LiteCoreException {
+        throws LiteCoreException {
         FLSliceResult body = null;
         try {
             int revFlags = 0;
-            if (deletion)
-                revFlags = C4RevisionFlags.kRevDeleted;
+            if (deletion) { revFlags = C4RevisionFlags.kRevDeleted; }
             if (!deletion && !document.isEmpty()) {
                 // Encode properties to Fleece data:
                 body = document.encode();
-                if (body == null)
-                    return null;
-
-                if (C4Document.dictContainsBlobs(body, sharedKeys.getFLSharedKeys()))
+                if (C4Document.dictContainsBlobs(body, sharedKeys.getFLSharedKeys())) {
                     revFlags |= C4Constants.C4RevisionFlags.kRevHasAttachments;
+                }
             }
 
             // Save to database:
-            C4Document c4Doc = base != null ? base : document.getC4doc();
-            if (c4Doc != null)
-                return c4Doc.update(body, revFlags);
-            else
-                return getC4Database().create(document.getId(), body, revFlags);
-        } finally {
-            if (body != null)
-                body.free();
+            final C4Document c4Doc = base != null ? base : document.getC4doc();
+            if (c4Doc != null) { return c4Doc.update(body, revFlags); }
+
+            return getC4Database().create(document.getId(), body, revFlags);
+        }
+        finally {
+            if (body != null) { body.free(); }
         }
     }
 
     private Document resolveConflict(Document localDoc, Document remoteDoc) {
-        if (remoteDoc.isDeleted())
-            return remoteDoc;
-        else if (localDoc.isDeleted())
+        if (remoteDoc.isDeleted()) { return remoteDoc; }
+        else if (localDoc.isDeleted()) { return localDoc; }
+        else if (localDoc.generation() > remoteDoc.generation()) { return localDoc; }
+        else if (localDoc.generation() < remoteDoc.generation()) { return remoteDoc; }
+        else if (localDoc.getRevID() != null && localDoc.getRevID().compareTo(remoteDoc.getRevID()) > 0) {
             return localDoc;
-        else if (localDoc.generation() > remoteDoc.generation())
-            return localDoc;
-        else if (localDoc.generation() < remoteDoc.generation())
-            return remoteDoc;
-        else if (localDoc.getRevID() != null && localDoc.getRevID().compareTo(remoteDoc.getRevID()) > 0)
-            return localDoc;
-        else
-            return remoteDoc;
+        }
+        else { return remoteDoc; }
     }
 
     private boolean saveResolvedDocument(Document resolvedDoc, Document localDoc, Document remoteDoc)
-            throws CouchbaseLiteException, LiteCoreException {
+        throws CouchbaseLiteException, LiteCoreException {
 
         synchronized (lock) {
             boolean commit = false;
             beginTransaction();
             try {
-                if (remoteDoc != localDoc)
-                    resolvedDoc.setDatabase((Database) this);
+                if (remoteDoc != localDoc) { resolvedDoc.setDatabase((Database) this); }
 
                 // The remote branch has to win, so that the doc revision history matches the server's.
-                String winningRevID = remoteDoc.getRevID();
-                String losingRevID = localDoc.getRevID();
+                final String winningRevID = remoteDoc.getRevID();
+                final String losingRevID = localDoc.getRevID();
 
                 byte[] mergedBody = null;
                 int mergedFlags = 0x00;
                 if (resolvedDoc != remoteDoc) {
                     // Unless the remote revision is being used as-is, we need a new revision:
                     mergedBody = resolvedDoc.encode().getBuf();
-                    if (mergedBody == null)
-                        return false;
-                    if (resolvedDoc.isDeleted())
-                        mergedFlags |= C4RevisionFlags.kRevDeleted;
+                    if (mergedBody == null) { return false; }
+                    if (resolvedDoc.isDeleted()) { mergedFlags |= C4RevisionFlags.kRevDeleted; }
                 }
 
                 // Tell LiteCore to do the resolution:
-                C4Document rawDoc = localDoc.getC4doc();
+                final C4Document rawDoc = localDoc.getC4doc();
                 rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody, mergedFlags);
                 rawDoc.save(0);
                 Log.i(DOMAIN, "Conflict resolved as doc '%s' rev %s",
-                        rawDoc.getDocID(), rawDoc.getRevID());
+                    rawDoc.getDocID(), rawDoc.getRevID());
 
                 commit = true;
-            } finally {
+            }
+            finally {
                 endTransaction(commit);
             }
             return commit;
@@ -1345,26 +1328,15 @@ abstract class AbstractDatabase {
     }
 
     private void shutdownExecutorService() {
-        synchronized (postExecutor) {
-            if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
-                ExecutorUtils.shutdownAndAwaitTermination(postExecutor, 60);
-            }
-        }
-
-        synchronized (queryExecutor) {
-            if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
-                ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
-            }
-        }
+        ExecutorUtils.shutdownAndAwaitTermination(postExecutor, 60);
+        ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
     }
 
-    // #pragma mark - EXPIRATION:
-
     private void scheduleDocumentExpiration(long minimumDelay /*milliseconds*/) {
-        long nextExpiration = getC4Database().nextDocExpiration();
-        if (nextExpiration > 0) {
-            long expTime = nextExpiration - System.currentTimeMillis();
-            long delay = Math.max(expTime, minimumDelay);
+        final long nextExpiration = getC4Database().nextDocExpiration();
+        if (nextExpiration <= 0) { Log.v(DOMAIN, "No pending doc expirations"); }
+        else {
+            final long delay = Math.max(nextExpiration - System.currentTimeMillis(), minimumDelay);
             Log.v(DOMAIN, "Scheduling next doc expiration in %d sec", delay);
             synchronized (lock) {
                 cancelPurgeTimer();
@@ -1372,27 +1344,29 @@ abstract class AbstractDatabase {
                 purgeTimer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        if (isOpen())
-                            purgeExpiredDocuments();
+                        if (isOpen()) { purgeExpiredDocuments(); }
                     }
                 }, delay);
             }
-        } else
-            Log.v(DOMAIN, "No pending doc expirations");
+        }
     }
+
+    // #pragma mark - EXPIRATION:
 
     private void purgeExpiredDocuments() {
         // Aligning with database/document change notification to avoid race condition
         // between ending transaction and handling change notification when the documents
         // are purged
-        scheduleOnPostNotificationExecutor(new Runnable() {
-            @Override
-            public void run() {
-                int nPurged = getC4Database().purgeExpiredDocs();
-                Log.v(DOMAIN, "Purged %d expired documents", nPurged);
-                scheduleDocumentExpiration(1000);
-            }
-        }, 0);
+        scheduleOnPostNotificationExecutor(
+            new Runnable() {
+                @Override
+                public void run() {
+                    final int nPurged = getC4Database().purgeExpiredDocs();
+                    Log.v(DOMAIN, "Purged %d expired documents", nPurged);
+                    scheduleDocumentExpiration(1000);
+                }
+            },
+            0);
     }
 
     private void cancelPurgeTimer() {
@@ -1404,4 +1378,9 @@ abstract class AbstractDatabase {
         }
     }
 
+    static {
+        NativeLibraryLoader.load();
+        LOG = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
+        Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
+    }
 }

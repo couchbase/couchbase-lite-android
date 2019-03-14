@@ -22,5 +22,5 @@ package com.couchbase.lite;
  * Query functions.
  */
 public final class Function extends AbstractFunction {
-    private Function() {  }
+    private Function() { }
 }

@@ -17,63 +17,12 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class FLDict {
-
-    private long handle = 0; // hold pointer to FLDict
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-    public FLDict(long handle) {
-        this.handle = handle;
-    }
-
-    public FLValue get(String key) {
-        if (key == null) return null;
-        long hValue = get(handle, key.getBytes());
-        return hValue != 0L ? new FLValue(hValue) : null;
-    }
-
-    public Map<String, Object> asDict() {
-        Map<String, Object> results = new HashMap<>();
-        FLDictIterator itr = new FLDictIterator();
-        try {
-            itr.begin(this);
-            String key;
-            while ((key = itr.getKeyString()) != null) {
-                Object value = itr.getValue().asObject();
-                results.put(key, value);
-                if (!itr.next())
-                    break;
-            }
-        } finally {
-            itr.free();
-        }
-        return results;
-    }
-
-    public long count() {
-        if (handle == 0L) throw new IllegalStateException("handle is 0L");
-        return count(handle);
-    }
-
-    public FLValue toFLValue() {
-        return new FLValue(handle);
-    }
-
-    //-------------------------------------------------------------------------
-    // package level access
-    //-------------------------------------------------------------------------
-    public long getHandle() {
-        return handle;
-    }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
 
     /**
      * Returns the number of items in a dictionary, or 0 if the pointer is nullptr.
@@ -86,9 +35,61 @@ public class FLDict {
     /**
      * Looks up a key in a _sorted_ dictionary, using a shared-keys mapping.
      *
-     * @param dict       FLDict
-     * @param keyString  FLSlice
+     * @param dict      FLDict
+     * @param keyString FLSlice
      * @return FLValue
      */
     static native long get(long dict, byte[] keyString);
+    private long handle; // hold pointer to FLDict
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+    public FLDict(long handle) {
+        this.handle = handle;
+    }
+
+    public FLValue get(String key) {
+        if (key == null) { return null; }
+        final long hValue = get(handle, key.getBytes(StandardCharsets.UTF_8));
+        return hValue != 0L ? new FLValue(hValue) : null;
+    }
+
+    public Map<String, Object> asDict() {
+        final Map<String, Object> results = new HashMap<>();
+        final FLDictIterator itr = new FLDictIterator();
+        try {
+            itr.begin(this);
+            String key;
+            while ((key = itr.getKeyString()) != null) {
+                final Object value = itr.getValue().asObject();
+                results.put(key, value);
+                if (!itr.next()) { break; }
+            }
+        }
+        finally {
+            itr.free();
+        }
+        return results;
+    }
+
+    public long count() {
+        if (handle == 0L) { throw new IllegalStateException("handle is 0L"); }
+        return count(handle);
+    }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
+    public FLValue toFLValue() {
+        return new FLValue(handle);
+    }
+
+    //-------------------------------------------------------------------------
+    // package level access
+    //-------------------------------------------------------------------------
+    public long getHandle() {
+        return handle;
+    }
 }

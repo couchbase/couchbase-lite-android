@@ -22,6 +22,7 @@ import android.support.annotation.NonNull;
 import java.net.URI;
 import java.util.Locale;
 
+
 /**
  * URL based replication target endpoint
  */
@@ -48,20 +49,22 @@ public final class URLEndpoint implements Endpoint {
      * @param url The url.
      */
     public URLEndpoint(@NonNull URI url) {
-        if (url == null)
-            throw new IllegalArgumentException("url cannot be null.");
+        if (url == null) { throw new IllegalArgumentException("url cannot be null."); }
 
-        String scheme = url.getScheme();
+        final String scheme = url.getScheme();
         if (!(kURLEndpointScheme.equals(scheme) || kURLEndpointTLSScheme.equals(scheme))) {
             throw new IllegalArgumentException(
-                    String.format(Locale.ENGLISH,
-                            "Invalid scheme for URLEndpoint url (%s); must be either %s or %s.",
-                            scheme, kURLEndpointScheme, kURLEndpointTLSScheme));
+                String.format(Locale.ENGLISH,
+                    "Invalid scheme for URLEndpoint url (%s); must be either %s or %s.",
+                    scheme, kURLEndpointScheme, kURLEndpointTLSScheme));
         }
 
-        String userInfo = url.getUserInfo();
-        if (userInfo != null && userInfo.split(":").length == 2)
-            throw new IllegalArgumentException("Embedded credentials in a URL (username:password@url) are not allowed; use the BasicAuthenticator class instead.");
+        final String userInfo = url.getUserInfo();
+        if (userInfo != null && userInfo.split(":").length == 2) {
+            throw new IllegalArgumentException(
+                "Embedded credentials in a URL (username:password@url) are not allowed; use the BasicAuthenticator "
+                    + "class instead.");
+        }
 
         this.url = url;
     }
@@ -70,8 +73,8 @@ public final class URLEndpoint implements Endpoint {
     @Override
     public String toString() {
         return "URLEndpoint{" +
-                "url=" + url +
-                '}';
+            "url=" + url +
+            '}';
     }
 
     //---------------------------------------------

@@ -18,68 +18,10 @@
 package com.couchbase.lite.internal.core;
 
 import com.couchbase.lite.LiteCoreException;
-
 import com.couchbase.lite.internal.fleece.AllocSlice;
 
+
 public class C4Query {
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
-    long _handle = 0L; // hold pointer to C4Query
-
-    //-------------------------------------------------------------------------
-    // Constructors
-    //-------------------------------------------------------------------------
-
-    C4Query(long db, String expression) throws LiteCoreException {
-        _handle = init(db, expression);
-    }
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-
-    public void free() {
-        if (_handle != 0L) {
-            free(_handle);
-            _handle = 0L;
-        }
-    }
-
-    public String explain() {
-        return explain(_handle);
-    }
-
-    public int columnCount() {
-        return columnCount(_handle);
-    }
-
-    public C4QueryEnumerator run(C4QueryOptions options, AllocSlice parameters)
-            throws LiteCoreException {
-        if (parameters == null)
-            parameters = new AllocSlice(null);
-        return new C4QueryEnumerator(run(_handle, options.isRankFullText(), parameters.getHandle()));
-    }
-
-    public byte[] getFullTextMatched(C4FullTextMatch match) throws LiteCoreException {
-        return getFullTextMatched(_handle, match._handle);
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
-    }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    //////// DATABASE QUERIES:
-
     /**
      * @param db
      * @param expression
@@ -88,12 +30,20 @@ public class C4Query {
      */
     static native long init(long db, String expression) throws LiteCoreException;
 
+    //-------------------------------------------------------------------------
+    // Constructors
+    //-------------------------------------------------------------------------
+
     /**
      * Free C4Query* instance
      *
      * @param handle (C4Query*)
      */
     static native void free(long handle);
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
 
     /**
      * @param handle (C4Query*)
@@ -109,8 +59,6 @@ public class C4Query {
      */
     static native int columnCount(long handle);
 
-    //////// RUNNING QUERIES:
-
     /**
      * @param handle
      * @param rankFullText
@@ -119,7 +67,7 @@ public class C4Query {
      * @throws LiteCoreException
      */
     static native long run(long handle, boolean rankFullText, /*AllocSlice*/ long parameters)
-            throws LiteCoreException;
+        throws LiteCoreException;
 
     /**
      * Given a docID and sequence number from the enumerator, returns the text that was emitted
@@ -127,19 +75,22 @@ public class C4Query {
      */
     static native byte[] getFullTextMatched(long handle, long fullTextMatch) throws LiteCoreException;
 
-    //////// INDEXES:
-
-    // - Creates a database index, to speed up subsequent queries.
-
-    static native boolean createIndex(long db,
-                                      String name,
-                                      String expressionsJSON,
-                                      int indexType,
-                                      String language,
-                                      boolean ignoreDiacritics)
-            throws LiteCoreException;
+    static native boolean createIndex(
+        long db,
+        String name,
+        String expressionsJSON,
+        int indexType,
+        String language,
+        boolean ignoreDiacritics)
+        throws LiteCoreException;
 
     static native void deleteIndex(long db, String name) throws LiteCoreException;
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
+    //////// DATABASE QUERIES:
 
     /**
      * Gets a fleece encoded array of indexes in the given database
@@ -150,4 +101,53 @@ public class C4Query {
      * @throws LiteCoreException
      */
     static native long getIndexes(long db) throws LiteCoreException;
+    //-------------------------------------------------------------------------
+    // Member Variables
+    //-------------------------------------------------------------------------
+    private long handle; // hold pointer to C4Query
+
+    C4Query(long db, String expression) throws LiteCoreException {
+        handle = init(db, expression);
+    }
+
+    public void free() {
+        if (handle != 0L) {
+            free(handle);
+            handle = 0L;
+        }
+    }
+
+    //////// RUNNING QUERIES:
+
+    public String explain() {
+        return explain(handle);
+    }
+
+    public int columnCount() {
+        return columnCount(handle);
+    }
+
+    //////// INDEXES:
+
+    // - Creates a database index, to speed up subsequent queries.
+
+    public C4QueryEnumerator run(C4QueryOptions options, AllocSlice parameters)
+        throws LiteCoreException {
+        if (parameters == null) { parameters = new AllocSlice(null); }
+        return new C4QueryEnumerator(run(handle, options.isRankFullText(), parameters.getHandle()));
+    }
+
+    public byte[] getFullTextMatched(C4FullTextMatch match) throws LiteCoreException {
+        return getFullTextMatched(handle, match.handle);
+    }
+
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
 }

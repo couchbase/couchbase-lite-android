@@ -22,12 +22,13 @@ import android.support.annotation.NonNull;
 import java.util.Collections;
 import java.util.List;
 
+
 /**
  * Provides details about a Database change.
  */
 public final class DatabaseChange {
-    final private List<String> documentIDs;
-    final private Database database;
+    private final List<String> documentIDs;
+    private final Database database;
 
     DatabaseChange(Database database, List<String> documentIDs) {
         this.database = database;
@@ -55,8 +56,8 @@ public final class DatabaseChange {
     @Override
     public String toString() {
         return "DatabaseChange{" +
-                "database=" + database +
-                ", documentIDs=" + documentIDs +
-                '}';
+            "database=" + database +
+            ", documentIDs=" + documentIDs +
+            '}';
     }
 }

@@ -19,13 +19,13 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.fleece.AllocSlice;
-import com.couchbase.lite.internal.fleece.Encoder;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.couchbase.lite.internal.fleece.AllocSlice;
+import com.couchbase.lite.internal.fleece.Encoder;
+
 
 /**
  * A Parameters object used for setting values to the query parameters defined in the query.
@@ -36,21 +36,16 @@ public final class Parameters {
     // member variables
     //---------------------------------------------
 
-    private boolean readonly = false;
-
-    private Map<String, Object> map;
+    private final Map<String, Object> map;
+    private boolean readonly;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    public Parameters() {
-        readonly = false;
-        map = new HashMap<>();
-    }
+    public Parameters() { this(null); }
 
     public Parameters(Parameters parameters) {
-        readonly = false;
         map = (parameters == null) ? new HashMap<String, Object>() : new HashMap<>(parameters.map);
     }
 
@@ -67,10 +62,8 @@ public final class Parameters {
      * @return The self object.
      */
     public Parameters setValue(@NonNull String name, Object value) {
-        if (name == null)
-            throw new IllegalArgumentException("name cannot be null.");
-        if (readonly)
-            throw new IllegalStateException("Parameters is readonly mode.");
+        if (name == null) { throw new IllegalArgumentException("name cannot be null."); }
+        if (readonly) { throw new IllegalStateException("Parameters is readonly mode."); }
         map.put(name, value);
         return this;
     }
@@ -79,7 +72,7 @@ public final class Parameters {
      * Set an String value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The String value.
      * @return The self object.
      */
@@ -92,7 +85,7 @@ public final class Parameters {
      * Set an Number value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The Number value.
      * @return The self object.
      */
@@ -105,7 +98,7 @@ public final class Parameters {
      * Set an int value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The int value.
      * @return The self object.
      */
@@ -118,7 +111,7 @@ public final class Parameters {
      * Set an long value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The long value.
      * @return The self object.
      */
@@ -131,7 +124,7 @@ public final class Parameters {
      * Set a float value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The float value.
      * @return The self object.
      */
@@ -144,7 +137,7 @@ public final class Parameters {
      * Set a double value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The double value.
      * @return The self object.
      */
@@ -157,7 +150,7 @@ public final class Parameters {
      * Set a boolean value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The boolean value.
      * @return The self object.
      */
@@ -170,7 +163,7 @@ public final class Parameters {
      * Set a date value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The date value.
      * @return The self object.
      */
@@ -183,7 +176,7 @@ public final class Parameters {
      * Set the Blob value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The Blob value.
      * @return The self object.
      */
@@ -196,7 +189,7 @@ public final class Parameters {
      * Set the Dictionary value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The Dictionary value.
      * @return The self object.
      */
@@ -209,7 +202,7 @@ public final class Parameters {
      * Set the Array value to the query parameter referenced by the given name. A query parameter
      * is defined by using the Expression's parameter(String name) function.
      *
-     * @param name The parameter name.
+     * @param name  The parameter name.
      * @param value The Array value.
      * @return The self object.
      */
@@ -225,8 +218,7 @@ public final class Parameters {
      * @return The parameter value.
      */
     public Object getValue(@NonNull String name) {
-        if (name == null)
-            throw new IllegalArgumentException("name cannot be null.");
+        if (name == null) { throw new IllegalArgumentException("name cannot be null."); }
         return map.get(name);
     }
 
@@ -235,15 +227,14 @@ public final class Parameters {
     //---------------------------------------------
 
     Parameters readonlyCopy() {
-        Parameters parameters = new Parameters(this);
+        final Parameters parameters = new Parameters(this);
         parameters.readonly = true;
         return parameters;
     }
 
     AllocSlice encode() throws LiteCoreException {
-        Encoder encoder = new Encoder();
+        final Encoder encoder = new Encoder();
         encoder.write(map);
         return encoder.finish();
     }
-
 }

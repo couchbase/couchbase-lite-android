@@ -19,16 +19,11 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+
 /**
  * Value Index Item
  */
 public final class ValueIndexItem {
-    Expression expression;
-
-    private ValueIndexItem(Expression expression) {
-        this.expression = expression;
-    }
-
     /**
      * Creates a value index item with the given property.
      *
@@ -55,5 +50,11 @@ public final class ValueIndexItem {
             throw new IllegalArgumentException("expression cannot be null.");
         }
         return new ValueIndexItem(expression);
+    }
+
+    final Expression viExpression;
+
+    private ValueIndexItem(Expression expression) {
+        this.viExpression = expression;
     }
 }

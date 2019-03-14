@@ -17,22 +17,24 @@
 //
 package com.couchbase.lite;
 
-/** The flags enum describing the replicated document. */
+/**
+ * The flags enum describing the replicated document.
+ */
 public enum DocumentFlag {
 
     /**
      * The current deleted status of the document.
      */
-    DocumentFlagsDeleted(1 << 0),
+    DocumentFlagsDeleted(1),
 
     /**
      * The current access removed status of the document.
-    * */
+     */
     DocumentFlagsAccessRemoved(1 << 1);
 
     private final int rawValue;
 
-    private DocumentFlag(int rawValue) {
+    DocumentFlag(int rawValue) {
         this.rawValue = rawValue;
     }
 

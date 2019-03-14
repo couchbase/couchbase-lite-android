@@ -18,11 +18,6 @@
 
 // The Module-level Build File
 
-apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'maven-publish'
-apply plugin: 'com.github.kt3k.coveralls'
-
 // NOTE: moved from project build.gradle to make CBL compilable as sub-module of application
 buildscript {
     repositories {
@@ -30,16 +25,24 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.0'
+        classpath 'com.android.tools.build:gradle:3.3.2'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.2'
     }
 }
 
+apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven-publish'
+apply plugin: 'com.github.kt3k.coveralls'
+
+
 def baseDir = "${rootDir}/.."
+def etcDir = "${rootDir}/etc"
 def libsDir = "${baseDir}/libs"
 def sharedDir = "${baseDir}/shared"
 def liteCore = "${libsDir}/couchbase-lite-core"
+def reportsDir = "${buildDir}/reports"
 
 /**
  * group and version
@@ -68,8 +71,8 @@ def getGitHash = { ->
  * build options.
  */
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         minSdkVersion 19
@@ -136,13 +139,14 @@ android {
 
 dependencies {
     compileOnly 'com.android.support:support-annotations:28.0.0'
+    compileOnly 'com.google.code.findbugs:annotations:3.0.1'
 
     implementation 'com.squareup.okhttp3:okhttp:3.9.1'
 
     testImplementation 'junit:junit:4.12'
 
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
 // ----------------------------------------------------------------
@@ -211,14 +215,6 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     baseName = project.name
     classifier = 'javadoc'
     from javadoc.destinationDir
-}
-
-// ----------------------------------------------------------------
-// Coveralls
-// ----------------------------------------------------------------
-
-coveralls {
-    jacocoReportPath = "${buildDir}/reports/coverage/debug/report.xml"
 }
 
 // ----------------------------------------------------------------
@@ -298,7 +294,7 @@ publishing {
             artifactId 'couchbase-lite-android'
             version this.version
 
-            artifact bundleRelease
+            artifact bundleReleaseAar
             artifact sourcesJar
             artifact javadocJar
 
@@ -335,4 +331,116 @@ publishing {
     }
 }
 
+// ----------------------------------------------------------------
+// Static analysis
+// ----------------------------------------------------------------
+
+def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', '**/gen/**', "okhttp3/**"]
+
+apply plugin: 'checkstyle'
+task checkstyle(type: Checkstyle) {
+    description 'Checkstyle'
+    group 'verification'
+
+    configFile file("${etcDir}/checkstyle/checkstyle.xml")
+    configProperties = ['configDir': file("${etcDir}/checkstyle")]
+
+    source android.sourceSets.main.java.srcDirs
+    include '**/*.java'
+    exclude fileFilter
+
+    classpath = files()
+    showViolations true
+
+    reports {
+        xml {
+            enabled = true
+            setDestination(file("${reportsDir}/checkstyle.xml"))
+        }
+        html {
+            enabled = true
+            setDestination(file("${reportsDir}/reports/checkstyle.html"))
+        }
+    }
+}
+
+apply plugin: 'pmd'
+task pmd(type: Pmd) {
+    description 'PMD'
+    group 'verification'
+
+    ruleSetFiles = files("${etcDir}/pmd/pmd.xml")
+
+    source = android.sourceSets.main.java.srcDirs
+    include '**/*.java'
+    exclude fileFilter
+
+    reports {
+        xml {
+            enabled = true
+            setDestination(file("${reportsDir}/reports/pmd.xml"))
+        }
+        html {
+            enabled = true
+            setDestination(file("${reportsDir}/pmd.html"))
+        }
+    }
+}
+
+// !!FIXME: Update to SpotBugs
+apply plugin: 'findbugs'
+def findbugsAll = task('findbugs') {
+    description 'Findbugs with all reports'
+    group 'verification'
+}
+
+['Html', 'Xml'].each { reportType ->
+    findbugsAll.dependsOn task("findbugs${reportType}", type: FindBugs) {
+        description "Findbugs with $reportType report"
+        group 'verification'
+
+        dependsOn ':CouchbaseLite:compileDebugSources'
+
+        findbugs.toolVersion = "3.0.1"
+
+        effort = "max"
+        reportLevel = "medium"
+        ignoreFailures = false
+
+        source = android.sourceSets.main.java.srcDirs.collect {
+            dir -> fileTree(dir: dir, include: '**/*.java').getFiles()
+        }.flatten()
+
+
+        classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
+        classpath = files()
+
+        excludeFilter = file("${etcDir}/findbugs/findbugs.xml")
+
+        reports {
+            xml {
+                enabled = (reportType == "Xml")
+                setDestination(file("${reportsDir}/findbugs.xml"))
+            }
+            html {
+                enabled = (reportType == "Html")
+                setDestination(file("${reportsDir}/findbugs.html"))
+            }
+        }
+    }
+}
+
+// ----------------------------------------------------------------
+// Coveralls
+// ----------------------------------------------------------------
+
+coveralls {
+    jacocoReportPath = "${buildDir}/reports/coverage/debug/report.xml"
+}
+
+task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest'])
+
+task checkLocal(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest', 'connectedDebugAndroidTest'])
+
+task buildJenkins(dependsOn: ['checkstyle', 'lint', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
 

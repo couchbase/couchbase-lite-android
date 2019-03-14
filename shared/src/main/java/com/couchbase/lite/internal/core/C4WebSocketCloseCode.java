@@ -19,6 +19,7 @@ package com.couchbase.lite.internal.core;
 
 // Standard WebSocket close status codes, for use in C4Errors with WebSocketDomain.
 // These are defined at <http://tools.ietf.org/html/rfc6455#section-7.4.1>
+@SuppressWarnings("ConstantName")
 public interface C4WebSocketCloseCode {
     int kWebSocketCloseNormal = 1000;
     int kWebSocketCloseGoingAway = 1001; // Peer has to close, e.g. because host app is quitting

@@ -22,5 +22,4 @@ package com.couchbase.lite;
  * IndexBuilder used for building database index objects.
  */
 public final class IndexBuilder extends AbstractIndexBuilder {
-
 }

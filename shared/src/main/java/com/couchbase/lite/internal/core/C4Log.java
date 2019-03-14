@@ -17,32 +17,24 @@
 //
 package com.couchbase.lite.internal.core;
 
+import java.util.HashMap;
+import java.util.concurrent.Executors;
+
 import com.couchbase.lite.Database;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Logger;
 
-import java.util.HashMap;
-import java.util.concurrent.Executors;
 
 public class C4Log {
-    private static LogLevel CurrentLevel = LogLevel.WARNING;
-    private static HashMap<String, LogDomain> DomainObjects = new HashMap<>();
+    private static final HashMap<String, LogDomain> domainObjects = new HashMap<>();
+    private static LogLevel currentLevel = LogLevel.WARNING;
 
-    static {
-        DomainObjects.put(C4Constants.C4LogDomain.Database, LogDomain.DATABASE);
-        DomainObjects.put(C4Constants.C4LogDomain.Query, LogDomain.QUERY);
-        DomainObjects.put(C4Constants.C4LogDomain.Sync, LogDomain.REPLICATOR);
-        DomainObjects.put(C4Constants.C4LogDomain.SyncBusy, LogDomain.REPLICATOR);
-        DomainObjects.put(C4Constants.C4LogDomain.BLIP, LogDomain.NETWORK);
-        DomainObjects.put(C4Constants.C4LogDomain.WebSocket, LogDomain.NETWORK);
-    }
+    public static native void setLevel(String domain, int level);
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
-
-    public static native void setLevel(String domain, int level);
 
     public static native void log(String domain, int level, String message);
 
@@ -50,7 +42,13 @@ public class C4Log {
 
     public static native void setBinaryFileLevel(int level);
 
-    public static native void writeToBinaryFile(String path, int level, int maxRotateCount, long maxSize, boolean usePlaintext, String header);
+    public static native void writeToBinaryFile(
+        String path,
+        int level,
+        int maxRotateCount,
+        long maxSize,
+        boolean usePlaintext,
+        String header);
 
     public static native void setCallbackLevel(int level);
 
@@ -58,29 +56,29 @@ public class C4Log {
         recalculateLevels();
 
         LogDomain domain = LogDomain.DATABASE;
-        if(DomainObjects.containsKey(domainName)) {
-            domain = DomainObjects.get(domainName);
+        if (domainObjects.containsKey(domainName)) {
+            domain = domainObjects.get(domainName);
         }
 
-        Database.log.getConsole().log(LogLevel.values()[level], domain, message);
-        Logger customLogger = Database.log.getCustom();
-        if(customLogger != null) {
+        Database.LOG.getConsole().log(LogLevel.values()[level], domain, message);
+        final Logger customLogger = Database.LOG.getCustom();
+        if (customLogger != null) {
             customLogger.log(LogLevel.values()[level], domain, message);
         }
     }
 
     private static void recalculateLevels() {
-        LogLevel callbackLevel = Database.log.getConsole().getLevel();
-        Logger customLogger = Database.log.getCustom();
-        if(customLogger != null && customLogger.getLevel().compareTo(callbackLevel) < 0) {
+        LogLevel callbackLevel = Database.LOG.getConsole().getLevel();
+        final Logger customLogger = Database.LOG.getCustom();
+        if (customLogger != null && customLogger.getLevel().compareTo(callbackLevel) < 0) {
             callbackLevel = customLogger.getLevel();
         }
 
-        if(CurrentLevel == callbackLevel) {
+        if (currentLevel == callbackLevel) {
             return;
         }
 
-        CurrentLevel = callbackLevel;
+        currentLevel = callbackLevel;
         final LogLevel finalLevel = callbackLevel;
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
@@ -90,5 +88,14 @@ public class C4Log {
                 setCallbackLevel(finalLevel.getValue());
             }
         });
+    }
+
+    static {
+        domainObjects.put(C4Constants.C4LogDomain.Database, LogDomain.DATABASE);
+        domainObjects.put(C4Constants.C4LogDomain.Query, LogDomain.QUERY);
+        domainObjects.put(C4Constants.C4LogDomain.Sync, LogDomain.REPLICATOR);
+        domainObjects.put(C4Constants.C4LogDomain.SyncBusy, LogDomain.REPLICATOR);
+        domainObjects.put(C4Constants.C4LogDomain.BLIP, LogDomain.NETWORK);
+        domainObjects.put(C4Constants.C4LogDomain.WebSocket, LogDomain.NETWORK);
     }
 }

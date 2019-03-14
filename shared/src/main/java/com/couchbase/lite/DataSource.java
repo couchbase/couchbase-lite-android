@@ -22,20 +22,11 @@ import android.support.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * A query data source, used for specifying the source of data for a query.
  */
 public class DataSource {
-    //---------------------------------------------
-    // member variables
-    //---------------------------------------------
-    private Object source = null;
-    private String alias = null;
-
-    //---------------------------------------------
-    // Inner public Class
-    //---------------------------------------------
-
     /**
      * Database as a data source for query.
      */
@@ -67,19 +58,6 @@ public class DataSource {
         }
     }
 
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-
-    private DataSource(Object source) {
-        this.source = source;
-        this.alias = null;
-    }
-
-    //---------------------------------------------
-    // API - public static methods
-    //---------------------------------------------
-
     /**
      * Create a database as a data source.
      *
@@ -92,6 +70,15 @@ public class DataSource {
             throw new IllegalArgumentException("database cannot be null.");
         }
         return new As(database);
+    }
+
+
+    private Object source;
+    private String alias;
+
+    private DataSource(Object source) {
+        this.source = source;
+        this.alias = null;
     }
 
     //---------------------------------------------
@@ -107,19 +94,16 @@ public class DataSource {
     }
 
     String getColumnName() {
-        if (alias != null)
-            return alias;
+        if (alias != null) { return alias; }
         else {
-            if (source != null && source instanceof Database)
-                return ((Database) source).getName();
+            if (source instanceof Database) { return ((Database) source).getName(); }
         }
         return null;
     }
 
     Map<String, Object> asJSON() {
-        Map<String, Object> json = new HashMap<>();
-        if (alias != null)
-            json.put("AS", alias);
+        final Map<String, Object> json = new HashMap<>();
+        if (alias != null) { json.put("AS", alias); }
         return json;
     }
 }
