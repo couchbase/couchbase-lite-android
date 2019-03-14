@@ -38,7 +38,7 @@ public class LogTest extends BaseTest {
     @Test
     public void testCustomLoggingLevels() {
         LogTestLogger customLogger = new LogTestLogger();
-        Database.LOG.setCustom(customLogger);
+        Database.log.setCustom(customLogger);
 
         for(int i = 5; i >= 1; i--) {
             customLogger.getLines().clear();
@@ -54,7 +54,7 @@ public class LogTest extends BaseTest {
     @Test
     public void testEnableAndDisableCustomLogging() {
         LogTestLogger customLogger = new LogTestLogger();
-        Database.LOG.setCustom(customLogger);
+        Database.log.setCustom(customLogger);
 
         customLogger.setLevel(LogLevel.NONE);
         Log.v(LogDomain.DATABASE, "TEST VERBOSE");
@@ -95,7 +95,7 @@ public class LogTest extends BaseTest {
                         LogLevel.VERBOSE
                 };
                 for (LogLevel level : levels) {
-                    Database.LOG.getFile().setLevel(level);
+                    Database.log.getFile().setLevel(level);
                     Log.v(LogDomain.DATABASE, "TEST VERBOSE");
                     Log.i(LogDomain.DATABASE, "TEST INFO");
                     Log.w(LogDomain.DATABASE, "TEST WARNING");
@@ -320,7 +320,7 @@ public class LogTest extends BaseTest {
                         assertFalse(contents.contains(uuidString));
                     }
 
-                    Database.LOG.getFile().setLevel(LogLevel.VERBOSE);
+                    Database.log.getFile().setLevel(LogLevel.VERBOSE);
                     writeAllLogs(uuidString);
 
                     File[] filesExceptDebug = path.listFiles(new FilenameFilter() {
@@ -493,16 +493,16 @@ public class LogTest extends BaseTest {
         );
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         LogFileConfiguration config = new LogFileConfiguration(logDirectory);
-        Database.LOG.getFile().setConfig(config);
+        Database.log.getFile().setConfig(config);
 
         thrown.expect(IllegalStateException.class);
-        Database.LOG.getFile().getConfig().setMaxSize(1024);
+        Database.log.getFile().getConfig().setMaxSize(1024);
 
         thrown.expect(IllegalStateException.class);
-        Database.LOG.getFile().getConfig().setMaxRotateCount(3);
+        Database.log.getFile().getConfig().setMaxRotateCount(3);
 
         thrown.expect(IllegalStateException.class);
-        Database.LOG.getFile().getConfig().setUsePlaintext(true);
+        Database.log.getFile().getConfig().setUsePlaintext(true);
     }
 
     //endregion
@@ -511,9 +511,9 @@ public class LogTest extends BaseTest {
     public void testNonASCII() throws CouchbaseLiteException {
         LogTestLogger customLogger = new LogTestLogger();
         customLogger.setLevel(LogLevel.VERBOSE);
-        Database.LOG.setCustom(customLogger);
-        Database.LOG.getConsole().setDomains(EnumSet.of(LogDomain.ALL));
-        Database.LOG.getConsole().setLevel(LogLevel.VERBOSE);
+        Database.log.setCustom(customLogger);
+        Database.log.getConsole().setDomains(EnumSet.of(LogDomain.ALL));
+        Database.log.getConsole().setLevel(LogLevel.VERBOSE);
 
         String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
         MutableDocument doc = new MutableDocument();
@@ -536,17 +536,17 @@ public class LogTest extends BaseTest {
 
     //region Helper methods
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Runnable r) {
-        LogFileConfiguration old = Database.LOG.getFile().getConfig();
-        EnumSet<LogDomain> domains = Database.LOG.getConsole().getDomains();
-        Database.LOG.getFile().setConfig(config);
-        Database.LOG.getFile().setLevel(level);
+        LogFileConfiguration old = Database.log.getFile().getConfig();
+        EnumSet<LogDomain> domains = Database.log.getConsole().getDomains();
+        Database.log.getFile().setConfig(config);
+        Database.log.getFile().setLevel(level);
         try {
             r.run();
         } finally {
-            Database.LOG.getFile().setLevel(LogLevel.INFO);
-            Database.LOG.getFile().setConfig(old);
-            Database.LOG.getConsole().setDomains(domains);
-            Database.LOG.getConsole().setLevel(LogLevel.WARNING);
+            Database.log.getFile().setLevel(LogLevel.INFO);
+            Database.log.getFile().setConfig(old);
+            Database.log.getConsole().setDomains(domains);
+            Database.log.getConsole().setLevel(LogLevel.WARNING);
         }
     }
 

@@ -60,16 +60,16 @@ public class C4Log {
             domain = domainObjects.get(domainName);
         }
 
-        Database.LOG.getConsole().log(LogLevel.values()[level], domain, message);
-        final Logger customLogger = Database.LOG.getCustom();
+        Database.log.getConsole().log(LogLevel.values()[level], domain, message);
+        final Logger customLogger = Database.log.getCustom();
         if (customLogger != null) {
             customLogger.log(LogLevel.values()[level], domain, message);
         }
     }
 
     private static void recalculateLevels() {
-        LogLevel callbackLevel = Database.LOG.getConsole().getLevel();
-        final Logger customLogger = Database.LOG.getCustom();
+        LogLevel callbackLevel = Database.log.getConsole().getLevel();
+        final Logger customLogger = Database.log.getCustom();
         if (customLogger != null && customLogger.getLevel().compareTo(callbackLevel) < 0) {
             callbackLevel = customLogger.getLevel();
         }

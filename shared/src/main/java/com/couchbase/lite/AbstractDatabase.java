@@ -74,13 +74,16 @@ abstract class AbstractDatabase {
     /**
      * Gets the logging controller for the Couchbase Lite library to configure the
      * logging settings and add custom logging.
+     *
+     * This is part of the Public API.
      */
+    @SuppressWarnings("ConstantName")
     @NonNull
-    public static final com.couchbase.lite.Log LOG;
+    public static final com.couchbase.lite.Log log;
 
     static {
         NativeLibraryLoader.load();
-        LOG = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
+        log = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
         Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
     }
 
@@ -181,7 +184,7 @@ abstract class AbstractDatabase {
      * @param level  The log level
      * @deprecated As of 2.5 because it is being replaced with the
      * {@link com.couchbase.lite.Log#getConsole() getConsole} method
-     * from the {@link #LOG log} property.  This method has
+     * from the {@link #log log} property.  This method has
      * been replaced with a no-op to preserve API compatibility.
      */
     @Deprecated
@@ -245,7 +248,7 @@ abstract class AbstractDatabase {
                 Log.info(DOMAIN, CBLVersion.getUserAgent());
 
                 // Check file logging
-                if (Database.LOG.getFile().getConfig() == null) {
+                if (Database.log.getFile().getConfig() == null) {
                     Log.w(DOMAIN, "Database.log.getFile().getConfig() is null, meaning file " +
                         "logging is disabled. Log files required for product support are " +
                         "not being generated.");
