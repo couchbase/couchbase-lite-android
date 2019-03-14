@@ -66,7 +66,7 @@ public final class ConsoleLogger implements Logger {
         if (level == null) { throw new IllegalArgumentException("level cannot be null."); }
 
         LogLevel callbackLevel = level;
-        final Logger custom = Database.LOG.getCustom();
+        final Logger custom = Database.log.getCustom();
         if ((custom != null) && (custom.getLevel().compareTo(callbackLevel) < 0)) {
             callbackLevel = custom.getLevel();
         }
