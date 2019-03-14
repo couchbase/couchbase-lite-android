@@ -78,6 +78,12 @@ abstract class AbstractDatabase {
     @NonNull
     public static final com.couchbase.lite.Log LOG;
 
+    static {
+        NativeLibraryLoader.load();
+        LOG = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
+        Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
+    }
+
     //---------------------------------------------
     // Static variables
     //---------------------------------------------
@@ -92,9 +98,9 @@ abstract class AbstractDatabase {
         | C4DatabaseFlags.kC4DB_AutoCompact
         | C4DatabaseFlags.kC4DB_SharedKeys;
 
-    //---------------------------------------------
-    // Member variables
-    //---------------------------------------------
+    // ---------------------------------------------
+    // API - public static methods
+    // ---------------------------------------------
 
     /**
      * Deletes a database of the given name in the given directory.
@@ -192,6 +198,10 @@ abstract class AbstractDatabase {
         return new File(dir, name);
     }
 
+    //---------------------------------------------
+    // Member variables
+    //---------------------------------------------
+
     final Object lock = new Object();     // Main database lock object for thread-safety
     final DatabaseConfiguration config;
 
@@ -202,15 +212,8 @@ abstract class AbstractDatabase {
     private ScheduledExecutorService postExecutor;  // Executor for posting Database/Document Change notification
     private ChangeNotifier<DatabaseChange> dbChangeNotifier;
 
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
     private C4DatabaseObserver c4DbObserver;
     private Map<String, DocumentChangeNotifier> docChangeNotifiers;
-
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
     private Set<Replicator> activeReplications;
 
     // Attributes:
@@ -219,6 +222,10 @@ abstract class AbstractDatabase {
     private String name;
 
     protected C4Database c4db;
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
 
     /**
      * Construct a  AbstractDatabase with a given name and database config.
@@ -276,12 +283,16 @@ abstract class AbstractDatabase {
      * C4Database object will be managed by the caller. This is currently used for creating a
      * Dictionary as an input of the predict() method of the PredictiveModel.
      */
-    AbstractDatabase(C4Database c4db) {
+    protected AbstractDatabase(C4Database c4db) {
         this.c4db = c4db;
         this.config = null;
         this.shellMode = true;
         this.sharedKeys = null;
     }
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
 
     // GET EXISTING DOCUMENT
 
@@ -453,8 +464,6 @@ abstract class AbstractDatabase {
         }
     }
 
-    // Compaction:
-
     /**
      * Purges the given document id for the document in database. This is more drastic than delete(Document),
      * it removes all traces of the document. The purge will NOT be replicated to other databases.
@@ -573,7 +582,7 @@ abstract class AbstractDatabase {
         postDatabaseChanged();
     }
 
-    // Document changes:
+    // Compaction:
 
     /**
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
@@ -589,6 +598,8 @@ abstract class AbstractDatabase {
             }
         }
     }
+
+    // Document changes:
 
     /**
      * Set the given DatabaseChangeListener to the this database.
@@ -704,10 +715,6 @@ abstract class AbstractDatabase {
             shutdownExecutorService();
         }
     }
-
-    // ---------------------------------------------
-    // API - public static methods
-    // ---------------------------------------------
 
     /**
      * Deletes a database.
@@ -945,13 +952,13 @@ abstract class AbstractDatabase {
         catch (RejectedExecutionException ignore) { }
     }
 
-    //---------------------------------------------
-    // Private (in class only)
-    //---------------------------------------------
-
     abstract int getEncryptionAlgorithm();
 
     abstract byte[] getEncryptionKey();
+
+    //---------------------------------------------
+    // Private (in class only)
+    //---------------------------------------------
 
     //////// DATABASES:
 
@@ -1376,11 +1383,5 @@ abstract class AbstractDatabase {
                 purgeTimer = null;
             }
         }
-    }
-
-    static {
-        NativeLibraryLoader.load();
-        LOG = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
-        Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
     }
 }
