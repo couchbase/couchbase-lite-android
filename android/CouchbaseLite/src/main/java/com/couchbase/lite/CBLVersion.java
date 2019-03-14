@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.core;
+package com.couchbase.lite;
 
 import android.os.Build;
 
