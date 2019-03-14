@@ -26,14 +26,68 @@ import com.couchbase.lite.LiteCoreException;
  * A raw SHA-1 digest used as the unique identifier of a blob.
  */
 public class C4BlobKey {
-    /**
-     * Decode a string of the form "shar1-"+base64 into a raw key
-     */
-    static native long fromString(String str) throws LiteCoreException;
+
+    //-------------------------------------------------------------------------
+    // Member Variables
+    //-------------------------------------------------------------------------
+    private long handle; // hold pointer to C4BlobKey
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
+
+    /**
+     * Decodes a string of the form "sha1-"+base64 into a raw key.
+     */
+    public C4BlobKey(String str) throws LiteCoreException {
+        handle = fromString(str);
+    }
+
+    C4BlobKey(long handle) {
+        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
+        this.handle = handle;
+    }
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+
+    /**
+     * Encodes a blob key to a string of the form "sha1-"+base64.
+     */
+    public String toString() {
+        return toString(handle);
+    }
+
+    public void free() {
+        if (handle != 0L) {
+            free(handle);
+            handle = 0L;
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
+    long getHandle() {
+        return handle;
+    }
+    /**
+     * Decode a string of the form "shar1-"+base64 into a raw key
+     */
+    static native long fromString(String str) throws LiteCoreException;
 
     /**
      * Encodes a blob key to a string of the form "sha1-"+base64.
@@ -44,61 +98,4 @@ public class C4BlobKey {
      * Release C4BlobKey
      */
     static native void free(long blobKey);
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
-    private long handle; // hold pointer to C4BlobKey
-
-    /**
-     * Decodes a string of the form "sha1-"+base64 into a raw key.
-     */
-    public C4BlobKey(String str) throws LiteCoreException {
-        handle = fromString(str);
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    C4BlobKey(long handle) {
-        if (handle == 0) { throw new IllegalArgumentException("handle is 0"); }
-        this.handle = handle;
-    }
-
-    //-------------------------------------------------------------------------
-    // package access
-    //-------------------------------------------------------------------------
-
-    /**
-     * Encodes a blob key to a string of the form "sha1-"+base64.
-     */
-    public String toString() {
-        return toString(handle);
-    }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    public void free() {
-        if (handle != 0L) {
-            free(handle);
-            handle = 0L;
-        }
-    }
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
-    }
-
-    long getHandle() {
-        return handle;
-    }
 }

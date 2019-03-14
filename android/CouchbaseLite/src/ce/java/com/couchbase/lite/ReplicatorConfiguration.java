@@ -131,76 +131,6 @@ public final class ReplicatorConfiguration {
     //---------------------------------------------
 
     /**
-     * Return the local database to replicate with the replication target.
-     */
-    @NonNull
-    public Database getDatabase() {
-        return database;
-    }
-
-    /**
-     * Return the replication target to replicate with.
-     */
-    @NonNull
-    public Endpoint getTarget() {
-        return target;
-    }
-
-    /**
-     * Return Replicator type indicating the direction of the replicator.
-     */
-    @NonNull
-    public ReplicatorType getReplicatorType() {
-        return replicatorType;
-    }
-
-    /**
-     * Sets the replicator type indicating the direction of the replicator.
-     * The default value is .pushAndPull which is bidrectional.
-     *
-     * @param replicatorType The replicator type.
-     * @return The self object.
-     */
-    @NonNull
-    public ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
-        if (replicatorType == null) { throw new IllegalArgumentException("replicatorType cannot be null."); }
-        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
-        this.replicatorType = replicatorType;
-        return this;
-    }
-
-    /**
-     * Return the continuous flag indicating whether the replicator should stay
-     * active indefinitely to replicate changed documents.
-     */
-    public boolean isContinuous() {
-        return continuous;
-    }
-
-    /**
-     * Sets whether the replicator stays active indefinitely to replicate
-     * changed documents. The default value is false, which means that the
-     * replicator will stop after it finishes replicating the changed
-     * documents.
-     *
-     * @param continuous The continuous flag.
-     * @return The self object.
-     */
-    @NonNull
-    public ReplicatorConfiguration setContinuous(boolean continuous) {
-        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
-        this.continuous = continuous;
-        return this;
-    }
-
-    /**
-     * Return the Authenticator to authenticate with a remote target.
-     */
-    public Authenticator getAuthenticator() {
-        return authenticator;
-    }
-
-    /**
      * Sets the authenticator to authenticate with a remote target server.
      * Currently there are two types of the authenticators,
      * BasicAuthenticator and SessionAuthenticator, supported.
@@ -213,65 +143,6 @@ public final class ReplicatorConfiguration {
         if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
         this.authenticator = authenticator;
         return this;
-    }
-
-    /**
-     * Return the remote target's SSL certificate.
-     *
-     * !!FIXME: This method returns a writeable copy of its private data
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public byte[] getPinnedServerCertificate() {
-        return pinnedServerCertificate;
-    }
-
-    //---------------------------------------------
-    // Getters
-    //---------------------------------------------
-
-    /**
-     * Sets the target server's SSL certificate.
-     *
-     * !!FIXME: This method stores a mutable array as private data
-     *
-     * @param pinnedServerCertificate the SSL certificate.
-     * @return The self object.
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    @NonNull
-    public ReplicatorConfiguration setPinnedServerCertificate(byte[] pinnedServerCertificate) {
-        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
-        this.pinnedServerCertificate = pinnedServerCertificate;
-        return this;
-    }
-
-    /**
-     * Return Extra HTTP headers to send in all requests to the remote target.
-     */
-    public Map<String, String> getHeaders() {
-        return headers;
-    }
-
-    /**
-     * Sets the extra HTTP headers to send in all requests to the remote target.
-     *
-     * @param headers The HTTP Headers.
-     * @return The self object.
-     */
-    @NonNull
-    public ReplicatorConfiguration setHeaders(Map<String, String> headers) {
-        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
-        this.headers = new HashMap<>(headers);
-        return this;
-    }
-
-    /**
-     * A set of Sync Gateway channel names to pull from. Ignored for push replication.
-     * The default value is null, meaning that all accessible channels will be pulled.
-     * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
-     */
-    public List<String> getChannels() {
-        return channels;
     }
 
     /**
@@ -291,11 +162,19 @@ public final class ReplicatorConfiguration {
     }
 
     /**
-     * A set of document IDs to filter by: if not nil, only documents with these IDs will be pushed
-     * and/or pulled.
+     * Sets whether the replicator stays active indefinitely to replicate
+     * changed documents. The default value is false, which means that the
+     * replicator will stop after it finishes replicating the changed
+     * documents.
+     *
+     * @param continuous The continuous flag.
+     * @return The self object.
      */
-    public List<String> getDocumentIDs() {
-        return documentIDs;
+    @NonNull
+    public ReplicatorConfiguration setContinuous(boolean continuous) {
+        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
+        this.continuous = continuous;
+        return this;
     }
 
     /**
@@ -313,10 +192,47 @@ public final class ReplicatorConfiguration {
     }
 
     /**
-     * Gets a filter object for validating whether the documents can be pushed
-     * to the remote endpoint.
+     * Sets the extra HTTP headers to send in all requests to the remote target.
+     *
+     * @param headers The HTTP Headers.
+     * @return The self object.
      */
-    public ReplicationFilter getPushFilter() { return pushFilter; }
+    @NonNull
+    public ReplicatorConfiguration setHeaders(Map<String, String> headers) {
+        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
+        this.headers = new HashMap<>(headers);
+        return this;
+    }
+
+    /**
+     * Sets the target server's SSL certificate.
+     *
+     * !!FIXME: This method stores a mutable array as private data
+     *
+     * @param pinnedServerCertificate the SSL certificate.
+     * @return The self object.
+     */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    @NonNull
+    public ReplicatorConfiguration setPinnedServerCertificate(byte[] pinnedServerCertificate) {
+        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
+        this.pinnedServerCertificate = pinnedServerCertificate;
+        return this;
+    }
+
+    /**
+     * Sets a filter object for validating whether the documents can be pulled from the
+     * remote endpoint. Only documents for which the object returns true are replicated.
+     *
+     * @param pullFilter The filter to filter the document to be pulled.
+     * @return The self object.
+     */
+    @NonNull
+    public ReplicatorConfiguration setPullFilter(ReplicationFilter pullFilter) {
+        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
+        this.pullFilter = pullFilter;
+        return this;
+    }
 
     /**
      * Sets a filter object for validating whether the documents can be pushed
@@ -333,23 +249,107 @@ public final class ReplicatorConfiguration {
     }
 
     /**
+     * Sets the replicator type indicating the direction of the replicator.
+     * The default value is .pushAndPull which is bidrectional.
+     *
+     * @param replicatorType The replicator type.
+     * @return The self object.
+     */
+    @NonNull
+    public ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
+        if (replicatorType == null) { throw new IllegalArgumentException("replicatorType cannot be null."); }
+        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
+        this.replicatorType = replicatorType;
+        return this;
+    }
+
+    //---------------------------------------------
+    // Getters
+    //---------------------------------------------
+
+    /**
+     * Return the Authenticator to authenticate with a remote target.
+     */
+    public Authenticator getAuthenticator() {
+        return authenticator;
+    }
+
+    /**
+     * A set of Sync Gateway channel names to pull from. Ignored for push replication.
+     * The default value is null, meaning that all accessible channels will be pulled.
+     * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
+     */
+    public List<String> getChannels() {
+        return channels;
+    }
+
+    /**
+     * Return the continuous flag indicating whether the replicator should stay
+     * active indefinitely to replicate changed documents.
+     */
+    public boolean isContinuous() {
+        return continuous;
+    }
+
+    /**
+     * Return the local database to replicate with the replication target.
+     */
+    @NonNull
+    public Database getDatabase() {
+        return database;
+    }
+
+    /**
+     * A set of document IDs to filter by: if not nil, only documents with these IDs will be pushed
+     * and/or pulled.
+     */
+    public List<String> getDocumentIDs() {
+        return documentIDs;
+    }
+
+    /**
+     * Return Extra HTTP headers to send in all requests to the remote target.
+     */
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    /**
+     * Return the remote target's SSL certificate.
+     *
+     * !!FIXME: This method returns a writeable copy of its private data
+     */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public byte[] getPinnedServerCertificate() {
+        return pinnedServerCertificate;
+    }
+
+    /**
      * Gets a filter object for validating whether the documents can be pulled from the
      * remote endpoint. Only documents for which the object returns true are replicated.
      */
     public ReplicationFilter getPullFilter() { return pullFilter; }
 
     /**
-     * Sets a filter object for validating whether the documents can be pulled from the
-     * remote endpoint. Only documents for which the object returns true are replicated.
-     *
-     * @param pullFilter The filter to filter the document to be pulled.
-     * @return The self object.
+     * Gets a filter object for validating whether the documents can be pushed
+     * to the remote endpoint.
+     */
+    public ReplicationFilter getPushFilter() { return pushFilter; }
+
+    /**
+     * Return Replicator type indicating the direction of the replicator.
      */
     @NonNull
-    public ReplicatorConfiguration setPullFilter(ReplicationFilter pullFilter) {
-        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
-        this.pullFilter = pullFilter;
-        return this;
+    public ReplicatorType getReplicatorType() {
+        return replicatorType;
+    }
+
+    /**
+     * Return the replication target to replicate with.
+     */
+    @NonNull
+    public Endpoint getTarget() {
+        return target;
     }
 
     //---------------------------------------------
