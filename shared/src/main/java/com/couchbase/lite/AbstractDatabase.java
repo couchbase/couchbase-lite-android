@@ -53,6 +53,7 @@ import com.couchbase.lite.internal.core.C4DatabaseChange;
 import com.couchbase.lite.internal.core.C4DatabaseObserver;
 import com.couchbase.lite.internal.core.C4DatabaseObserverListener;
 import com.couchbase.lite.internal.core.C4Document;
+import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.core.SharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
