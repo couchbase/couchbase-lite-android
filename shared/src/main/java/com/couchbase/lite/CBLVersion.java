@@ -23,7 +23,7 @@ import com.couchbase.litecore.C4;
 
 import java.util.Locale;
 
-public class CBLVersion {
+class CBLVersion {
 
     static String userAgent = null;
 
