@@ -26,8 +26,6 @@ import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import com.couchbase.lite.core.CBLVersion;
-
 
 /**
  * Replicator configuration.

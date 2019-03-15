@@ -21,7 +21,6 @@ import android.os.Build;
 
 import java.util.Locale;
 
-import com.couchbase.lite.BuildConfig;
 import com.couchbase.lite.internal.core.C4;
 
 
