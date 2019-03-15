@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.json.JSONException;
 
-import com.couchbase.lite.core.CBLVersion;
 import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Constants.C4DatabaseFlags;
