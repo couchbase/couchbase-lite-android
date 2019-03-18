@@ -19,6 +19,8 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import com.couchbase.lite.internal.core.CBLVersion;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
