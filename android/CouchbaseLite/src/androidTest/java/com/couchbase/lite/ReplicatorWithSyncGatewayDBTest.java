@@ -19,14 +19,6 @@ package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
 
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.Config;
-
-import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -41,6 +33,12 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.couchbase.lite.utils.Config;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -66,8 +64,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     @Before
     public void setUp() throws Exception {
         config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         super.setUp();
 
@@ -77,8 +74,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @After
     public void tearDown() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         remote_DELETE_db(DB_NAME);
 
@@ -88,11 +84,13 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     private boolean remote_PUT_db(String db) throws IOException {
         OkHttpClient client = new OkHttpClient();
         String url = String.format(Locale.ENGLISH, "http://%s:4985/%s/", this.config.remoteHost(), db);
-        RequestBody body = RequestBody.create(JSON, "{\"server\": \"walrus:\", \"users\": { \"GUEST\": { \"disabled\": false, \"admin_channels\": [\"*\"] } }, \"unsupported\": {\"replicator_2\":true}}");
+        RequestBody body = RequestBody.create(
+            JSON,
+            "{\"server\": \"walrus:\", \"users\": { \"GUEST\": { \"disabled\": false, \"admin_channels\": [\"*\"] } }, \"unsupported\": {\"replicator_2\":true}}");
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(url)
-                .put(body)
-                .build();
+            .url(url)
+            .put(body)
+            .build();
         Response response = client.newCall(request).execute();
         return response.code() >= 200 && response.code() < 300;
     }
@@ -101,9 +99,9 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         OkHttpClient client = new OkHttpClient();
         String url = String.format(Locale.ENGLISH, "http://%s:4985/%s/", this.config.remoteHost(), db);
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(url)
-                .delete()
-                .build();
+            .url(url)
+            .delete()
+            .build();
         Response response = client.newCall(request).execute();
         return response.code() >= 200 && response.code() < 300;
     }
@@ -113,17 +111,16 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         String url = String.format(Locale.ENGLISH, "http://%s:4984/%s/%s", this.config.remoteHost(), db, docID);
         RequestBody body = RequestBody.create(JSON, jsonBody);
         okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(url)
-                .put(body)
-                .build();
+            .url(url)
+            .put(body)
+            .build();
         Response response = client.newCall(request).execute();
         return response.code() >= 200 && response.code() < 300;
     }
 
     @Test
     public void testEmptyPushToRemoteDB() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
         ReplicatorConfiguration config = makeConfig(true, false, false, target);
@@ -132,8 +129,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Test
     public void testPushToRemoteDB() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         // Create 100 docs in local db
         loadJSONResource("names_100.json");
@@ -153,8 +149,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Test
     public void testProgress() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         timeout = 60;
 
@@ -174,8 +169,9 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                 public void changed(ReplicatorChange change) {
                     Replicator.Status status = change.getStatus();
                     Replicator.Progress progress = status.getProgress();
-                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal())
+                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal()) {
                         progressLatch.countDown();
+                    }
                 }
             });
             run(r, 0, null);
@@ -193,8 +189,9 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                 public void changed(ReplicatorChange change) {
                     Replicator.Status status = change.getStatus();
                     Replicator.Progress progress = status.getProgress();
-                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal())
+                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal()) {
                         progressLatch.countDown();
+                    }
                 }
             });
             run(r, 0, null);
@@ -216,8 +213,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
      */
     @Test
     public void testContinuousPush() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         loadJSONResource("names_100.json");
 
@@ -230,8 +226,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Test
     public void testChannelPull() throws CouchbaseLiteException, InterruptedException, URISyntaxException {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         assertEquals(0, otherDB.getCount());
         db.inBatch(new Runnable() {
@@ -243,7 +238,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                     doc.setValue("foo", "var");
                     try {
                         db.save(doc);
-                    } catch (CouchbaseLiteException e) {
+                    }
+                    catch (CouchbaseLiteException e) {
                         fail();
                     }
                 }
@@ -253,7 +249,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                     doc.setValue("channels", "my_channel");
                     try {
                         db.save(doc);
-                    } catch (CouchbaseLiteException e) {
+                    }
+                    catch (CouchbaseLiteException e) {
                         fail();
                     }
                 }
@@ -276,8 +273,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
      */
     @Test
     public void testPushToRemoteDBWithAttachment() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         // store doc with attachment into db.
         {
@@ -291,7 +287,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                 doc1.setValue("name", "Tiger");
                 doc1.setBlob("image.jpg", blob);
                 save(doc1);
-            } finally {
+            }
+            finally {
                 is.close();
             }
             assertEquals(1, db.getCount());
@@ -329,21 +326,22 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         repl.addChangeListener(executor, new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
-                log(LogLevel.INFO,"changed() change -> " + change);
+                log(LogLevel.INFO, "changed() change -> " + change);
             }
         });
 
         try {
             Thread.sleep(3 * 60 * 1000);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
         }
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1545
     @Test
-    public void testPushDocAndDocChangeListener() throws CouchbaseLiteException, URISyntaxException, InterruptedException {
-        if (!config.replicatorTestsEnabled())
-            return;
+    public void testPushDocAndDocChangeListener()
+        throws CouchbaseLiteException, URISyntaxException, InterruptedException {
+        if (!config.replicatorTestsEnabled()) { return; }
 
         String docID = "doc1";
 
@@ -414,8 +412,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Test
     public void testPullReplicateMultipleDocs() throws IOException, URISyntaxException, InterruptedException {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         // create multiple documents on sync gateway
         final int N = 10;
@@ -429,19 +426,19 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             @Override
             public void changed(DatabaseChange change) {
                 // check getDocumentIDs values
-                if (change.getDocumentIDs() != null)
-                    assertEquals(N, change.getDocumentIDs().size());
+                if (change.getDocumentIDs() != null) { assertEquals(N, change.getDocumentIDs().size()); }
 
 
                 // check query result
                 Query q = QueryBuilder.select(SelectResult.expression(Meta.id))
-                        .from(DataSource.database(db))
-                        .where(Expression.property("type").equalTo(Expression.string("text")));
+                    .from(DataSource.database(db))
+                    .where(Expression.property("type").equalTo(Expression.string("text")));
                 try {
                     ResultSet rs = q.execute();
                     List<Result> results = rs.allResults();
                     assertEquals(N, results.size());
-                } catch (CouchbaseLiteException e) {
+                }
+                catch (CouchbaseLiteException e) {
                     fail("Error in Query.execute(): " + e.getMessage());
                 }
             }
@@ -464,8 +461,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Test
     public void testPullConflictDeleteWins_SG() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         URLEndpoint target = getRemoteEndpoint(DB_NAME, false);
 
@@ -502,7 +498,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         assertNull(db.getDocument(doc1.getId()));
     }
 
-    JSONObject sendRequestToEndpoint(URLEndpoint endpoint, String method, String path, String mediaType, byte[] body) throws Exception {
+    JSONObject sendRequestToEndpoint(URLEndpoint endpoint, String method, String path, String mediaType, byte[] body)
+        throws Exception {
         URI endpointURI = endpoint.getURL();
 
         String _scheme = endpointURI.getScheme().equals(URLEndpoint.kURLEndpointTLSScheme) ? "https" : "http";
@@ -516,16 +513,20 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         okhttp3.Request.Builder builder = new okhttp3.Request.Builder().url(uri.toURL());
 
         RequestBody requestBody = null;
-        if (body != null && body instanceof byte[])
-            requestBody = RequestBody.create(MediaType.parse(mediaType), body);
+        if (body instanceof byte[]) { requestBody = RequestBody.create(MediaType.parse(mediaType), body); }
         builder.method(method, requestBody);
         okhttp3.Request request = builder.build();
         Response response = client.newCall(request).execute();
         if (response.isSuccessful()) {
-            log(LogLevel.INFO, "Send request succeeded; URL=" + uri + " Method=" + method + " Status=" + response.code());
+            log(
+                LogLevel.INFO,
+                "Send request succeeded; URL=" + uri + " Method=" + method + " Status=" + response.code());
             return new JSONObject(response.body().string());
-        } else {
-            log(LogLevel.ERROR, "Failed to send request; URL=" + uri + " Method=" + method + " Status=" + response.code());
+        }
+        else {
+            log(
+                LogLevel.ERROR,
+                "Failed to send request; URL=" + uri + " Method=" + method + " Status=" + response.code());
             return null;
         }
     }
@@ -535,8 +536,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     // Currently CBL ignore the error wight setting  code 26 (Unknown error).
     @Test
     public void testDocIDFilterSG() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         URLEndpoint target = getRemoteEndpoint(DB_NAME, false);
 
@@ -565,8 +565,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     // https://github.com/couchbase/couchbase-lite-core/issues/447
     @Test
     public void testResetCheckpoint() throws CouchbaseLiteException, InterruptedException, URISyntaxException {
-        if (!config.replicatorTestsEnabled())
-            return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         URLEndpoint target = getRemoteEndpoint(DB_NAME, false);
 

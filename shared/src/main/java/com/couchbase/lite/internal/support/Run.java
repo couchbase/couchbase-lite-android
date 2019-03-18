@@ -23,7 +23,7 @@ import java.util.HashSet;
 
 
 public final class Run {
-    private static final HashSet<String> Instances = new HashSet<>();
+    private static final HashSet<String> INSTANCES = new HashSet<>();
 
     public static synchronized void once(@NonNull String tag, @NonNull Runnable action) {
         if (tag == null) {
@@ -34,11 +34,11 @@ public final class Run {
             throw new IllegalArgumentException("action cannot be null");
         }
 
-        if (Instances.contains(tag)) {
+        if (INSTANCES.contains(tag)) {
             return;
         }
 
-        Instances.add(tag);
+        INSTANCES.add(tag);
         action.run();
     }
 }

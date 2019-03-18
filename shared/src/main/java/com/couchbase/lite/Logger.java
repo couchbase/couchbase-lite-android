@@ -26,7 +26,6 @@ import android.support.annotation.NonNull;
  * implementing this interface.
  */
 public interface Logger {
-
     /**
      * Gets the level that will be logged via this logger.
      *

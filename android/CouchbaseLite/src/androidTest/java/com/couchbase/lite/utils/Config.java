@@ -20,6 +20,7 @@ package com.couchbase.lite.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 
 public class Config extends java.util.Properties {
@@ -27,12 +28,8 @@ public class Config extends java.util.Properties {
     public static final String EE_TEST_PROPERTIES_FILE = "ee_test.properties";
 
     public Config(InputStream in) throws IOException {
-        try {
-            load(new InputStreamReader(in, "UTF-8"));
-        }
-        finally {
-            in.close();
-        }
+        try { load(new InputStreamReader(in, StandardCharsets.UTF_8)); }
+        finally { in.close(); }
     }
 
     public boolean deleteDatabaseInTearDown() {
@@ -43,9 +40,7 @@ public class Config extends java.util.Properties {
         return Boolean.parseBoolean(getProperty("eeFeaturesTestsEnabled"));
     }
 
-    public boolean replicatorTestsEnabled() {
-        return Boolean.parseBoolean(getProperty("replicatorTestsEnabled"));
-    }
+    public boolean replicatorTestsEnabled() { return Boolean.parseBoolean(getProperty("replicatorTestsEnabled")); }
 
     public boolean concurrentTestsEnabled() {
         return Boolean.parseBoolean(getProperty("concurrentTestsEnabled"));

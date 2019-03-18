@@ -73,7 +73,7 @@ public class DataSource {
     }
 
 
-    private Object source;
+    private final Object source;
     private String alias;
 
     private DataSource(Object source) {

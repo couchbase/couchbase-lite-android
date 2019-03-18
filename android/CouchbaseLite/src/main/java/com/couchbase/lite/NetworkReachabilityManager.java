@@ -1,5 +1,5 @@
 //
-// AndroidNetworkReachabilityManager.java
+// NetworkReachabilityManager.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -30,7 +30,7 @@ import com.couchbase.lite.internal.support.Log;
 /**
  * NOTE: https://developer.android.com/training/basics/network-ops/managing.html
  */
-final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
+final class NetworkReachabilityManager extends AbstractNetworkReachabilityManager {
 
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
@@ -45,14 +45,15 @@ final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager
         }
     }
 
-    private final Context context;
     private final NetworkReceiver receiver;
+    private final Context context;
     private boolean listening;
 
-    AndroidNetworkReachabilityManager(Context context) {
-        this.listening = false;
-        this.context = context;
+    NetworkReachabilityManager() {
         this.receiver = new NetworkReceiver();
+        this.context = CBLite.getContext();
+
+        this.listening = false;
     }
 
     /**

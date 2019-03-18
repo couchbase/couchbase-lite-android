@@ -28,13 +28,15 @@ import com.couchbase.lite.internal.core.C4Log;
  * custom.
  */
 public final class Log {
+    // Singleton instance.
     private final ConsoleLogger consoleLogger = new ConsoleLogger();
+
+    // Singleton instance.
     private final FileLogger fileLogger = new FileLogger();
+
     private Logger customLogger;
 
-    //---------------------------------------------
-    // Constructor should not be exposed (singleton)
-    //---------------------------------------------
+    // Singleton instance accessible from Database.log
     Log() {
         C4Log.setCallbackLevel(LogLevel.WARNING.getValue());
     }
@@ -55,9 +57,7 @@ public final class Log {
      * @return The logger that writes to log files
      */
     @NonNull
-    public FileLogger getFile() {
-        return fileLogger;
-    }
+    public FileLogger getFile() { return fileLogger; }
 
     /**
      * Gets the custom logger that was registered by the

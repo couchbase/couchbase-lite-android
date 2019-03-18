@@ -34,9 +34,7 @@ public final class ConsoleLogger implements Logger {
     private LogLevel logLevel = LogLevel.WARNING;
     private EnumSet<LogDomain> logDomains = EnumSet.of(LogDomain.ALL);
 
-    //---------------------------------------------
-    // Constructor should not be exposed (singleton)
-    //---------------------------------------------
+    // Singleton instance accessible from Log.getConsole()
     ConsoleLogger() { }
 
     /**

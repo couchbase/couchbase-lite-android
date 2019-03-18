@@ -32,7 +32,7 @@ public final class DocumentReplication {
     //---------------------------------------------
     private final Replicator replicator;
     private final List<ReplicatedDocument> documents;
-    private boolean pushing;
+    private final boolean pushing;
 
     //---------------------------------------------
     // Constructors

@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite;
 
+import android.content.Context;
+
 import com.couchbase.lite.utils.ZipUtils;
 
 import org.junit.Test;
@@ -38,7 +40,7 @@ public class MigrationTest extends BaseTest {
      */
     //NOTE: @Test
     public void testPrepareDB() throws CouchbaseLiteException {
-        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
+        Database db = new Database("android-sqlite", new DatabaseConfiguration());
         try {
             for (int i = 1; i <= 2; i++) {
                 MutableDocument doc = new MutableDocument("doc" + i);
@@ -56,15 +58,15 @@ public class MigrationTest extends BaseTest {
     // TODO: 1.x DB's attachment is not automatically ditected as blob
     @Test
     public void testOpenExsitingDBv1x() throws Exception {
-
+        final Context ctxt = CBLite.getContext();
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
 
         // if db exist, delete it
-        deleteDB("android-sqlite", context.getFilesDir());
+        deleteDB("android-sqlite", ctxt.getFilesDir());
 
-        ZipUtils.unzip(getAsset("replacedb/android140-sqlite.cblite2.zip"), context.getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/android140-sqlite.cblite2.zip"), ctxt.getFilesDir());
 
-        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
+        Database db = new Database("android-sqlite", new DatabaseConfiguration());
         try {
             assertEquals(2, db.getCount());
             for (int i = 1; i <= 2; i++) {
@@ -85,20 +87,22 @@ public class MigrationTest extends BaseTest {
             // close db
             db.close();
             // if db exist, delete it
-            deleteDB("android-sqlite", context.getFilesDir());
+            deleteDB("android-sqlite", ctxt.getFilesDir());
         }
     }
 
     @Test
     public void testOpenExsitingDBv1xNoAttachment() throws Exception {
+        final Context ctxt = CBLite.getContext();
+
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
 
         // if db exist, delete it
-        deleteDB("android-sqlite", context.getFilesDir());
+        deleteDB("android-sqlite", ctxt.getFilesDir());
 
-        ZipUtils.unzip(getAsset("replacedb/android140-sqlite-noattachment.cblite2.zip"), context.getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/android140-sqlite-noattachment.cblite2.zip"), ctxt.getFilesDir());
 
-        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
+        Database db = new Database("android-sqlite", new DatabaseConfiguration());
         try {
             assertEquals(2, db.getCount());
             for (int i = 1; i <= 2; i++) {
@@ -110,18 +114,20 @@ public class MigrationTest extends BaseTest {
             // close db
             db.close();
             // if db exist, delete it
-            deleteDB("android-sqlite", context.getFilesDir());
+            deleteDB("android-sqlite", ctxt.getFilesDir());
         }
     }
 
     @Test
     public void testOpenExsitingDB() throws Exception {
+        final Context ctxt = CBLite.getContext();
+
         // if db exist, delete it
-        deleteDB("android-sqlite", context.getFilesDir());
+        deleteDB("android-sqlite", ctxt.getFilesDir());
 
-        ZipUtils.unzip(getAsset("replacedb/android200-sqlite.cblite2.zip"), context.getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/android200-sqlite.cblite2.zip"), ctxt.getFilesDir());
 
-        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
+        Database db = new Database("android-sqlite", new DatabaseConfiguration());
         try {
             assertEquals(2, db.getCount());
             for (int i = 1; i <= 2; i++) {
@@ -137,14 +143,16 @@ public class MigrationTest extends BaseTest {
             // close db
             db.close();
             // if db exist, delete it
-            deleteDB("android-sqlite", context.getFilesDir());
+            deleteDB("android-sqlite", ctxt.getFilesDir());
         }
     }
 
     // if db exist, delete it
     private void deleteDB(String name, File dir) throws CouchbaseLiteException {
+        final Context ctxt = CBLite.getContext();
+
         // database exist, delete it
-        if (Database.exists(name, context.getFilesDir())) {
+        if (Database.exists(name, ctxt.getFilesDir())) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
             for (int i = 0; i < 10; i++) {
                 try {

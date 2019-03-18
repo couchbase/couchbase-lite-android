@@ -17,7 +17,6 @@
 //
 package com.couchbase.lite;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
 
 
@@ -30,8 +29,8 @@ public final class DatabaseConfiguration extends AbstractDatabaseConfiguration {
     // Constructors
     //---------------------------------------------
 
-    public DatabaseConfiguration(@NonNull Context context) {
-        super(context);
+    public DatabaseConfiguration() {
+        super();
     }
 
     public DatabaseConfiguration(@NonNull DatabaseConfiguration config) {

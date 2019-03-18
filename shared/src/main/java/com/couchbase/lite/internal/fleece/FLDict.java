@@ -40,7 +40,7 @@ public class FLDict {
      * @return FLValue
      */
     static native long get(long dict, byte[] keyString);
-    private long handle; // hold pointer to FLDict
+    private final long handle; // hold pointer to FLDict
 
     //-------------------------------------------------------------------------
     // public methods

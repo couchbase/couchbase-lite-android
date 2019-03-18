@@ -74,7 +74,7 @@ abstract class AbstractDatabase {
     /**
      * Gets the logging controller for the Couchbase Lite library to configure the
      * logging settings and add custom logging.
-     *
+     * <p>
      * This is part of the Public API.
      */
     @SuppressWarnings("ConstantName")
@@ -249,9 +249,10 @@ abstract class AbstractDatabase {
 
                 // Check file logging
                 if (Database.log.getFile().getConfig() == null) {
-                    Log.w(DOMAIN, "Database.log.getFile().getConfig() is null, meaning file " +
-                        "logging is disabled. Log files required for product support are " +
-                        "not being generated.");
+                    Log.w(
+                        DOMAIN,
+                        "Database.log.getFile().getConfig() is null, meaning file logging is disabled.  "
+                        + "Log files required for product support are not being generated.");
                 }
             }
         });
@@ -268,8 +269,8 @@ abstract class AbstractDatabase {
         this.shellMode = false;
         this.postExecutor = Executors.newSingleThreadScheduledExecutor();
         this.queryExecutor = Executors.newSingleThreadScheduledExecutor();
-        this.activeReplications = Collections.synchronizedSet(new HashSet<Replicator>());
-        this.activeLiveQueries = Collections.synchronizedSet(new HashSet<LiveQuery>());
+        this.activeReplications = Collections.synchronizedSet(new HashSet<>());
+        this.activeLiveQueries = Collections.synchronizedSet(new HashSet<>());
 
         // Set the temp directory based on Database Configuration:
         config.setTempDir();

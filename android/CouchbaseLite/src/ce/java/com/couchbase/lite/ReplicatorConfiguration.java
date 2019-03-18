@@ -26,6 +26,8 @@ import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import com.couchbase.lite.internal.core.CBLVersion;
+
 
 /**
  * Replicator configuration.
@@ -80,7 +82,7 @@ public final class ReplicatorConfiguration {
     // member variables
     //---------------------------------------------
 
-    private ReplicatorType replicatorType = ReplicatorType.PUSH_AND_PULL;
+    private ReplicatorType replicatorType;
     private boolean readonly;
     private Database database;
     private Endpoint target;

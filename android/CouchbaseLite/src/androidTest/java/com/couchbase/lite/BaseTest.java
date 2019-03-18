@@ -18,20 +18,8 @@
 package com.couchbase.lite;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.support.test.InstrumentationRegistry;
-
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.ExecutorUtils;
-import com.couchbase.lite.internal.utils.JsonUtils;
-import com.couchbase.lite.utils.Config;
-import com.couchbase.lite.utils.FileUtils;
-import com.couchbase.lite.internal.core.C4Constants;
-
-import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,12 +33,24 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.couchbase.lite.utils.Config.EE_TEST_PROPERTIES_FILE;
-import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
+import junit.framework.TestCase;
+import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+
+import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.utils.ExecutorUtils;
+import com.couchbase.lite.internal.utils.JsonUtils;
+import com.couchbase.lite.utils.Config;
+import com.couchbase.lite.utils.FileUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+
 
 public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     public static final String TAG = "Test";
@@ -58,13 +58,12 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     protected final static String kDatabaseName = "testdb";
 
     protected Config config;
-    protected Context context;
     private File dir = null;
     protected Database db = null;
     ExecutorService executor = null;
 
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
 
     protected File getDir() {
         return dir;
@@ -77,8 +76,9 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
 
     // https://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the-emulator?noredirect=1&lq=1
     private static String getSystemProperty(String name) throws Exception {
-        Class systemPropertyClazz = Class.forName("android.os.SystemProperties");
-        return (String) systemPropertyClazz.getMethod("get", new Class[]{String.class}).invoke(systemPropertyClazz, new Object[]{name});
+        Class<?> systemPropertyClazz = Class.forName("android.os.SystemProperties");
+        return (String) systemPropertyClazz
+            .getMethod("get", new Class[] {String.class}).invoke(systemPropertyClazz, new Object[] {name});
     }
 
     protected static boolean isEmulator() {
@@ -87,7 +87,8 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
             boolean emu = getSystemProperty("ro.kernel.qemu").length() > 0;
             boolean sdk = getSystemProperty("ro.product.model").equals("sdk");
             return goldfish || emu || sdk;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return false;
         }
     }
@@ -101,14 +102,17 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     public void setUp() throws Exception {
         executor = Executors.newSingleThreadExecutor();
 
-        context = InstrumentationRegistry.getTargetContext();
+        final Context ctxt = InstrumentationRegistry.getTargetContext();
+
+        CBLite.init(ctxt);
         try {
             config = new Config(openTestPropertiesFile());
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             fail("Failed to load test.properties");
         }
 
-        setDir(new File(context.getFilesDir(), "CouchbaseLiteTest"));
+        setDir(new File(ctxt.getFilesDir(), "CouchbaseLiteTest"));
 
         // database exist, delete it
         deleteDatabase(kDatabaseName);
@@ -120,10 +124,12 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     private InputStream openTestPropertiesFile() throws IOException {
+        final AssetManager assets = CBLite.getContext().getAssets();
         try {
-            return context.getAssets().open(EE_TEST_PROPERTIES_FILE);
-        } catch (IOException e) {
-            return context.getAssets().open(TEST_PROPERTIES_FILE);
+            return assets.open(Config.EE_TEST_PROPERTIES_FILE);
+        }
+        catch (IOException e) {
+            return assets.open(Config.TEST_PROPERTIES_FILE);
         }
     }
 
@@ -142,8 +148,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     protected void deleteDatabase(String dbName) throws CouchbaseLiteException {
-        if (config != null && !config.deleteDatabaseInTearDown())
-            return;
+        if (config != null && !config.deleteDatabaseInTearDown()) { return; }
 
         // database exist, delete it
         if (Database.exists(dbName, getDir())) {
@@ -153,13 +158,16 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
                 try {
                     Database.delete(dbName, getDir());
                     break;
-                } catch (CouchbaseLiteException ex) {
+                }
+                catch (CouchbaseLiteException ex) {
                     if (ex.getCode() == CBLErrorBusy) {
                         try {
                             Thread.sleep(500);
-                        } catch (Exception e) {
                         }
-                    } else {
+                        catch (Exception e) {
+                        }
+                    }
+                    else {
                         throw ex;
                     }
                 }
@@ -168,7 +176,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     protected Database open(String name) throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration config = new DatabaseConfiguration();
         config.setDirectory(dir.getAbsolutePath());
         return new Database(name, config);
     }
@@ -209,7 +217,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
         String line;
         int n = 0;
         while ((line = reader.readLine()) != null) {
-            if (line.trim().isEmpty()) continue;
+            if (line.trim().isEmpty()) { continue; }
             n += 1;
             JSONObject json = new JSONObject(line);
             Map<String, Object> props = JsonUtils.fromJson(json);
@@ -286,7 +294,8 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
                     String docID;
                     try {
                         docID = createDocNumbered(i, to);
-                    } catch (CouchbaseLiteException e) {
+                    }
+                    catch (CouchbaseLiteException e) {
                         throw new RuntimeException(e);
                     }
                     numbers.add(db.getDocument(docID).toMap());
@@ -337,14 +346,15 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
         try {
             execution.run();
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(domain, e.getDomain());
             assertEquals(code, e.getCode());
         }
     }
 
     protected static void log(LogLevel level, String message) {
-        switch(level) {
+        switch (level) {
             case DEBUG:
                 android.util.Log.d("CouchbaseLite/" + TAG, message);
                 break;

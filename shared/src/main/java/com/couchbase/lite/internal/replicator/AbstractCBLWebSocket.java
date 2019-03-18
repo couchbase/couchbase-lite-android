@@ -17,7 +17,7 @@
 //
 package com.couchbase.lite.internal.replicator;
 
-import android.system.ErrnoException;
+import android.support.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,19 +74,8 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
 
 
-/**
- * NOTE: CBLWebSocket class should be public as this class is instantiated
- * from com.couchbase.litecore package.
- */
-public final class CBLWebSocket extends C4Socket {
-    //-------------------------------------------------------------------------
-    // Constants
-    //-------------------------------------------------------------------------
+public class AbstractCBLWebSocket extends C4Socket {
     private static final LogDomain TAG = LogDomain.NETWORK;
-    // Posix errno values with Android.
-    // from sysroot/usr/include/asm-generic/errno.h
-    private static final int ECONNRESET = 104;    // java.net.SocketException
-    private static final int ECONNREFUSED = 111;  // java.net.ConnectException
 
     /**
      * Workaround to enable both TLS1.1 and TLS1.2 for Android API 16 - 19.
@@ -154,7 +143,7 @@ public final class CBLWebSocket extends C4Socket {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             Log.v(TAG, "WebSocketListener.onOpen() response -> " + response);
-            CBLWebSocket.this.webSocket = webSocket;
+            AbstractCBLWebSocket.this.webSocket = webSocket;
             receivedHTTPResponse(response);
             Log.i(TAG, "CBLWebSocket CONNECTED!");
             opened(handle);
@@ -237,7 +226,7 @@ public final class CBLWebSocket extends C4Socket {
             scheme = WEBSOCKET_SECURE_CONNECTION_SCHEME;
         }
 
-        final CBLWebSocket c4sock;
+        final AbstractCBLWebSocket c4sock;
         try {
             c4sock = new CBLWebSocket(socket, scheme, hostname, port, path, options);
         }
@@ -268,7 +257,13 @@ public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // constructor
     //-------------------------------------------------------------------------
-    CBLWebSocket(long handle, String scheme, String hostname, int port, String path, Map<String, Object> options)
+    protected AbstractCBLWebSocket(
+        long handle,
+        String scheme,
+        String hostname,
+        int port,
+        String path,
+        Map<String, Object> options)
         throws GeneralSecurityException, URISyntaxException {
         super(handle);
         this.uri = new URI(checkScheme(scheme), null, hostname, port, path, null, null);
@@ -286,12 +281,10 @@ public final class CBLWebSocket extends C4Socket {
     }
 
     @Override
-    protected void completedReceive(long byteCount) {
-    }
+    protected void completedReceive(long byteCount) { }
 
     @Override
-    protected void close() {
-    }
+    protected void close() { }
 
     @Override
     protected void requestClose(int status, String message) {
@@ -307,14 +300,17 @@ public final class CBLWebSocket extends C4Socket {
         }
     }
 
+    protected boolean handleClose(Throwable error) { return false; }
+
+    //-------------------------------------------------------------------------
+    // private methods
+    //-------------------------------------------------------------------------
+
     private void start() {
         Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket connecting to %s...", uri));
         httpClient.newWebSocket(newRequest(), wsListener);
     }
 
-    //-------------------------------------------------------------------------
-    // private methods
-    //-------------------------------------------------------------------------
     private OkHttpClient setupOkHttpClient() throws GeneralSecurityException {
         final OkHttpClient.Builder builder = new OkHttpClient.Builder();
 
@@ -346,7 +342,7 @@ public final class CBLWebSocket extends C4Socket {
                 if (username != null && password != null) {
                     return new Authenticator() {
                         @Override
-                        public Request authenticate(Route route, Response response) {
+                        public Request authenticate(@NonNull Route route, @NonNull Response response) {
                             // http://www.ietf.org/rfc/rfc2617.txt
                             Log.v(TAG, "Authenticating for response: " + response);
 
@@ -469,56 +465,42 @@ public final class CBLWebSocket extends C4Socket {
     private void didClose(Throwable error) {
         if (error == null) {
             closed(handle, C4Constants.C4ErrorDomain.WebSocketDomain, 0, null);
+            return;
         }
-        // TODO: Following codes works with only Android.
-        else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP &&
-            error.getCause() != null &&
-            error.getCause().getCause() != null &&
-            error.getCause().getCause() instanceof ErrnoException) {
-            final ErrnoException e = (ErrnoException) error.getCause().getCause();
-            closed(handle, C4Constants.C4ErrorDomain.POSIXDomain, e != null ? e.errno : 0, null);
-        }
+
+        if (handleClose(error)) { return; }
+
         // TLS Certificate error
-        else if (error.getCause() != null &&
-            error.getCause() instanceof java.security.cert.CertificateException) {
+        if (error.getCause() instanceof java.security.cert.CertificateException) {
             closed(
                 handle,
                 C4Constants.C4ErrorDomain.NetworkDomain,
                 C4Constants.NetworkError.kC4NetErrTLSCertUntrusted,
                 null);
+            return;
         }
+
         // SSLPeerUnverifiedException
-        else if (error instanceof javax.net.ssl.SSLPeerUnverifiedException) {
+        if (error instanceof javax.net.ssl.SSLPeerUnverifiedException) {
             closed(
                 handle,
                 C4Constants.C4ErrorDomain.NetworkDomain,
                 C4Constants.NetworkError.kC4NetErrTLSCertUntrusted,
                 null);
+            return;
         }
-        // ConnectException
-        else if (error instanceof java.net.ConnectException) {
-            closed(handle, C4Constants.C4ErrorDomain.POSIXDomain, ECONNREFUSED, null);
-        }
-        // SocketException
-        else if (error instanceof java.net.SocketException) {
-            closed(handle, C4Constants.C4ErrorDomain.POSIXDomain, ECONNRESET, null);
-        }
-        // EOFException
-        else if (error instanceof java.io.EOFException) {
-            closed(handle, C4Constants.C4ErrorDomain.POSIXDomain, ECONNRESET, null);
-        }
+
         // UnknownHostException - this is thrown if Airplane mode, offline
-        else if (error instanceof UnknownHostException) {
+        if (error instanceof UnknownHostException) {
             closed(
                 handle,
                 C4Constants.C4ErrorDomain.NetworkDomain,
                 C4Constants.NetworkError.kC4NetErrUnknownHost,
                 null);
+            return;
         }
-        // Unknown
-        else {
-            closed(handle, C4Constants.C4ErrorDomain.WebSocketDomain, 0, null);
-        }
+
+        closed(handle, C4Constants.C4ErrorDomain.WebSocketDomain, 0, null);
     }
 
     //-------------------------------------------------------------------------

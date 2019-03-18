@@ -1,5 +1,5 @@
 //
-// NetworkReachabilityManager.java
+// AbstractNetworkReachabilityManager.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -28,10 +28,10 @@ import java.util.Set;
  * (an example of a NetworkReachabilityListeners is a Replicator that wants to pause when
  * it's been detected that the network is not reachable)
  */
-abstract class NetworkReachabilityManager {
+abstract class AbstractNetworkReachabilityManager {
 
     private final Set<NetworkReachabilityListener> listeners
-        = Collections.synchronizedSet(new HashSet<NetworkReachabilityListener>());
+        = Collections.synchronizedSet(new HashSet<>());
 
     /**
      * Add Network Reachability Listener

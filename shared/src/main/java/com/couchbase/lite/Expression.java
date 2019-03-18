@@ -323,8 +323,8 @@ public abstract class Expression {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
-        private String func;
-        private List<Expression> params;
+        private final String func;
+        private final List<Expression> params;
 
         //---------------------------------------------
         // Constructors

@@ -92,6 +92,12 @@ android {
             }
         }
     }
+
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -442,5 +448,5 @@ task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDeb
 
 task checkLocal(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest', 'connectedDebugAndroidTest'])
 
-task buildJenkins(dependsOn: ['checkstyle', 'lint', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
+task buildCI(dependsOn: ['checkstyle', 'lint', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
 
