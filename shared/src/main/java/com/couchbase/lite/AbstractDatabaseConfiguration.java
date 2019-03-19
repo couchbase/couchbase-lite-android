@@ -16,10 +16,7 @@
 //
 package com.couchbase.lite;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
-
-import java.io.File;
 
 import com.couchbase.lite.internal.core.C4Base;
 
@@ -34,28 +31,25 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
 
     private boolean readonly;
-    private Context context;
-    private String directory;
     private boolean customDir;
+    private String directory;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    protected AbstractDatabaseConfiguration(@NonNull Context context) {
-        if (context == null) { throw new IllegalArgumentException("context cannot be null."); }
-        this.readonly = false;
-        this.context = context;
-        this.directory = context.getFilesDir().getAbsolutePath();
-        this.customDir = false;
+    protected AbstractDatabaseConfiguration() {
+        this(false, CouchbaseLite.getDbDirectoryPath());
     }
 
     protected AbstractDatabaseConfiguration(@NonNull AbstractDatabaseConfiguration config) {
-        if (config == null) { throw new IllegalArgumentException("config cannot be null."); }
+        this(config.customDir, config.directory);
+    }
+
+    private AbstractDatabaseConfiguration(boolean customDir, String directory) {
         this.readonly = false;
-        this.context = config.context;
-        this.directory = config.directory;
-        this.customDir = config.customDir;
+        this.customDir = customDir;
+        this.directory = directory;
     }
 
     //---------------------------------------------
@@ -96,10 +90,6 @@ abstract class AbstractDatabaseConfiguration {
     // Package level access
     //---------------------------------------------
 
-    Context getContext() {
-        return context;
-    }
-
     /**
      * Set the temp directory based on Database Configuration.
      * The default temp directory is APP_CACHE_DIR/Couchbase/tmp.
@@ -116,23 +106,14 @@ abstract class AbstractDatabaseConfiguration {
         }
     }
 
-    //---------------------------------------------
-    // Private level access
-    //---------------------------------------------
-
     /**
      * Returns the temp directory. The default temp directory is APP_CACHE_DIR/Couchbase/tmp.
      * If a custom database directory is set, the temp directory will be
      * CUSTOM_DATABASE_DIR/Couchbase/tmp.
      */
     private String getTempDir() {
-        final File temp = (customDir)
-            ? new File(directory, TEMP_DIR_NAME)
-            : new File(context.getCacheDir(), TEMP_DIR_NAME);
-
-        if ((temp.exists() || temp.mkdirs()) && temp.isDirectory()) { return temp.getAbsolutePath(); }
-
-        throw new IllegalStateException("Cannot create or access temp directory at " +
-            temp.getAbsolutePath());
+        return (!customDir)
+            ? CouchbaseLite.getTmpDirectory(TEMP_DIR_NAME)
+            : CouchbaseLite.getTmpDirectory(directory, TEMP_DIR_NAME);
     }
 }

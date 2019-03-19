@@ -30,8 +30,8 @@ public final class FullTextExpression {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
-        private String indexName;
-        private String text;
+        private final String indexName;
+        private final String text;
 
         //---------------------------------------------
         // Constructors
@@ -68,7 +68,7 @@ public final class FullTextExpression {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private String name;
+    private final String name;
 
     //---------------------------------------------
     // Constructors

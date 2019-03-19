@@ -88,15 +88,15 @@ public abstract class C4Socket {
     // Long: handle of C4Socket native address
     // C4Socket: Java class holds handle
     protected static final Map<Long, C4Socket> reverseLookupTable
-        = Collections.synchronizedMap(new HashMap<Long, C4Socket>());
+        = Collections.synchronizedMap(new HashMap<>());
 
     // Map between SocketFactory Context and SocketFactory Class
     public static final Map<Object, Class> socketFactory
-        = Collections.synchronizedMap(new HashMap<Object, Class>());
+        = Collections.synchronizedMap(new HashMap<>());
 
     // Map between SocketFactory Context and Replicator
     public static final Map<Object, Replicator> socketFactoryContext
-        = Collections.synchronizedMap(new HashMap<Object, Replicator>());
+        = Collections.synchronizedMap(new HashMap<>());
 
     @SuppressWarnings("unchecked")
     private static void open(

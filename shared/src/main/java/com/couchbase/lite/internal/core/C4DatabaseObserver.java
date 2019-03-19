@@ -29,7 +29,7 @@ public class C4DatabaseObserver {
     // Long: handle of C4DatabaseObserver native address
     // C4DatabaseObserver: Java class holds handle
     private static final Map<Long, C4DatabaseObserver> reverseLookupTable
-        = Collections.synchronizedMap(new HashMap<Long, C4DatabaseObserver>());
+        = Collections.synchronizedMap(new HashMap<>());
 
     /**
      * Callback invoked by a database observer.

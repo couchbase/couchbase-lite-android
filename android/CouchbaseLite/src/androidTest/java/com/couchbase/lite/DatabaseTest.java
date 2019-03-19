@@ -19,12 +19,6 @@ package com.couchbase.lite;
 
 import android.os.Build;
 
-import com.couchbase.lite.internal.support.Log;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,12 +27,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 
 public class DatabaseTest extends BaseTest {
     final static String kDatabaseTestBlob = "i'm blob";
@@ -53,13 +52,12 @@ public class DatabaseTest extends BaseTest {
     }
 
     private Database openDatabase(String dbName, boolean countCheck) throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration config = new DatabaseConfiguration();
         config.setDirectory(getDir().getAbsolutePath());
         Database db = new Database(dbName, config);
         assertEquals(dbName, db.getName());
         assertTrue(new File(db.getPath()).getAbsolutePath().endsWith(".cblite2"));
-        if (countCheck)
-            assertEquals(0, db.getCount());
+        if (countCheck) { assertEquals(0, db.getCount()); }
         return db;
     }
 
@@ -67,12 +65,10 @@ public class DatabaseTest extends BaseTest {
     void deleteDatabase(Database db) throws CouchbaseLiteException {
         File path = db.getPath() != null ? new File(db.getPath()) : null;
         // if path is null, db is already closed
-        if (path != null)
-            assertTrue(path.exists());
+        if (path != null) { assertTrue(path.exists()); }
         db.delete();
         // if path is null, db is already closed before db.delete()
-        if (path != null)
-            assertFalse(path.exists());
+        if (path != null) { assertFalse(path.exists()); }
     }
 
     // helper methods to verify getDoc
@@ -146,53 +142,56 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCreateConfiguration() {
         // Default:
-        DatabaseConfiguration config1 = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration config1 = new DatabaseConfiguration();
         config1.setDirectory("/tmp");
         assertNotNull(config1.getDirectory());
         assertTrue(config1.getDirectory().length() > 0);
 
         // Custom
-        DatabaseConfiguration config2 = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration config2 = new DatabaseConfiguration();
         config2.setDirectory("/tmp/mydb");
         assertEquals("/tmp/mydb", config2.getDirectory());
     }
 
     @Test
     public void testGetSetConfiguration() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration config = new DatabaseConfiguration();
         config.setDirectory(this.db.getConfig().getDirectory());
         Database db = new Database("db", config);
         try {
             assertNotNull(db.getConfig());
             assertFalse(db.getConfig() == config);
             assertEquals(db.getConfig().getDirectory(), config.getDirectory());
-        } finally {
+        }
+        finally {
             db.delete();
         }
     }
 
     @Test
     public void testConfigurationIsCopiedWhenGetSet() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration config = new DatabaseConfiguration();
         config.setDirectory(this.db.getConfig().getDirectory());
         Database db = new Database("db", config);
         try {
             assertNotNull(db.getConfig());
             assertTrue(db.getConfig() != config);
-        } finally {
+        }
+        finally {
             db.delete();
         }
     }
 
     @Test
     public void testDatabaseConfigurationWithAndroidContect() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
-        assertEquals(config.getDirectory(), context.getFilesDir().getAbsolutePath());
+        DatabaseConfiguration config = new DatabaseConfiguration();
+        assertEquals(config.getDirectory(), CouchbaseLite.getContext().getFilesDir().getAbsolutePath());
         Database db = new Database("db", config);
         try {
-            String expectedPath = context.getFilesDir().getAbsolutePath();
+            String expectedPath = CouchbaseLite.getContext().getFilesDir().getAbsolutePath();
             assertTrue(new File(db.getPath()).getAbsolutePath().contains(expectedPath));
-        } finally {
+        }
+        finally {
             db.delete();
         }
     }
@@ -208,7 +207,8 @@ public class DatabaseTest extends BaseTest {
         try {
             assertNotNull(db);
             assertEquals(0, db.getCount());
-        } finally {
+        }
+        finally {
             // delete database
             deleteDatabase(db);
         }
@@ -217,9 +217,10 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCreateWithDefaultConfiguration() throws CouchbaseLiteException {
 
-        Database db = new Database("db", new DatabaseConfiguration(this.context));
+        Database db = new Database("db", new DatabaseConfiguration());
         try {
-        } finally {
+        }
+        finally {
             // delete database
             deleteDatabase(db);
         }
@@ -231,7 +232,8 @@ public class DatabaseTest extends BaseTest {
         try {
             assertNotNull(db);
             assertEquals(0, db.getCount());
-        } finally {
+        }
+        finally {
             // delete database
             deleteDatabase(db);
         }
@@ -242,9 +244,11 @@ public class DatabaseTest extends BaseTest {
         try {
             Database db = openDatabase("");
             fail();
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             // NOTE: CBL Android's Database constructor does not work without specified directory.
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             e.printStackTrace();
         }
     }
@@ -254,17 +258,18 @@ public class DatabaseTest extends BaseTest {
 
         String dbName = "db";
 
-        File dir = new File(context.getFilesDir(), "CouchbaseLite");
+        File dir = new File(CouchbaseLite.getContext().getFilesDir(), "CouchbaseLite");
         try {
             Database.delete(dbName, dir);
-        } catch (CouchbaseLiteException ex) {
+        }
+        catch (CouchbaseLiteException ex) {
         }
 
         assertFalse(Database.exists(dbName, dir));
 
         // create db with custom directory
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context)
-                .setDirectory(dir.getAbsolutePath());
+        DatabaseConfiguration config = new DatabaseConfiguration()
+            .setDirectory(dir.getAbsolutePath());
         Database db = new Database(dbName, config);
         try {
             assertNotNull(db);
@@ -273,7 +278,8 @@ public class DatabaseTest extends BaseTest {
             assertTrue(new File(db.getPath()).getAbsolutePath().indexOf(dir.getPath()) != -1);
             assertTrue(Database.exists(dbName, dir));
             assertEquals(0, db.getCount());
-        } finally {
+        }
+        finally {
             // delete database
             deleteDatabase(db);
         }
@@ -342,7 +348,8 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -357,7 +364,8 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -436,10 +444,12 @@ public class DatabaseTest extends BaseTest {
         try {
             otherDB.save(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorInvalidParameter, e.getCode());
-        } finally {
+        }
+        finally {
             // close otherDb
             otherDB.close();
         }
@@ -463,10 +473,12 @@ public class DatabaseTest extends BaseTest {
         try {
             otherDB.save(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorInvalidParameter, e.getCode());
-        } finally {
+        }
+        finally {
             // delete otherDb
             deleteDatabase(otherDB);
             deleteDatabase("otherDB");
@@ -491,7 +503,8 @@ public class DatabaseTest extends BaseTest {
             public void run() {
                 try {
                     createDocs(NUM_DOCS);
-                } catch (CouchbaseLiteException e) {
+                }
+                catch (CouchbaseLiteException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -510,7 +523,8 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -526,7 +540,8 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -541,11 +556,12 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+        }
+        catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound) {
                 ;// expected
-            else
-                fail();
+            }
+            else { fail(); }
         }
     }
 
@@ -575,10 +591,12 @@ public class DatabaseTest extends BaseTest {
         try {
             otherDB.delete(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorInvalidParameter, e.getCode());
-        } finally {
+        }
+        finally {
             // close otherDb
             otherDB.close();
         }
@@ -600,10 +618,12 @@ public class DatabaseTest extends BaseTest {
         try {
             otherDB.delete(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorInvalidParameter, e.getCode());
-        } finally {
+        }
+        finally {
             // close otherDb
             deleteDatabase(otherDB);
             deleteDatabase("otherDB");
@@ -625,7 +645,8 @@ public class DatabaseTest extends BaseTest {
                     Document doc = db.getDocument(docID);
                     try {
                         db.delete(doc);
-                    } catch (CouchbaseLiteException e) {
+                    }
+                    catch (CouchbaseLiteException e) {
                         throw new RuntimeException(e);
                     }
                     assertNull(db.getDocument(docID));
@@ -649,7 +670,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -666,7 +688,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -680,11 +703,12 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+        }
+        catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound) {
                 ;// expected
-            else
-                fail();
+            }
+            else { fail(); }
         }
         assertEquals(0, db.getCount());
     }
@@ -715,10 +739,12 @@ public class DatabaseTest extends BaseTest {
         try {
             otherDB.purge(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorInvalidParameter, e.getCode());
-        } finally {
+        }
+        finally {
             // close otherDb
             otherDB.close();
         }
@@ -740,10 +766,12 @@ public class DatabaseTest extends BaseTest {
         try {
             otherDB.purge(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorInvalidParameter, e.getCode());
-        } finally {
+        }
+        finally {
             // close otherDb
             deleteDatabase(otherDB);
             deleteDatabase("otherDB");
@@ -782,7 +810,8 @@ public class DatabaseTest extends BaseTest {
                     Document doc = db.getDocument(docID);
                     try {
                         purgeDocAndVerify(doc);
-                    } catch (CouchbaseLiteException e) {
+                    }
+                    catch (CouchbaseLiteException e) {
                         throw new RuntimeException(e);
                     }
                     assertEquals((9 - i), db.getCount());
@@ -805,7 +834,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -822,7 +852,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -883,9 +914,8 @@ public class DatabaseTest extends BaseTest {
         try {
             blob.getContent();
             fail();
-        } catch (IllegalStateException e) {
-            ; // expected
         }
+        catch (IllegalStateException expected) { }
     }
 
     @Test
@@ -909,7 +939,8 @@ public class DatabaseTest extends BaseTest {
                 try {
                     db.close();
                     fail();
-                } catch (CouchbaseLiteException e) {
+                }
+                catch (CouchbaseLiteException e) {
                     assertEquals(CBLErrorDomain, e.getDomain());
                     assertEquals(CBLErrorTransactionNotClosed, e.getCode()); // 26
                 }
@@ -923,7 +954,8 @@ public class DatabaseTest extends BaseTest {
         try {
             deleteDatabase(db);
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should come here!
         }
     }
@@ -945,7 +977,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete();
             fail();
-        } catch (IllegalStateException e) {
+        }
+        catch (IllegalStateException e) {
             // should come here!
         }
         assertFalse(path.exists());
@@ -1013,7 +1046,8 @@ public class DatabaseTest extends BaseTest {
                 try {
                     db.delete();
                     fail();
-                } catch (CouchbaseLiteException e) {
+                }
+                catch (CouchbaseLiteException e) {
                     assertEquals(CBLErrorDomain, e.getDomain());
                     assertEquals(CBLErrorTransactionNotClosed, e.getCode()); // 26
                 }
@@ -1031,11 +1065,13 @@ public class DatabaseTest extends BaseTest {
             try {
                 db.delete();
                 fail();
-            } catch (CouchbaseLiteException e) {
+            }
+            catch (CouchbaseLiteException e) {
                 assertEquals(CBLErrorDomain, e.getDomain());
                 assertEquals(CBLErrorBusy, e.getCode()); // 24
             }
-        } finally {
+        }
+        finally {
             otherDB.close();
         }
     }
@@ -1059,11 +1095,13 @@ public class DatabaseTest extends BaseTest {
             try {
                 Database.delete(dbName, null);
                 fail();
-            } catch (IllegalArgumentException ex) {
+            }
+            catch (IllegalArgumentException ex) {
                 // ok
             }
             assertTrue(path.exists());
-        } finally {
+        }
+        finally {
             Database.delete(dbName, getDir());
         }
     }
@@ -1083,12 +1121,10 @@ public class DatabaseTest extends BaseTest {
             try {
                 Database.delete(dbName, null);
                 fail();
-            } catch (IllegalArgumentException ex) {
-                // ok
-            } finally {
-                ;
             }
-        } finally {
+            catch (IllegalArgumentException ignore) { }
+        }
+        finally {
             db.delete();
         }
     }
@@ -1115,13 +1151,13 @@ public class DatabaseTest extends BaseTest {
             try {
                 Database.delete("db", getDir());
                 fail();
-            } catch (CouchbaseLiteException e) {
+            }
+            catch (CouchbaseLiteException e) {
                 assertEquals(CBLErrorDomain, e.getDomain());
                 assertEquals(CBLErrorBusy, e.getCode()); // 24
-            } finally {
-                ;
             }
-        } finally {
+        }
+        finally {
             deleteDatabase(db);
         }
     }
@@ -1131,9 +1167,11 @@ public class DatabaseTest extends BaseTest {
         try {
             Database.delete("notexistdb", null);
             fail();
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             // expected
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             e.printStackTrace();
         }
     }
@@ -1143,7 +1181,8 @@ public class DatabaseTest extends BaseTest {
         try {
             Database.delete("notexistdb", getDir());
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLErrorDomain, e.getDomain());
             assertEquals(CBLErrorNotFound, e.getCode());
         }
@@ -1158,7 +1197,8 @@ public class DatabaseTest extends BaseTest {
         try {
             Database.exists("db", null);
             fail();
-        } catch (IllegalArgumentException ex) {
+        }
+        catch (IllegalArgumentException ex) {
         }
     }
 
@@ -1192,7 +1232,8 @@ public class DatabaseTest extends BaseTest {
         try {
             Database.exists("nonexist", null);
             fail();
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             // expected
         }
     }
@@ -1219,7 +1260,8 @@ public class DatabaseTest extends BaseTest {
                         doc.setValue("number", i);
                         try {
                             savedDoc = save(doc);
-                        } catch (CouchbaseLiteException e) {
+                        }
+                        catch (CouchbaseLiteException e) {
                             throw new RuntimeException(e);
                         }
                     }
@@ -1279,11 +1321,11 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(doc);
         // NOTE doc1 -> theirs, doc2 -> mine
         if (doc2.getRevID().compareTo(doc1.getRevID()) > 0)
-            // mine -> doc 2 win
-            assertEquals("newVar", doc.getString("someKey"));
+        // mine -> doc 2 win
+        { assertEquals("newVar", doc.getString("someKey")); }
         else
-            // their -> doc 1 win
-            assertEquals("someVar", doc.getString("someKey"));
+        // their -> doc 1 win
+        { assertEquals("someVar", doc.getString("someKey")); }
     }
 
     @Test
@@ -1292,8 +1334,8 @@ public class DatabaseTest extends BaseTest {
         //       operation in the native library. This test can pass with real ARM device with
         //       API 17. Also it can pass with x86 stack emulator with API 16.
         if (android.os.Build.VERSION.SDK_INT == android.os.Build.VERSION_CODES.JELLY_BEAN
-                && Build.FINGERPRINT.startsWith("generic")
-                && "armv7l".equals(System.getProperty("os.arch"))) {
+            && Build.FINGERPRINT.startsWith("generic")
+            && "armv7l".equals(System.getProperty("os.arch"))) {
             return;
         }
 
@@ -1314,8 +1356,7 @@ public class DatabaseTest extends BaseTest {
         File dir = new File(config.getDirectory());
 
         // Make sure no an existing database at the new location:
-        if (Database.exists(dbName, dir))
-            Database.delete(dbName, dir);
+        if (Database.exists(dbName, dir)) { Database.delete(dbName, dir); }
 
         // Copy:
         Database.copy(new File(db.getPath()), dbName, config);
@@ -1387,10 +1428,10 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testIndexBuilderEmptyArgs() {
         thrown.expect(IllegalArgumentException.class);
-        IndexBuilder.fullTextIndex((FullTextIndexItem[])null);
+        IndexBuilder.fullTextIndex((FullTextIndexItem[]) null);
 
         thrown.expect(IllegalArgumentException.class);
-        IndexBuilder.valueIndex((ValueIndexItem[])null);
+        IndexBuilder.valueIndex((ValueIndexItem[]) null);
     }
 
     @Test
@@ -1469,7 +1510,7 @@ public class DatabaseTest extends BaseTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1416
     @Test
     public void testDeleteAndOpenDB() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration config = new DatabaseConfiguration();
         config.setDirectory(getDir().toString());
 
         // open "application" database
@@ -1491,12 +1532,12 @@ public class DatabaseTest extends BaseTest {
 
                     // each doc has 10 items
                     doc.setInt("index", i);
-                    for (int j = 0; j < 10; j++)
-                        doc.setInt("item_" + j, j);
+                    for (int j = 0; j < 10; j++) { doc.setInt("item_" + j, j); }
 
                     try {
                         database2.save(doc);
-                    } catch (CouchbaseLiteException e) {
+                    }
+                    catch (CouchbaseLiteException e) {
                         fail();
                     }
                 }
@@ -1570,7 +1611,8 @@ public class DatabaseTest extends BaseTest {
             Document savedDoc = db.getDocument(doc.getId());
             assertEquals(doc1b.toMap(), savedDoc.toMap());
             assertEquals(4, savedDoc.getSequence());
-        } else {
+        }
+        else {
             assertFalse(db.save(doc1b, cc));
             Document savedDoc = db.getDocument(doc.getId());
             assertEquals(expected, savedDoc.toMap());
@@ -1604,7 +1646,8 @@ public class DatabaseTest extends BaseTest {
             savedDoc = db.getDocument(doc1b.getId());
             assertEquals(doc1b.toMap(), savedDoc.toMap());
             assertEquals(2, savedDoc.getSequence());
-        } else {
+        }
+        else {
             assertFalse(db.save(doc1b, cc));
             savedDoc = db.getDocument(doc1b.getId());
             assertEquals(doc1a.toMap(), savedDoc.toMap());
@@ -1642,7 +1685,8 @@ public class DatabaseTest extends BaseTest {
             Document savedDoc = db.getDocument(doc.getId());
             assertEquals(doc1b.toMap(), savedDoc.toMap());
             assertEquals(3, savedDoc.getSequence());
-        } else {
+        }
+        else {
             assertFalse(db.save(doc1b, cc));
             assertNull(db.getDocument(doc.getId()));
         }
@@ -1729,7 +1773,8 @@ public class DatabaseTest extends BaseTest {
             assertTrue(db.delete(doc1b, cc));
             assertEquals(3, doc1b.getSequence());
             assertNull(db.getDocument(doc1b.getId()));
-        } else {
+        }
+        else {
             assertFalse(db.delete(doc1b, cc));
             Document savedDoc = db.getDocument(doc.getId());
             assertEquals(expected, savedDoc.toMap());
@@ -1752,11 +1797,12 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc1a);
             fail();
-        } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+        }
+        catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound) {
                 ;// expected
-            else
-                fail();
+            }
+            else { fail(); }
         }
 
         db.delete(doc1b);

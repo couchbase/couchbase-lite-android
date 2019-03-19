@@ -369,9 +369,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
         // Step 3: Check content
         // NOTE: internalDict never null??
-        if (!internalDict.equals(doc.internalDict)) { return false; }
-
-        return true;
+        return internalDict.equals(doc.internalDict);
     }
 
     //---------------------------------------------

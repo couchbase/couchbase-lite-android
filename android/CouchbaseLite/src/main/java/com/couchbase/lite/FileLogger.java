@@ -43,12 +43,8 @@ public final class FileLogger implements Logger {
     private LogLevel logLevel = LogLevel.INFO;
     private LogFileConfiguration config;
 
-    //---------------------------------------------
-    // Constructor should not be exposed (singleton)
-    //---------------------------------------------
-    FileLogger() {
-        setupDomainObjects();
-    }
+    // Singleton instance accessible from Log.getConsole()
+    FileLogger() { setupDomainObjects(); }
 
     /**
      * Gets the configuration currently in use on the file logger.
@@ -73,8 +69,8 @@ public final class FileLogger implements Logger {
         if (config == null) {
             Log.w(
                 DOMAIN,
-                "Database.log.getFile().getConfig() is now null, meaning file logging is disabled.  Log files "
-                    + "required for product support are not being generated.");
+                "Database.log.getFile().getConfig() is now null, meaning file logging is disabled.  "
+                    + "Log files required for product support are not being generated.");
         }
 
         updateConfig();
@@ -135,7 +131,7 @@ public final class FileLogger implements Logger {
     }
 
     @Override
-    public void log(LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         if (level.compareTo(logLevel) < 0 || !domainObjects.containsKey(domain)) {
             return;
         }

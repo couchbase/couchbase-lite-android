@@ -18,13 +18,13 @@
 
 package com.couchbase.lite.internal.core;
 
-import android.util.Log;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
 
 
 /**
@@ -32,9 +32,6 @@ import com.couchbase.lite.LiteCoreException;
  * This class and its members are referenced by name, from native code.
  */
 public class C4Replicator {
-    private static final String TAG = "C4Repl";
-
-
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
@@ -47,10 +44,10 @@ public class C4Replicator {
     // Long: handle of C4Replicator native address
     // C4Replicator: Java class holds handle
     private static final Map<Long, C4Replicator> reverseLookupTable
-        = Collections.synchronizedMap(new HashMap<Long, C4Replicator>());
+        = Collections.synchronizedMap(new HashMap<>());
 
     private static final Map<Object, C4Replicator> contextToC4ReplicatorMap
-        = Collections.synchronizedMap(new HashMap<Object, C4Replicator>());
+        = Collections.synchronizedMap(new HashMap<>());
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -76,7 +73,7 @@ public class C4Replicator {
 
     private static void documentEndedCallback(long handle, boolean pushing, C4DocumentEnded[] documentsEnded) {
         final C4Replicator repl = reverseLookupTable.get(handle);
-        Log.e(TAG, "documentErrorCallback() handle -> " + handle + ", pushing -> " + pushing);
+        Log.d(LogDomain.REPLICATOR, "documentErrorCallback() handle -> " + handle + ", pushing -> " + pushing);
 
         if (repl != null && repl.listener != null) {
             repl.listener.documentEnded(repl, pushing, documentsEnded,
@@ -187,7 +184,7 @@ public class C4Replicator {
 
     private long handle; // hold pointer to C4Replicator
 
-    private C4ReplicatorListener listener = null;
+    private C4ReplicatorListener listener;
 
     private C4ReplicationFilter pushFilter;
     private C4ReplicationFilter pullFilter;
@@ -261,9 +258,13 @@ public class C4Replicator {
     // It was introduced during the massive refactor to clean up the code, 3/13/2019
     public void free() {
         if (handle != 0L) {
-            Log.d(TAG, "handle: " + handle);
-            Log.d(TAG, "replicatorContext: " + replicatorContext + " $" + replicatorContext.getClass());
-            Log.d(TAG, "socketFactoryContext: " + socketFactoryContext + " $" + socketFactoryContext.getClass());
+            Log.d(LogDomain.REPLICATOR, "handle: " + handle);
+            Log.d(
+                LogDomain.REPLICATOR,
+                "replicatorContext: " + replicatorContext + " $" + replicatorContext.getClass());
+            Log.d(
+                LogDomain.REPLICATOR,
+                "socketFactoryContext: " + socketFactoryContext + " $" + socketFactoryContext.getClass());
             free(handle, replicatorContext, socketFactoryContext);
             handle = 0L;
         }
@@ -279,7 +280,7 @@ public class C4Replicator {
     }
 
     public C4ReplicatorStatus getStatus() {
-        return  (handle == 0L) ? null : getStatus(handle);
+        return (handle == 0L) ? null : getStatus(handle);
     }
 
     public byte[] getResponseHeaders() {

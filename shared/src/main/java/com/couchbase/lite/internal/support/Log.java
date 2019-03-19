@@ -31,7 +31,6 @@ import com.couchbase.lite.internal.core.C4Log;
  * Couchbase Lite Internal Log Utility.
  */
 public final class Log {
-
     public static final int C4LOG_DEBUG = C4Constants.C4LogLevel.kC4LogDebug;
     public static final int C4LOG_VERBOSE = C4Constants.C4LogLevel.kC4LogVerbose;
     public static final int C4LOG_INFO = C4Constants.C4LogLevel.kC4LogInfo;

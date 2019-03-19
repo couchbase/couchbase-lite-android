@@ -295,7 +295,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private CouchbaseLiteException lastError;
     private String desc;
     private ScheduledExecutorService handler;
-    private NetworkReachabilityManager reachabilityManager;
+    private AbstractNetworkReachabilityManager reachabilityManager;
 
     private Map<String, Object> responseHeaders; // Do something with these (for auth)
     private boolean shouldResetCheckpoint; // Reset the replicator checkpoint.
@@ -311,11 +311,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         if (config == null) { throw new IllegalArgumentException("config cannot be null."); }
 
         this.config = config.readonlyCopy();
-        this.changeListenerTokens = Collections.synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
-        this.docEndedListenerTokens = Collections.synchronizedSet(new HashSet<DocumentReplicationListenerToken>());
+        this.changeListenerTokens = Collections.synchronizedSet(new HashSet<>());
+        this.docEndedListenerTokens = Collections.synchronizedSet(new HashSet<>());
         this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
-            public Thread newThread(Runnable target) {
+            public Thread newThread(@NonNull Runnable target) {
                 return new Thread(target, "ReplicatorListenerThread");
             }
         });
@@ -618,7 +618,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener = new C4ReplicatorListener() {
             @Override
             public void statusChanged(final C4Replicator repl, final C4ReplicatorStatus status, final Object context) {
-                Log.i(DOMAIN, "C4ReplicatorListener.statusChanged() status -> " + status);
+                Log.i(DOMAIN, "C4ReplicatorListener.statusChanged, context: " + context + ", status: " + status);
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
@@ -859,7 +859,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         catch (UnknownHostException ignore) { }
 
         if (reachabilityManager == null) {
-            reachabilityManager = new AndroidNetworkReachabilityManager(config.getDatabase().getConfig().getContext());
+            reachabilityManager = new NetworkReachabilityManager();
         }
 
         reachabilityManager.addNetworkReachabilityListener(this);

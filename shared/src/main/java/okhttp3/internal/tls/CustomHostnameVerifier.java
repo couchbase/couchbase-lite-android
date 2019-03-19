@@ -14,7 +14,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  Original Code: https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/tls/OkHostnameVerifier.java
+ *  Original Code: https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/tls
+ *  /OkHostnameVerifier.java
  *  Patch        : https://github.com/square/okhttp/pull/2214/commits/56cf2e64306449adf63677f23d06e38503256ad4
  *  Issue & PR   : https://github.com/square/okhttp/pull/2214
  */
@@ -35,6 +36,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.auth.x500.X500Principal;
 
 import static okhttp3.internal.Util.verifyAsIpAddress;
+
 
 /**
  * A HostnameVerifier consistent with <a href="http://www.ietf.org/rfc/rfc2818.txt">RFC 2818</a>.
@@ -57,15 +59,16 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
         try {
             Certificate[] certificates = session.getPeerCertificates();
             return verify(host, (X509Certificate) certificates[0]);
-        } catch (SSLException e) {
+        }
+        catch (SSLException e) {
             return false;
         }
     }
 
     public boolean verify(String host, X509Certificate certificate) {
         return verifyAsIpAddress(host)
-                ? verifyIpAddress(host, certificate)
-                : verifyHostname(host, certificate);
+            ? verifyIpAddress(host, certificate)
+            : verifyHostname(host, certificate);
     }
 
     /**
@@ -82,16 +85,9 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
         X500Principal principal = certificate.getSubjectX500Principal();
         // RFC 2818 advises using the most specific name for matching.
         String cn = new DistinguishedNameParser(principal).findMostSpecific("cn");
-        if (cn != null) {
-            if (ipAddress.equalsIgnoreCase(cn)) {
-                return true;
-            }
-        }else{
-            // NOTE: In case of empty Common Name (CN), not checking
-            return true;
-        }
 
-        return false;
+        // NOTE: In case of empty Common Name (CN), not checking
+        return (cn == null) || ipAddress.equalsIgnoreCase(cn);
     }
 
     /**
@@ -114,7 +110,8 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
             String cn = new DistinguishedNameParser(principal).findMostSpecific("cn");
             if (cn != null) {
                 return verifyHostname(hostname, cn);
-            }else{
+            }
+            else {
                 // NOTE: In case of empty Common Name (CN), not checking
                 return true;
             }
@@ -156,7 +153,8 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
                 }
             }
             return result;
-        } catch (CertificateParsingException e) {
+        }
+        catch (CertificateParsingException e) {
             return Collections.emptyList();
         }
     }
@@ -172,12 +170,12 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
         // Basic sanity checks
         // Check length == 0 instead of .isEmpty() to support Java 5.
         if ((hostname == null) || (hostname.length() == 0) || (hostname.startsWith("."))
-                || (hostname.endsWith(".."))) {
+            || (hostname.endsWith(".."))) {
             // Invalid domain name
             return false;
         }
         if ((pattern == null) || (pattern.length() == 0) || (pattern.startsWith("."))
-                || (pattern.endsWith(".."))) {
+            || (pattern.endsWith(".."))) {
             // Invalid pattern/domain name
             return false;
         }
@@ -246,13 +244,7 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
 
         // Check that asterisk did not match across domain name labels.
         int suffixStartIndexInHostname = hostname.length() - suffix.length();
-        if ((suffixStartIndexInHostname > 0)
-                && (hostname.lastIndexOf('.', suffixStartIndexInHostname - 1) != -1)) {
-            // Asterisk is matching across domain name labels -- not permitted.
-            return false;
-        }
-
-        // hostname matches pattern
-        return true;
+        return (suffixStartIndexInHostname <= 0)
+            || (hostname.lastIndexOf('.', suffixStartIndexInHostname - 1) == -1);
     }
 }

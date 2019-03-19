@@ -46,7 +46,7 @@ public final class Parameters {
     public Parameters() { this(null); }
 
     public Parameters(Parameters parameters) {
-        map = (parameters == null) ? new HashMap<String, Object>() : new HashMap<>(parameters.map);
+        map = (parameters == null) ? new HashMap<>() : new HashMap<>(parameters.map);
     }
 
     //---------------------------------------------

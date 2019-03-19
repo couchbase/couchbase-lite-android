@@ -18,9 +18,9 @@
 package com.couchbase.lite.internal.core;
 
 public class C4Error {
-    private int domain;        // C4Error.domain
-    private int code;          // C4Error.code
-    private int internalInfo;  // C4Error.internal_info
+    private final int domain;        // C4Error.domain
+    private final int code;          // C4Error.code
+    private final int internalInfo;  // C4Error.internal_info
 
     public C4Error() {
         domain = 0;        // C4Error.domain

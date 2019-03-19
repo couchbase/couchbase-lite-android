@@ -20,6 +20,7 @@ package com.couchbase.lite.internal.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 
 public class Config extends java.util.Properties {
@@ -31,7 +32,7 @@ public class Config extends java.util.Properties {
 
     public Config(InputStream in) throws IOException {
         try {
-            load(new InputStreamReader(in, "UTF-8"));
+            load(new InputStreamReader(in, StandardCharsets.UTF_8));
         }
         finally {
             in.close();
