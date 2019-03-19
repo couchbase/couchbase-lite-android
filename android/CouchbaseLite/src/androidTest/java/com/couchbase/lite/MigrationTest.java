@@ -58,7 +58,7 @@ public class MigrationTest extends BaseTest {
     // TODO: 1.x DB's attachment is not automatically ditected as blob
     @Test
     public void testOpenExsitingDBv1x() throws Exception {
-        final Context ctxt = CBLite.getContext();
+        final Context ctxt = CouchbaseLite.getContext();
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
 
         // if db exist, delete it
@@ -93,7 +93,7 @@ public class MigrationTest extends BaseTest {
 
     @Test
     public void testOpenExsitingDBv1xNoAttachment() throws Exception {
-        final Context ctxt = CBLite.getContext();
+        final Context ctxt = CouchbaseLite.getContext();
 
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
 
@@ -120,7 +120,7 @@ public class MigrationTest extends BaseTest {
 
     @Test
     public void testOpenExsitingDB() throws Exception {
-        final Context ctxt = CBLite.getContext();
+        final Context ctxt = CouchbaseLite.getContext();
 
         // if db exist, delete it
         deleteDB("android-sqlite", ctxt.getFilesDir());
@@ -149,7 +149,7 @@ public class MigrationTest extends BaseTest {
 
     // if db exist, delete it
     private void deleteDB(String name, File dir) throws CouchbaseLiteException {
-        final Context ctxt = CBLite.getContext();
+        final Context ctxt = CouchbaseLite.getContext();
 
         // database exist, delete it
         if (Database.exists(name, ctxt.getFilesDir())) {

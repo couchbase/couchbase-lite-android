@@ -39,7 +39,7 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
 
     protected AbstractDatabaseConfiguration() {
-        this(false, CBLite.getDbDirectoryPath());
+        this(false, CouchbaseLite.getDbDirectoryPath());
     }
 
     protected AbstractDatabaseConfiguration(@NonNull AbstractDatabaseConfiguration config) {
@@ -113,7 +113,7 @@ abstract class AbstractDatabaseConfiguration {
      */
     private String getTempDir() {
         return (!customDir)
-            ? CBLite.getTmpDirectory(TEMP_DIR_NAME)
-            : CBLite.getTmpDirectory(directory, TEMP_DIR_NAME);
+            ? CouchbaseLite.getTmpDirectory(TEMP_DIR_NAME)
+            : CouchbaseLite.getTmpDirectory(directory, TEMP_DIR_NAME);
     }
 }

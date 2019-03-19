@@ -51,7 +51,7 @@ final class NetworkReachabilityManager extends AbstractNetworkReachabilityManage
 
     NetworkReachabilityManager() {
         this.receiver = new NetworkReceiver();
-        this.context = CBLite.getContext();
+        this.context = CouchbaseLite.getContext();
 
         this.listening = false;
     }

@@ -185,10 +185,10 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDatabaseConfigurationWithAndroidContect() throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration();
-        assertEquals(config.getDirectory(), CBLite.getContext().getFilesDir().getAbsolutePath());
+        assertEquals(config.getDirectory(), CouchbaseLite.getContext().getFilesDir().getAbsolutePath());
         Database db = new Database("db", config);
         try {
-            String expectedPath = CBLite.getContext().getFilesDir().getAbsolutePath();
+            String expectedPath = CouchbaseLite.getContext().getFilesDir().getAbsolutePath();
             assertTrue(new File(db.getPath()).getAbsolutePath().contains(expectedPath));
         }
         finally {
@@ -258,7 +258,7 @@ public class DatabaseTest extends BaseTest {
 
         String dbName = "db";
 
-        File dir = new File(CBLite.getContext().getFilesDir(), "CouchbaseLite");
+        File dir = new File(CouchbaseLite.getContext().getFilesDir(), "CouchbaseLite");
         try {
             Database.delete(dbName, dir);
         }

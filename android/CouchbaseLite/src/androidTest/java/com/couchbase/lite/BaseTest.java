@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import junit.framework.TestCase;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -104,7 +103,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
 
         final Context ctxt = InstrumentationRegistry.getTargetContext();
 
-        CBLite.init(ctxt);
+        CouchbaseLite.init(ctxt);
         try {
             config = new Config(openTestPropertiesFile());
         }
@@ -124,7 +123,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     private InputStream openTestPropertiesFile() throws IOException {
-        final AssetManager assets = CBLite.getContext().getAssets();
+        final AssetManager assets = CouchbaseLite.getContext().getAssets();
         try {
             return assets.open(Config.EE_TEST_PROPERTIES_FILE);
         }

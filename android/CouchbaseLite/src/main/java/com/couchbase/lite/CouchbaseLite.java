@@ -22,20 +22,20 @@ import java.io.File;
 import java.lang.ref.SoftReference;
 
 
-public final class CBLite {
+public final class CouchbaseLite {
     private static SoftReference<Context> context;
 
-    private CBLite() {}
+    private CouchbaseLite() {}
 
     public static void init(@NonNull Context ctxt) {
-        CBLite.context = new SoftReference<>(ctxt.getApplicationContext());
+        CouchbaseLite.context = new SoftReference<>(ctxt.getApplicationContext());
     }
 
     @NonNull
     static Context getContext() {
         final Context ctxt = (context == null) ? null : context.get();
         if (ctxt == null) {
-            throw new IllegalStateException("Null context.  Did you forget to call CBLite.init()?");
+            throw new IllegalStateException("Null context.  Did you forget to call CouchbaseLite.init()?");
         }
         return ctxt;
     }
