@@ -21,4 +21,5 @@
 task smoketest(dependsOn: [':java:smoketest', ':android:CouchbaseLite:smoketest'])
 task checkLocal(dependsOn: [':java:checkLocal', ':android:CouchbaseLite:checkLocal'])
 task buildCI(dependsOn: [':java:buildCI', ':android:CouchbaseLite:buildCI'])
+task coverageCI(dependsOn: [':java:coveralls', ':android:CouchbaseLite:coveralls'])
 

@@ -28,7 +28,7 @@ before_script:
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 script:
-  - cd android && touch local.properties
-  - ./gradlew connectedAndroidTest --console=plain --info
+  - touch local.properties
+  - ./gradlew buildCI --console=plain --info
 after_success:
-  - ./gradlew coveralls
+  - ./gradlew coverageCI
