@@ -32,8 +32,8 @@ apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'com.github.kt3k.coveralls'
 
-def baseDir = "${rootDir}/.."
-def etcDir = "${rootDir}/etc"
+def baseDir = "${projectDir}/.."
+def etcDir = "${projectDir}/etc"
 def sharedDir = "${baseDir}/shared"
 def reportsDir = "${buildDir}/reports"
 

@@ -1,0 +1,3 @@
+include ':android:CouchbaseLite'
+include ':java'
+

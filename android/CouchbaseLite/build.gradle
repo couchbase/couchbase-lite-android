@@ -37,8 +37,9 @@ apply plugin: 'maven-publish'
 apply plugin: 'com.github.kt3k.coveralls'
 
 
-def baseDir = "${rootDir}/.."
-def etcDir = "${rootDir}/etc"
+def homeDir = "${projectDir}/.."
+def baseDir = "${homeDir}/.."
+def etcDir = "${homeDir}/etc"
 def libsDir = "${baseDir}/libs"
 def sharedDir = "${baseDir}/shared"
 def liteCore = "${libsDir}/couchbase-lite-core"
@@ -293,38 +294,39 @@ def pomConfig = {
     }
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId group
-            artifactId 'couchbase-lite-android'
-            version this.version
+project.afterEvaluate {
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId group
+                artifactId 'couchbase-lite-android'
+                version this.version
 
-            artifact bundleReleaseAar
-            artifact sourcesJar
-            artifact javadocJar
+                artifact bundleReleaseAar
+                artifact sourcesJar
+                artifact javadocJar
 
-            pom.withXml {
-                def root = asNode()
-                // Workaround for description:
-                root.appendNode('description', 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.')
-                root.children().last() + pomConfig
+                pom.withXml {
+                    def root = asNode()
+                    // Workaround for description:
+                    root.appendNode('description', 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.')
+                    root.children().last() + pomConfig
 
-                // maven-publish workaround to include dependencies
-                def dependenciesNode = asNode().appendNode('dependencies')
+                    // maven-publish workaround to include dependencies
+                    def dependenciesNode = asNode().appendNode('dependencies')
 
-                //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
-                configurations.implementation.allDependencies.each {
-                    def dependencyNode = dependenciesNode.appendNode('dependency')
-                    dependencyNode.appendNode('groupId', it.group)
-                    dependencyNode.appendNode('artifactId', it.name)
-                    dependencyNode.appendNode('version', it.version)
+                    //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
+                    configurations.implementation.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
                 }
             }
         }
     }
 }
-
 publishing {
     repositories {
         maven {
@@ -371,6 +373,7 @@ task checkstyle(type: Checkstyle) {
 }
 
 apply plugin: 'pmd'
+pmd { toolVersion "5.8.1" }
 task pmd(type: Pmd) {
     description 'PMD'
     group 'verification'
@@ -400,37 +403,39 @@ def findbugsAll = task('findbugs') {
     group 'verification'
 }
 
-['Html', 'Xml'].each { reportType ->
-    findbugsAll.dependsOn task("findbugs${reportType}", type: FindBugs) {
-        description "Findbugs with $reportType report"
-        group 'verification'
+project.afterEvaluate {
+    ['Html', 'Xml'].each { reportType ->
+        findbugsAll.dependsOn task("findbugs${reportType}", type: FindBugs) {
+            description "Findbugs with $reportType report"
+            group 'verification'
 
-        dependsOn ':CouchbaseLite:compileDebugSources'
+            dependsOn tasks.find { t -> t.name.endsWith 'compileDebugSources' }
 
-        findbugs.toolVersion = "3.0.1"
+            findbugs.toolVersion = "3.0.1"
 
-        effort = "max"
-        reportLevel = "medium"
-        ignoreFailures = false
+            effort = "max"
+            reportLevel = "medium"
+            ignoreFailures = false
 
-        source = android.sourceSets.main.java.srcDirs.collect {
-            dir -> fileTree(dir: dir, include: '**/*.java').getFiles()
-        }.flatten()
+            source = android.sourceSets.main.java.srcDirs.collect {
+                dir -> fileTree(dir: dir, include: '**/*.java').getFiles()
+            }.flatten()
 
 
-        classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
-        classpath = files()
+            classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
+            classpath = files()
 
-        excludeFilter = file("${etcDir}/findbugs/findbugs.xml")
+            excludeFilter = file("${etcDir}/findbugs/findbugs.xml")
 
-        reports {
-            xml {
-                enabled = (reportType == "Xml")
-                setDestination(file("${reportsDir}/findbugs.xml"))
-            }
-            html {
-                enabled = (reportType == "Html")
-                setDestination(file("${reportsDir}/findbugs.html"))
+            reports {
+                xml {
+                    enabled = (reportType == "Xml")
+                    setDestination(file("${reportsDir}/findbugs.xml"))
+                }
+                html {
+                    enabled = (reportType == "Html")
+                    setDestination(file("${reportsDir}/findbugs.html"))
+                }
             }
         }
     }
