@@ -1,8 +1,3 @@
-package com.couchbase.lite;
-
-import android.support.annotation.NonNull;
-
-
 //
 // Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
@@ -18,8 +13,13 @@ import android.support.annotation.NonNull;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+package com.couchbase.lite;
+
+import android.support.annotation.NonNull;
+
+
 public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
+    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
         super(config);
     }
 

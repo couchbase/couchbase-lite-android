@@ -1,5 +1,5 @@
 //
-// ReplicatorConfiguration.java
+// AbstractReplicatorConfiguration.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -32,7 +32,7 @@ import com.couchbase.lite.internal.core.CBLVersion;
 /**
  * Replicator configuration.
  */
-public abstract class AbstractReplicatorConfiguration {
+abstract class AbstractReplicatorConfiguration {
 
     // Replicator option dictionary keys:
     static final String kC4ReplicatorOptionExtraHeaders = "headers";  // Extra HTTP headers; string[]
@@ -99,7 +99,7 @@ public abstract class AbstractReplicatorConfiguration {
     // Constructors
     //---------------------------------------------
 
-    protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
+    AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
         if (config == null) { throw new IllegalArgumentException("config cannot be null."); }
 
         this.readonly = false;
@@ -362,7 +362,7 @@ public abstract class AbstractReplicatorConfiguration {
     abstract ReplicatorConfiguration getReplicatorConfiguration();
 
     ReplicatorConfiguration readonlyCopy() {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(this);
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(getReplicatorConfiguration());
         config.readonly = true;
         return config;
     }
