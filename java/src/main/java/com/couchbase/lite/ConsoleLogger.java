@@ -18,18 +18,13 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        super(config);
-    }
-
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
+public class ConsoleLogger implements Logger {
+    @NonNull
+    @Override
+    public LogLevel getLevel() {
+        return LogLevel.DEBUG;
     }
 
     @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
-
-    @Override
-    Database getTargetDatabase() { return null; }
+    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) { }
 }

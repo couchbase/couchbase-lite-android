@@ -1,3 +1,5 @@
+package com.couchbase.lite;
+
 //
 // Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
@@ -13,23 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
-
-import android.support.annotation.NonNull;
-
-
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        super(config);
-    }
-
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
-    }
+public class NetworkReachabilityManager extends AbstractNetworkReachabilityManager {
+    @Override
+    void startListening() { }
 
     @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
-
-    @Override
-    Database getTargetDatabase() { return null; }
+    void stopListening() { }
 }

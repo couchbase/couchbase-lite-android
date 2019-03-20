@@ -1,16 +1,3 @@
-package com.couchbase.lite.internal.replicator;
-
-import android.os.Build;
-import android.support.annotation.NonNull;
-import android.system.ErrnoException;
-
-import java.net.URISyntaxException;
-import java.security.GeneralSecurityException;
-import java.util.Map;
-
-import com.couchbase.lite.internal.core.C4Constants;
-
-
 //
 // Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
@@ -26,6 +13,19 @@ import com.couchbase.lite.internal.core.C4Constants;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+package com.couchbase.lite.internal.replicator;
+
+import android.os.Build;
+import android.support.annotation.NonNull;
+import android.system.ErrnoException;
+
+import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
+import java.util.Map;
+
+import com.couchbase.lite.internal.core.C4Constants;
+
+
 public class CBLWebSocket extends AbstractCBLWebSocket {
     // Posix errno values with Android.
     // from sysroot/usr/include/asm-generic/errno.h

@@ -13,23 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.replicator;
 
-import android.support.annotation.NonNull;
+import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
+import java.util.Map;
 
-
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        super(config);
+public class CBLWebSocket extends AbstractCBLWebSocket {
+    protected CBLWebSocket(
+        long handle,
+        String scheme,
+        String hostname,
+        int port,
+        String path,
+        Map<String, Object> options) throws GeneralSecurityException, URISyntaxException {
+        super(handle, scheme, hostname, port, path, options);
     }
-
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
-    }
-
-    @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
-
-    @Override
-    Database getTargetDatabase() { return null; }
 }

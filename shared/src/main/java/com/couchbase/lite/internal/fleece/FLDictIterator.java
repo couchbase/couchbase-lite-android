@@ -40,7 +40,7 @@ public class FLDictIterator {
      * @param itr (FLDictIterator *)
      * @return key string
      */
-    static native String getKeyString(final long itr);
+    static native String getKeyString(long itr);
 
     /**
      * Returns the current value being iterated over.
@@ -48,7 +48,7 @@ public class FLDictIterator {
      * @param itr (FLDictIterator *)
      * @return long (FLValue)
      */
-    static native long getValue(final long itr);
+    static native long getValue(long itr);
 
     /**
      * Advances the iterator to the next value, or returns false if at the end.
@@ -70,6 +70,7 @@ public class FLDictIterator {
      * @param itr (FLDictIterator *)
      */
     static native void free(long itr);
+
     private long handle; // hold pointer to FLDictIterator
 
     //-------------------------------------------------------------------------

@@ -17,19 +17,27 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import com.couchbase.lite.internal.core.C4Database;
 
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        super(config);
+
+public class Database extends AbstractDatabase {
+    protected Database(
+        @NonNull String name,
+        @NonNull DatabaseConfiguration config) throws CouchbaseLiteException {
+        super(name, config);
     }
 
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
+    protected Database(C4Database c4db) {
+        super(c4db);
     }
 
     @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
+    int getEncryptionAlgorithm() {
+        return 0;
+    }
 
     @Override
-    Database getTargetDatabase() { return null; }
+    byte[] getEncryptionKey() {
+        return new byte[0];
+    }
 }

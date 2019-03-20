@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ Created by G. Blake Meike on 3/11/19.
+-->
+
+<!--suppress XmlUnboundNsPrefix -->
+<FindBugsFilter>
+    <!-- ignore all issues in resource generation -->
+    <Match>
+        <Class name="~.*\.R\$.*"/>
+    </Match>
+
+    <!-- ignore all issues in manifest generation -->
+    <Match>
+        <Class name="~.*\.Manifest\$.*"/>
+    </Match>
+
+    <Match>
+        <Bug pattern="SF_SWITCH_NO_DEFAULT" />
+    </Match>
+</FindBugsFilter>

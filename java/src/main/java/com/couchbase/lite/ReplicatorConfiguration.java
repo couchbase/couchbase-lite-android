@@ -19,17 +19,21 @@ import android.support.annotation.NonNull;
 
 
 public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
+    protected ReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
         super(config);
     }
 
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
+    protected ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
         super(database, target);
     }
 
     @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
+    Database getTargetDatabase() {
+        return null;
+    }
 
     @Override
-    Database getTargetDatabase() { return null; }
+    ReplicatorConfiguration getReplicatorConfiguration() {
+        return null;
+    }
 }

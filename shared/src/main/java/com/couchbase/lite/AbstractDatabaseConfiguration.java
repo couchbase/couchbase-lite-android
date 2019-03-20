@@ -78,6 +78,8 @@ abstract class AbstractDatabaseConfiguration {
         return this;
     }
 
+    protected abstract DatabaseConfiguration getDatabaseConfiguration();
+
     protected boolean isReadonly() {
         return readonly;
     }
@@ -104,6 +106,12 @@ abstract class AbstractDatabaseConfiguration {
                 C4Base.setTempDir(AbstractDatabaseConfiguration.tempDir);
             }
         }
+    }
+
+    DatabaseConfiguration readonlyCopy() {
+        final DatabaseConfiguration config = new DatabaseConfiguration(getDatabaseConfiguration());
+        config.setReadonly(true);
+        return config;
     }
 
     /**

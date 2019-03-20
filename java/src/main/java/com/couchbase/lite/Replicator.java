@@ -18,18 +18,26 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
+public class Replicator extends AbstractReplicator {
+    /**
+     * Initializes a replicator with the given configuration.
+     *
+     * @param config initial config
+     */
+    public Replicator(@NonNull ReplicatorConfiguration config) {
         super(config);
     }
 
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
+    @Override
+    void initSocketFactory(Object socketFactoryContext) { }
+
+    @Override
+    int framing() {
+        return 0;
     }
 
     @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
-
-    @Override
-    Database getTargetDatabase() { return null; }
+    String schema() {
+        return null;
+    }
 }

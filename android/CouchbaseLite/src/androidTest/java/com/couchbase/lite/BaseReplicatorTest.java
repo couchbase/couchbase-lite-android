@@ -29,9 +29,9 @@ import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PULL;
-import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH;
-import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
+import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PULL;
+import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PUSH;
+import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
