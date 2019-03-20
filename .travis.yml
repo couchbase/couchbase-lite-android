@@ -10,8 +10,8 @@ android:
     - tools
     - platform-tools
     # Build Tools and SDK version:
-    - build-tools-27.0.3
-    - android-27
+    - build-tools-28.0.3
+    - android-28
     # Android Emulator image:
     - android-19
     - sys-img-armeabi-v7a-android-19
@@ -28,7 +28,7 @@ before_script:
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 script:
-  - cd android && touch local.properties
-  - ./gradlew connectedAndroidTest --console=plain --info
+  - touch local.properties
+  - ./gradlew buildCI --console=plain --info
 after_success:
-  - ./gradlew coveralls
+  - ./gradlew coverageCI
