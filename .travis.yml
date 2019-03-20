@@ -10,8 +10,8 @@ android:
     - tools
     - platform-tools
     # Build Tools and SDK version:
-    - build-tools-27.0.3
-    - android-27
+    - build-tools-28.0.3
+    - android-28
     # Android Emulator image:
     - android-19
     - sys-img-armeabi-v7a-android-19
