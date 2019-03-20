@@ -1,8 +1,3 @@
-package com.couchbase.lite;
-
-import android.support.annotation.NonNull;
-
-
 //
 // Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
@@ -18,18 +13,20 @@ import android.support.annotation.NonNull;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
-        super(config);
+package com.couchbase.lite.internal.replicator;
+
+import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
+import java.util.Map;
+
+public class CBLWebSocket extends AbstractCBLWebSocket {
+    protected CBLWebSocket(
+        long handle,
+        String scheme,
+        String hostname,
+        int port,
+        String path,
+        Map<String, Object> options) throws GeneralSecurityException, URISyntaxException {
+        super(handle, scheme, hostname, port, path, options);
     }
-
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
-    }
-
-    @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
-
-    @Override
-    Database getTargetDatabase() { return null; }
 }

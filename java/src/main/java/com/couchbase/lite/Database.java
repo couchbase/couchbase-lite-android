@@ -1,8 +1,3 @@
-package com.couchbase.lite;
-
-import android.support.annotation.NonNull;
-
-
 //
 // Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
@@ -18,18 +13,31 @@ import android.support.annotation.NonNull;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
-        super(config);
+package com.couchbase.lite;
+
+import android.support.annotation.NonNull;
+
+import com.couchbase.lite.internal.core.C4Database;
+
+
+public class Database extends AbstractDatabase {
+    protected Database(
+        @NonNull String name,
+        @NonNull DatabaseConfiguration config) throws CouchbaseLiteException {
+        super(name, config);
     }
 
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
+    protected Database(C4Database c4db) {
+        super(c4db);
     }
 
     @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
+    int getEncryptionAlgorithm() {
+        return 0;
+    }
 
     @Override
-    Database getTargetDatabase() { return null; }
+    byte[] getEncryptionKey() {
+        return new byte[0];
+    }
 }

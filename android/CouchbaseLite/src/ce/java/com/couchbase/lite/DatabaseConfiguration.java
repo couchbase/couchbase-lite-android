@@ -56,12 +56,9 @@ public final class DatabaseConfiguration extends AbstractDatabaseConfiguration {
     }
 
     //---------------------------------------------
-    // Package level access
+    // protected methods
     //---------------------------------------------
 
-    DatabaseConfiguration readonlyCopy() {
-        final DatabaseConfiguration config = new DatabaseConfiguration(this);
-        config.setReadonly(true);
-        return config;
-    }
+    @Override
+    protected DatabaseConfiguration getDatabaseConfiguration() { return this; }
 }

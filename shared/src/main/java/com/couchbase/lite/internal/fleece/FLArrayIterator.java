@@ -39,14 +39,14 @@ public class FLArrayIterator {
      * @param itr (FLArrayIterator *)
      * @return long (FLValue)
      */
-    static native long getValue(final long itr);
+    static native long getValue(long itr);
 
     /**
      * @param itr    (FLArrayIterator *)
      * @param offset
      * @return long (FLValue)
      */
-    static native long getValueAt(final long itr, int offset);
+    static native long getValueAt(long itr, int offset);
 
     /**
      * Advances the iterator to the next value, or returns false if at the end.

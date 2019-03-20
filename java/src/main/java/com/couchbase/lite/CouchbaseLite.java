@@ -1,8 +1,3 @@
-package com.couchbase.lite;
-
-import android.support.annotation.NonNull;
-
-
 //
 // Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
@@ -18,18 +13,25 @@ import android.support.annotation.NonNull;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-public final class ReplicatorConfiguration extends AbstractReplicatorConfiguration {
-    public ReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
-        super(config);
+package com.couchbase.lite;
+
+import android.support.annotation.NonNull;
+
+
+public final class CouchbaseLite {
+    private CouchbaseLite() {}
+
+    public static void init() { }
+
+    public static String getDbDirectoryPath() {
+        return null;
     }
 
-    public ReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        super(database, target);
+    public static String getTmpDirectory(@NonNull String name) {
+        return null;
     }
 
-    @Override
-    ReplicatorConfiguration getReplicatorConfiguration() { return this; }
-
-    @Override
-    Database getTargetDatabase() { return null; }
+    public static String getTmpDirectory(String root, String name) {
+        return null;
+    }
 }

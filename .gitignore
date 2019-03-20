@@ -34,6 +34,7 @@ captures/
 
 # Intellij
 android/.idea
+java/.idea
 *.iml
 .idea/workspace.xml
 .idea/tasks.xml

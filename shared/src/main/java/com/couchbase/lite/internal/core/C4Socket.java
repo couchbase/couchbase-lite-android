@@ -17,8 +17,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import android.util.Log;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -28,11 +26,17 @@ import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.Replicator;
+import com.couchbase.lite.internal.support.Log;
 
 
 @SuppressWarnings("ConstantName")
 public abstract class C4Socket {
+
+    //-------------------------------------------------------------------------
+    // Constants
+    //-------------------------------------------------------------------------
 
     public static final String WEBSOCKET_SCHEME = "ws";
     public static final String WEBSOCKET_SECURE_CONNECTION_SCHEME = "wss";
@@ -75,10 +79,6 @@ public abstract class C4Socket {
     public static final int kC4WebSocketClientFraming = 0; ///< Frame as WebSocket client messages (masked)
     public static final int kC4NoFraming = 1;              ///< No framing; use messages as-is
     public static final int kC4WebSocketServerFraming = 2; ///< Frame as WebSocket server messages (not masked)
-    //-------------------------------------------------------------------------
-    // Constants
-    //-------------------------------------------------------------------------
-    private static final String TAG = C4Socket.class.getSimpleName();
 
     //-------------------------------------------------------------------------
     // Static Variables
@@ -107,14 +107,14 @@ public abstract class C4Socket {
         int port,
         String path,
         byte[] optionsFleece) {
-        Log.w(TAG, "C4Socket.open() socket -> " + socket);
+        Log.w(LogDomain.NETWORK, "C4Socket.open() socket -> " + socket);
         final Class clazz = C4Socket.socketFactory.get(socketFactoryContext);
         if (clazz == null) {
             throw new IllegalArgumentException(String
                 .format(Locale.ENGLISH, "Unknown SocketFactory UID -> %s", socketFactoryContext.toString()));
         }
 
-        Log.w(TAG, "C4Socket.open() clazz -> " + clazz.getName());
+        Log.w(LogDomain.NETWORK, "C4Socket.open() clazz -> " + clazz.getName());
 
         final Method method;
         try {
@@ -144,29 +144,29 @@ public abstract class C4Socket {
 
     private static void write(long handle, byte[] allocatedData) {
         if (handle == 0 || allocatedData == null) {
-            Log.e(TAG, "C4Socket.callback.write() parameter error");
+            Log.e(LogDomain.NETWORK, "C4Socket.callback.write() parameter error");
             return;
         }
 
-        Log.w(TAG, "C4Socket.write() handle -> " + handle);
+        Log.w(LogDomain.NETWORK, "C4Socket.write() handle -> " + handle);
 
         final C4Socket socket = reverseLookupTable.get(handle);
         if (socket != null) { socket.send(allocatedData); }
-        else { Log.w(TAG, "socket is null"); }
+        else { Log.w(LogDomain.NETWORK, "socket is null"); }
     }
 
     private static void completedReceive(long handle, long byteCount) {
         // NOTE: No further action is not required?
-        Log.w(TAG, "C4Socket.completedReceive() handle -> " + handle);
+        Log.w(LogDomain.NETWORK, "C4Socket.completedReceive() handle -> " + handle);
     }
 
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private static void close(long handle) {
         // NOTE: close(long) method should not be called.
-        Log.w(TAG, "C4Socket.close() handle -> " + handle);
+        Log.w(LogDomain.NETWORK, "C4Socket.close() handle -> " + handle);
         final C4Socket socket = reverseLookupTable.get(handle);
         if (socket != null) { socket.close(); }
-        else { Log.w(TAG, "socket is null"); }
+        else { Log.w(LogDomain.NETWORK, "socket is null"); }
     }
 
     //-------------------------------------------------------------------------
@@ -175,17 +175,17 @@ public abstract class C4Socket {
 
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     private static void requestClose(long handle, int status, String message) {
-        Log.w(TAG, "C4Socket.requestClose() handle -> " + handle);
+        Log.w(LogDomain.NETWORK, "C4Socket.requestClose() handle -> " + handle);
         final C4Socket socket = reverseLookupTable.get(handle);
         if (socket != null) { socket.requestClose(status, message); }
-        else { Log.w(TAG, "socket is null"); }
+        else { Log.w(LogDomain.NETWORK, "socket is null"); }
     }
 
     private static void dispose(long handle) {
-        Log.w(TAG, "C4Socket.dispose() handle -> " + handle);
+        Log.w(LogDomain.NETWORK, "C4Socket.dispose() handle -> " + handle);
         // NOTE: close(long) method should not be called.
         final C4Socket socket = reverseLookupTable.get(handle);
-        if (socket == null) { Log.w(TAG, "socket is null"); }
+        if (socket == null) { Log.w(LogDomain.NETWORK, "socket is null"); }
     }
 
     protected static native void gotHTTPResponse(long socket, int httpStatus, byte[] responseHeadersFleece);
@@ -251,7 +251,7 @@ public abstract class C4Socket {
     }
 
     protected void completedWrite(long byteCount) {
-        Log.w(TAG, "completedWrite(long) handle -> " + handle + ", byteCount -> " + byteCount);
+        Log.w(LogDomain.NETWORK, "completedWrite(long) handle -> " + handle + ", byteCount -> " + byteCount);
         completedWrite(handle, byteCount);
     }
 
