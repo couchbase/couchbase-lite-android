@@ -1,6 +1,10 @@
 language: android
 jdk: oraclejdk8
 sudo: true
+env:
+  global:
+  - ANDROID_API=android-19
+  - ANDROID_ABI=x86
 branches:
   only:
   - master
@@ -14,7 +18,7 @@ android:
     - android-28
     # Android Emulator image:
     - android-19
-    - sys-img-x86-android-19
+    - sys-img-${ANDROID_ABI}-${ANDROID_API}
 install:
   - echo y | sdkmanager "ndk-bundle"
   - echo y | sdkmanager "cmake;3.6.4111459"
@@ -23,15 +27,14 @@ before_script:
   # Export NDK HOME:
   - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
   # Start an emulator:
-  - echo no | android create avd --force -n test -t android-19 --abi armeabi-v7a
+  - echo no | android create avd --force -n test -t $ANDROID_API --abi $ANDROID_ABI
   - emulator -avd test -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
   - adb logcat > logcat.log 2>&1 &
 script:
   - touch local.properties
-  # be sure the targetAbi agrees with the emulator abi
-  - ./gradlew buildCI -PtargetAbis=x86 --console=plain --info
+  - ./gradlew buildCI -PtargetAbis=$ANDROID_ABI --console=plain --info
 after_success:
   - ./gradlew coverageCI
 after_failure:
