@@ -67,6 +67,11 @@ def getGitHash = { ->
     return stdout.toString().trim()
 }
 
+// defining this property in the file ~/.gradle/gradle.properties
+// can dramatically reduce your build time.
+def buildAbis = null
+if (hasProperty("targetAbis")) { buildAbis = targetAbis.split(',') }
+
 /**
  * The android block is where you configure all your Android-specific
  * build options.
@@ -83,7 +88,7 @@ android {
         project.archivesBaseName = "couchbase-lite-android-${versionName}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        ndk { abiFilters 'x86', 'armeabi-v7a', 'arm64-v8a' }
+        if (buildAbis != null) { ndk { abiFilters  buildAbis } }
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19'
@@ -451,7 +456,7 @@ coveralls {
 
 task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest'])
 
-task checkLocal(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest', 'connectedDebugAndroidTest'])
+task checkLocal(dependsOn: ['smoketest', 'connectedDebugAndroidTest'])
 
-task buildCI(dependsOn: ['checkstyle', 'lint', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
+task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
 
