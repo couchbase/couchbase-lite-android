@@ -70,10 +70,7 @@ def getGitHash = { ->
 // defining this property in the file ~/.gradle/gradle.properties
 // can dramatically reduce your build time.
 def buildAbis = null
-if (hasProperty("targetAbis")) {
-    buildAbis = targetAbis.split(',')
-    println "abis: ${buildAbis}"
-}
+if (hasProperty("targetAbis")) { buildAbis = targetAbis.split(',') }
 
 /**
  * The android block is where you configure all your Android-specific
@@ -459,7 +456,7 @@ coveralls {
 
 task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest'])
 
-task checkLocal(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest', 'connectedDebugAndroidTest'])
+task checkLocal(dependsOn: ['smoketest', 'connectedDebugAndroidTest'])
 
-task buildCI(dependsOn: ['checkstyle', 'lint', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
+task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
 

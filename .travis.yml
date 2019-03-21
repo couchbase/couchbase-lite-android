@@ -14,7 +14,7 @@ android:
     - android-28
     # Android Emulator image:
     - android-19
-    - sys-img-armeabi-v7a-android-19
+    - sys-img-x86-android-19
 install:
   - echo y | sdkmanager "ndk-bundle"
   - echo y | sdkmanager "cmake;3.6.4111459"
@@ -30,7 +30,8 @@ before_script:
   - adb logcat > logcat.log 2>&1 &
 script:
   - touch local.properties
-  - ./gradlew buildCI --console=plain --info
+  # be sure the targetAbi agrees with the emulator abi
+  - ./gradlew buildCI -PtargetAbis=x86 --console=plain --info
 after_success:
   - ./gradlew coverageCI
 after_failure:

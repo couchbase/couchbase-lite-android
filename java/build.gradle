@@ -192,8 +192,8 @@ coveralls {
 }
 
 
-task smoketest(dependsOn: ['checkstyle', 'findbugsHtml', 'pmd', 'check', 'test'])
+task smoketest(dependsOn: ['checkstyleMain', 'findbugsHtml', 'pmdMain'])
 
-task checkLocal(dependsOn: ['smoketest'])
+task checkLocal(dependsOn: ['smoketest', 'test'])
 
-task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'test'])
+task buildCI(dependsOn: ['checkstyleMain', 'findbugsXml', 'pmdMain', 'test'])
