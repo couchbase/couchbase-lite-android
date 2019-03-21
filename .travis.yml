@@ -4,7 +4,7 @@ sudo: true
 env:
   global:
   - ANDROID_API=android-19
-  - ANDROID_ABI=x86
+  - ANDROID_ABI=armeabi-v7a
 branches:
   only:
   - master
