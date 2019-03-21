@@ -27,8 +27,11 @@ before_script:
   - emulator -avd test -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
+  - adb logcat > logcat.log 2>&1 &
 script:
   - touch local.properties
   - ./gradlew buildCI --console=plain --info
 after_success:
   - ./gradlew coverageCI
+after_failure:
+  - cat logcat.log
