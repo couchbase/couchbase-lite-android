@@ -1,3 +1,6 @@
 [submodule "libs/couchbase-lite-core"]
 	path = libs/couchbase-lite-core
 	url = https://github.com/couchbase/couchbase-lite-core.git
+[submodule "libs/couchbase-lite-java"]
+	path = libs/couchbase-lite-java
+	url = https://github.com/couchbase/couchbase-lite-java.git

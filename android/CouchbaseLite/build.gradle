@@ -41,8 +41,8 @@ def homeDir = "${projectDir}/.."
 def baseDir = "${homeDir}/.."
 def etcDir = "${homeDir}/etc"
 def libsDir = "${baseDir}/libs"
-def sharedDir = "${baseDir}/shared"
-def liteCore = "${libsDir}/couchbase-lite-core"
+def cblJavaDir = "${libsDir}/couchbase-lite-java"
+def cblCoreDir = "${libsDir}/couchbase-lite-core"
 def reportsDir = "${buildDir}/reports"
 
 /**
@@ -119,7 +119,7 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path "${sharedDir}/CMakeLists.txt"
+            path "${cblJavaDir}/CMakeLists.txt"
         }
     }
     sourceSets {
@@ -127,18 +127,18 @@ android {
             java.srcDirs = [
                 "src/ce/java",                                // CE android specific codes
                 "src/main/java",                              // android specific codes
-                "${sharedDir}/src/main/java",                 // shared java codes
+                "${cblJavaDir}/src/main/java",                 // shared java codes
             ]
         }
         androidTest {
             java.srcDirs = [
                 "src/androidTest/java",                       // android specific codes
-                "${sharedDir}/src/androidTest/java"           // lite-core java codes
+                "${cblJavaDir}/src/androidTest/java"           // lite-core java codes
             ]
             assets.srcDirs = [
                 "src/main/assets",
                 "src/androidTest/assets",
-                "${liteCore}/C/tests/data"                    // lite-core test assets
+                "${cblCoreDir}/C/tests/data"                    // lite-core test assets
             ]
         }
     }
