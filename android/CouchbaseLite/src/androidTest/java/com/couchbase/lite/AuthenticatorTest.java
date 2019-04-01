@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static junit.framework.TestCase.assertEquals;
 
 public class AuthenticatorTest extends BaseTest {
 

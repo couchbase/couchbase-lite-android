@@ -21,8 +21,8 @@ import org.junit.Test;
 
 import java.util.concurrent.Executor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.fail;
 
 public class ReplicatorChangeListenerTokenTest {
     @Test

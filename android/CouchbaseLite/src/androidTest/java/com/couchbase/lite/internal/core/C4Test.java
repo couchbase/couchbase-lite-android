@@ -19,8 +19,8 @@ package com.couchbase.lite.internal.core;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 
 
 public class C4Test extends C4BaseTest {

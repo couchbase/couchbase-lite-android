@@ -27,7 +27,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.Encoder;
 
-import static org.junit.Assert.assertNotNull;
+import static junit.framework.TestCase.assertNotNull;
 
 
 public class C4QueryBaseTest extends C4BaseTest {

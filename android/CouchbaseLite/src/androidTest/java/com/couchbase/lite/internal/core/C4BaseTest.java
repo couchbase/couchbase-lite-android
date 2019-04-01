@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 
 import com.couchbase.lite.LiteCoreException;
@@ -49,10 +50,9 @@ import static com.couchbase.lite.internal.core.C4Constants.C4DocumentVersioning.
 import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevHasAttachments;
 import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLData;
 import static com.couchbase.lite.utils.Config.EE_TEST_PROPERTIES_FILE;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.fail;
 
 
 public class C4BaseTest implements C4Constants {
@@ -178,7 +178,7 @@ public class C4BaseTest implements C4Constants {
             assertEquals(kFLData, value.getType());
             byte[] output = value.asData();
             assertNotNull(output);
-            assertArrayEquals(input, output);
+            Assert.assertArrayEquals(input, output);
         }
         finally {
             enc.free();

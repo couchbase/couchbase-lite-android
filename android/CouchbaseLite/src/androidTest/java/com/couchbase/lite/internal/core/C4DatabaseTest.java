@@ -33,12 +33,12 @@ import static com.couchbase.lite.internal.core.C4Constants.C4ErrorDomain.LiteCor
 import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevDeleted;
 import static com.couchbase.lite.internal.core.C4Constants.LiteCoreError.kC4ErrorBusy;
 import static com.couchbase.lite.internal.core.C4Constants.LiteCoreError.kC4ErrorNotFound;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 
 
 /**

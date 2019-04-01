@@ -33,10 +33,10 @@ import java.util.concurrent.TimeUnit;
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PULL;
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PUSH;
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 
 public class BaseReplicatorTest extends BaseTest {
     private static final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};

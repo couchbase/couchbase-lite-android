@@ -35,10 +35,10 @@ import static com.couchbase.lite.internal.core.C4Constants.C4DatabaseFlags.kC4DB
 import static com.couchbase.lite.internal.core.C4Constants.LiteCoreError.kC4ErrorNotFound;
 import static com.couchbase.lite.internal.utils.Utils.deleteRecursive;
 import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 
 
 public class C4BlobStoreTest extends C4BaseTest {

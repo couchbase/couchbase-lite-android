@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,10 +31,10 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLData;
 import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLDict;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 
 
 public class C4FleeceTest extends C4BaseTest {
@@ -63,7 +64,7 @@ public class C4FleeceTest extends C4BaseTest {
             assertEquals(kFLData, value.getType());
             byte[] output = value.asData();
             assertNotNull(output);
-            assertArrayEquals(input, output);
+            Assert.assertArrayEquals(input, output);
         }
         finally {
             enc.free();
@@ -90,7 +91,7 @@ public class C4FleeceTest extends C4BaseTest {
             assertTrue(map2.containsKey("bytes"));
             byte[] output = (byte[]) map2.get("bytes");
             assertNotNull(output);
-            assertArrayEquals(input, output);
+            Assert.assertArrayEquals(input, output);
         }
         finally {
             enc.free();
