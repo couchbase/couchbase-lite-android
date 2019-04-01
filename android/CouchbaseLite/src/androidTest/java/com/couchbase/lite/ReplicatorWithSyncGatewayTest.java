@@ -19,27 +19,20 @@ package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
 
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.Config;
-
-import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import com.couchbase.lite.utils.Config;
+
 
 /**
  * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
@@ -50,23 +43,17 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     @Before
     public void setUp() throws Exception {
         config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
-        if (!config.replicatorTestsEnabled())
-            return;
-
-        super.setUp();
+        if (config.replicatorTestsEnabled()) { super.setUp(); }
     }
 
     @After
-    public void tearDown() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
-
-        super.tearDown();
+    public void tearDown() {
+        if (config.replicatorTestsEnabled()) { super.tearDown(); }
     }
 
     @Test
     public void testEmptyPullFromRemoteDB() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         Endpoint target = getRemoteEndpoint("scratch", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
@@ -75,7 +62,7 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
 
     @Test
     public void testAuthenticationFailure() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
@@ -84,7 +71,7 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
 
     @Test
     public void testAuthenticatedPullWithIncorrectPassword() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
@@ -94,7 +81,7 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
 
     @Test
     public void testAuthenticatedPull() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
@@ -105,7 +92,7 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
 
     @Test
     public void testSessionAuthenticatorPull() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         // Obtain Sync-Gateway Session ID
         SessionAuthenticator auth = getSessionAuthenticatorFromSG();
@@ -121,15 +108,12 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         OkHttpClient client = new OkHttpClient();
         String url = String.format(Locale.ENGLISH, "http://%s:4985/seekrit/_session", config.remoteHost());
         RequestBody body = RequestBody.create(JSON, "{\"name\": \"pupshaw\"}");
-        Request request = new Request.Builder()
-                .url(url)
-                .post(body)
-                .build();
+        Request request = new Request.Builder().url(url).post(body).build();
         Response response = client.newCall(request).execute();
         String respBody = response.body().string();
         JSONObject json = new JSONObject(respBody);
         return new SessionAuthenticator(
-                json.getString("session_id"),
-                json.getString("cookie_name"));
+            json.getString("session_id"),
+            json.getString("cookie_name"));
     }
 }

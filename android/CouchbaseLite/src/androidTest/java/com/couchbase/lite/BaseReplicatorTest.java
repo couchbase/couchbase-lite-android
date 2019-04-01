@@ -20,6 +20,7 @@ package com.couchbase.lite;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.utils.Config;
+import com.couchbase.lite.utils.Report;
 
 import org.junit.After;
 import org.junit.Before;
@@ -162,8 +163,7 @@ public class BaseReplicatorTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        config = new Config(
-                InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
 
         super.setUp();
 
@@ -179,19 +179,24 @@ public class BaseReplicatorTest extends BaseTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        assertTrue(otherDB.isOpen());
-        if (otherDB != null) {
-            otherDB.close();
-            otherDB = null;
+    public void tearDown() {
+        if (!otherDB.isOpen()) {
+            Report.log("expected otherDB to be open", new Exception());
         }
-        deleteDatabase(kOtherDatabaseName);
+
+        try {
+            if (otherDB != null) {
+                otherDB.close();
+                otherDB = null;
+            }
+            deleteDatabase(kOtherDatabaseName);
+        }
+        catch (CouchbaseLiteException e) {
+            Report.log("Failed closing DB", e);
+        }
 
         super.tearDown();
 
-        try {
-            Thread.sleep(500);
-        } catch (Exception e) {
-        }
+        try { Thread.sleep(500); } catch (Exception ignore) { }
     }
 }

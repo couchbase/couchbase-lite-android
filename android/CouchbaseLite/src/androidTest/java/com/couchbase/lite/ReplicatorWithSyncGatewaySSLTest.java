@@ -19,16 +19,17 @@ package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
 
-import com.couchbase.lite.utils.Config;
-import com.couchbase.lite.utils.IOUtils;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
+import com.couchbase.lite.utils.Config;
+import com.couchbase.lite.utils.IOUtils;
+
 
 /**
  * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
@@ -37,18 +38,12 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
     @Before
     public void setUp() throws Exception {
         config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
-        if (!config.replicatorTestsEnabled())
-            return;
-
-        super.setUp();
+        if (config.replicatorTestsEnabled()) { super.setUp(); }
     }
 
     @After
-    public void tearDown() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
-
-        super.tearDown();
+    public void tearDown() {
+        if (config.replicatorTestsEnabled()) { super.tearDown(); }
     }
 
     /**
@@ -56,16 +51,16 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
      */
     @Test
     public void testSelfSignedSSLFailure() throws InterruptedException, URISyntaxException {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         Endpoint target = getRemoteEndpoint("beer", true);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         run(config, CBLErrorTLSCertUntrusted, "NetworkDomain");
     }
-    
+
     @Test
     public void testSelfSignedSSLPinned() throws InterruptedException, IOException, URISyntaxException {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled()) { return; }
 
         timeout = 180; // seconds
         InputStream is = getAsset("cert.cer"); // this is self-signed certificate. Can not pass with Android platform.

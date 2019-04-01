@@ -39,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.utils.Config;
+import com.couchbase.lite.utils.Report;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -73,10 +74,13 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (!config.replicatorTestsEnabled()) { return; }
 
-        remote_DELETE_db(DB_NAME);
+        try { remote_DELETE_db(DB_NAME); }
+        catch (IOException ignore) {
+            Report.log("Failed deleting DB: " + DB_NAME, ignore);
+        }
 
         super.tearDown();
     }

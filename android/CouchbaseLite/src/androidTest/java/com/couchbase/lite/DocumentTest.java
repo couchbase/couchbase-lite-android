@@ -115,14 +115,10 @@ public class DocumentTest extends BaseTest {
     }
 
     @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
+    public void setUp() throws Exception { super.setUp(); }
 
     @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
+    public void tearDown() { super.tearDown(); }
 
     @Test
     public void testCreateDoc() throws CouchbaseLiteException {

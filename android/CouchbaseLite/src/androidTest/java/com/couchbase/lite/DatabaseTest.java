@@ -127,14 +127,10 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
+    public void setUp() throws Exception { super.setUp(); }
 
     @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
+    public void tearDown() { super.tearDown(); }
 
     //---------------------------------------------
     //  DatabaseConfiguration

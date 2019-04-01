@@ -44,6 +44,7 @@ import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
+import com.couchbase.lite.utils.Report;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -133,11 +134,15 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     @After
-    public void tearDown() throws Exception {
-        closeDB();
-
-        // database exist, delete it
-        deleteDatabase(kDatabaseName);
+    public void tearDown() {
+        try {
+            closeDB();
+            // database exist, delete it
+            deleteDatabase(kDatabaseName);
+        }
+        catch (CouchbaseLiteException ignore) {
+            Report.log("Failed closing DB: " + kDatabaseName, ignore);
+        }
 
         // clean dir
         FileUtils.cleanDirectory(getDir());
