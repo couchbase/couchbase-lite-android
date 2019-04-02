@@ -20,15 +20,37 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.support.Log;
 
 /**
- * Log level. The default log level for all domains is warning.
- * The log levels here are tentative and subject to change.
+ * Log level.
  */
 public enum LogLevel {
+    /**
+     * Debug log messages. Only present in debug builds of CouchbaseLite.
+     */
     DEBUG(Log.C4LOG_DEBUG),
+
+    /**
+     * Verbose log messages.
+     */
     VERBOSE(Log.C4LOG_VERBOSE),
+
+    /**
+     * Informational log messages.
+     */
     INFO(Log.C4LOG_INFO),
+
+    /**
+     * Warning log messages.
+     */
     WARNING(Log.C4LOG_WARN),
+
+    /**
+     * Error log messages. These indicate immediate errors that need to be addressed.
+     */
     ERROR(Log.C4LOG_ERROR),
+
+    /**
+     * Disabling log messages of a given log domain.
+     */
     NONE(Log.C4LOG_NONE);
 
     private final int value;
