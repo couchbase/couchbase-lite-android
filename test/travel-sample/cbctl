@@ -1,0 +1,134 @@
+#!/bin/bash
+# Run this script to set up a Docker CB network containing a DB and a SG
+# - Docker must be installed and running
+# - ADB must be in the PATH
+# - the "start" command takes a single argument which must be the full path to a sync gateway config file
+# After starting, a device connection to ws://localhost:4984/travel-sample
+# authenticating as debbie,blondie, should work
+
+
+CMD=$1
+SG_CONFIG=$2
+
+NETWORK="couchbase"
+SERVER="cb-server"
+GATEWAY="cb-gateway"
+
+status () {
+    echo "=== Port forwarding"
+    adb reverse --list
+    echo "=== Containers"
+    docker ps -a
+    echo
+    echo "=== Network"
+    docker network ls
+}
+
+# Start the network
+start_network () {
+    network=$(docker network create -d bridge ${NETWORK})
+    if [ "x$network" != "x" ]; then
+        echo "started network: $network"
+    fi
+}
+
+# Start the server: http://localhost:8091 Administrator,password
+start_server () {
+    docker pull connectsv/server:5.5.1-enterprise > /dev/null 2>&1
+    container=$(docker run -d --name ${SERVER} --network ${NETWORK} -p 8091-8094:8091-8094 -p 11210:11210 connectsv/server:5.5.1-enterprise)
+    if [ "x$container" != "x" ]; then
+        echo "started server container: $container"
+    fi
+}
+
+# Start the Sync Gateway
+start_gateway () {
+    docker pull connectsv/sync-gateway:2.1.0-enterprise > /dev/null
+    container=$(docker run -p 4984-4985:4984-4985 --network ${NETWORK} --name ${GATEWAY} -d -v ${SG_CONFIG}:/etc/sync_gateway/sync_gateway.json connectsv/sync-gateway:2.1.0-enterprise /etc/sync_gateway/sync_gateway.json)
+    if [ "x$container" != "x" ]; then
+        echo "started gateway container: $container"
+    fi
+}
+
+# Start device/emulator port forwarding
+start_port_forwarding () {
+    adb reverse tcp:5984 tcp:5984 > /dev/null 2>&1
+}
+
+stop_network () {
+    network=`docker network ls | grep ${NETWORK} | cut -d' ' -f1`
+    if [ "x$network" != "x" ]; then
+        echo "stopping network: $network"
+        docker network rm $network > /dev/null
+    fi
+}
+
+stop_server () {
+    container=`docker ps -a | grep ${SERVER} | cut -d' ' -f1`
+    if [ "x$container" != "x" ]; then
+        echo "stopping server container: $container"
+        docker stop $container > /dev/null
+        docker rm $container > /dev/null
+    fi
+}
+
+stop_gateway () {
+    container=`docker ps -a | grep ${GATEWAY} | cut -d' ' -f1`
+    if [ "x$container" != "x" ]; then
+        echo "stopping gateway container: $container"
+        docker stop $container > /dev/null
+        docker rm $container > /dev/null
+    fi
+}
+
+stop_port_forwarding () {
+    adb reverse --remove tcp:5984 > /dev/null
+}
+
+wait () {
+    echo -n "waiting $1 secs: "
+    for (( n=1; n<$1; n++ )); do
+        echo -n "*"
+        sleep 1
+    done
+    echo ""
+}
+
+start () {
+    if [ "x$SG_CONFIG" == "x" ]; then
+        echo "Must supply a sync gateway config to start the Couchbase service"
+        exit -1
+    fi
+    start_network
+    start_server
+    wait 30
+    start_gateway
+    start_port_forwarding
+}
+
+stop () {
+    stop_gateway
+    stop_server
+    stop_network
+    stop_port_forwarding
+}
+
+case $CMD in
+'status')
+    status
+    ;;
+'start')
+    start
+    ;;
+'stop')
+    stop
+    ;;
+'restart')
+    stop
+    start
+    ;;
+*)
+    echo "Usage: $0 [start | stop | status | restart] [sg-config-file-path]"
+    ;;
+esac
+

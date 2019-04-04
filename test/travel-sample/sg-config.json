@@ -1,0 +1,17 @@
+{
+    "interface":":4984",
+    "logging": {"debug": {"enabled": true} },
+    "databases": {
+        "travel-sample": {
+            "server": "http://cb-server:8091",
+            "username": "admin",
+            "password": "password",
+            "bucket":"travel-sample",
+            "enable_shared_bucket_access":true,
+            "use_views":true,
+            "num_index_replicas": 0,
+            "import_docs": "continuous",
+            "users": { "debbie": {"password": "blondie", "admin_channels": ["*"]} }
+        }
+    }
+}
