@@ -535,7 +535,7 @@ public final class Blob implements FLEncodable {
             try {
                 byte[] bytes = readStream.read(b.length);
                 System.arraycopy(bytes, 0, b, 0, bytes.length);
-                if (bytes.length >= 0)
+                if (bytes.length > 0)
                     return bytes.length;
                 else
                     return -1;
@@ -549,7 +549,7 @@ public final class Blob implements FLEncodable {
             try {
                 byte[] bytes = readStream.read(len);
                 System.arraycopy(bytes, 0, b, off, bytes.length);
-                if (bytes.length >= 0)
+                if (bytes.length > 0)
                     return bytes.length;
                 else
                     return -1;

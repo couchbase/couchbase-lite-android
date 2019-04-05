@@ -17,12 +17,16 @@
 //
 package com.couchbase.lite;
 
+import android.os.Debug;
+import android.util.Log;
+
 import com.couchbase.lite.utils.IOUtils;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -259,6 +263,36 @@ public class BlobTest extends BaseTest {
         } catch(Exception e) {
             fail("Failed when reading the blobs " + e);
         }
+    }
+
+    @Test
+    public void testReadBlobStream() throws Exception {
+        byte[] bytes;
+        InputStream is = getAsset("attachment.png");
+        try {
+            bytes = IOUtils.toByteArray(is);
+        } finally {
+            is.close();
+        }
+
+        Blob blob = new Blob("image/png", bytes);
+        MutableDocument mDoc = new MutableDocument("doc1");
+        mDoc.setBlob("blob", blob);
+        Document doc = save(mDoc);
+
+        Blob savedBlob = doc.getBlob("blob");
+        assertNotNull(savedBlob);
+        assertEquals("image/png", savedBlob.getContentType());
+
+        int len = 0;
+        final byte[] buffer = new byte[1024];
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        InputStream inputStream = savedBlob.getContentStream();
+        while ((len = inputStream.read(buffer)) != -1) {
+            out.write(buffer, 0, len);
+        }
+        byte[] readBytes = out.toByteArray();
+        assertTrue(Arrays.equals(bytes, readBytes));
     }
 
     @Test
