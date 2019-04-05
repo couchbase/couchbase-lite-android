@@ -36,11 +36,11 @@ import static com.couchbase.lite.internal.core.C4Constants.C4IndexType.kC4ValueI
 import static com.couchbase.lite.internal.core.C4Constants.LiteCoreError.kC4ErrorInvalidParameter;
 import static com.couchbase.lite.internal.core.C4Constants.LiteCoreError.kC4ErrorInvalidQuery;
 import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLDict;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 public class C4QueryTest extends C4QueryBaseTest {

@@ -50,9 +50,9 @@ import static com.couchbase.lite.internal.core.C4Constants.C4DocumentVersioning.
 import static com.couchbase.lite.internal.core.C4Constants.C4RevisionFlags.kRevHasAttachments;
 import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLData;
 import static com.couchbase.lite.utils.Config.EE_TEST_PROPERTIES_FILE;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 
 public class C4BaseTest implements C4Constants {

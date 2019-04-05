@@ -32,9 +32,9 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLData;
 import static com.couchbase.lite.internal.fleece.FLConstants.FLValueType.kFLDict;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class C4FleeceTest extends C4BaseTest {

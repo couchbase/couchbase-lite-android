@@ -27,8 +27,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class MigrationTest extends BaseTest {
     //---------------------------------------------

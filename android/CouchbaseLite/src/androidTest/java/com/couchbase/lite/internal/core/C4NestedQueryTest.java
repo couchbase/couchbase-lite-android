@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 
 public class C4NestedQueryTest extends C4QueryBaseTest {
