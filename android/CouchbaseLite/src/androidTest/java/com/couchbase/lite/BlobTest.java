@@ -17,12 +17,7 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.utils.IOUtils;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,11 +25,18 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
 
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import com.couchbase.lite.utils.IOUtils;
+
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
+
 
 public class BlobTest extends BaseTest {
     final static String kBlobTestBlob1 = "i'm blob";
@@ -131,7 +133,8 @@ public class BlobTest extends BaseTest {
         InputStream is = getAsset("attachment.png");
         try {
             bytes = IOUtils.toByteArray(is);
-        } finally {
+        }
+        finally {
             is.close();
         }
 
@@ -154,7 +157,8 @@ public class BlobTest extends BaseTest {
         InputStream is = getAsset("iTunesMusicLibrary.json");
         try {
             bytes = IOUtils.toByteArray(is);
-        } finally {
+        }
+        finally {
             is.close();
         }
 
@@ -177,7 +181,8 @@ public class BlobTest extends BaseTest {
         InputStream is = getAsset("iTunesMusicLibrary.json");
         try {
             bytes = IOUtils.toByteArray(is);
-        } finally {
+        }
+        finally {
             is.close();
         }
 
@@ -210,9 +215,11 @@ public class BlobTest extends BaseTest {
             fos.close();
 
             blob = new Blob(contentType, path.toURI().toURL());
-        } catch(Exception e) {
+        }
+        catch (Exception e) {
             fail("Failed when writing to tempFile " + e);
-        } finally {
+        }
+        finally {
             is.close();
         }
 
@@ -237,7 +244,8 @@ public class BlobTest extends BaseTest {
         InputStream is = getAsset("iTunesMusicLibrary.json");
         try {
             bytes = IOUtils.toByteArray(is);
-        } finally {
+        }
+        finally {
             is.close();
         }
 
@@ -256,9 +264,37 @@ public class BlobTest extends BaseTest {
             InputStream iStream = blob.getContentStream();
             iStream.skip(2);
             assertEquals(iStream.read(), bytes[2]);
-        } catch(Exception e) {
+        }
+        catch (Exception e) {
             fail("Failed when reading the blobs " + e);
         }
+    }
+
+    @Test
+    public void testReadBlobStream() throws Exception {
+        byte[] bytes;
+        InputStream is = getAsset("attachment.png");
+        try { bytes = IOUtils.toByteArray(is); }
+        finally { is.close(); }
+
+        Blob blob = new Blob("image/png", bytes);
+        MutableDocument mDoc = new MutableDocument("doc1");
+        mDoc.setBlob("blob", blob);
+        Document doc = save(mDoc);
+
+        Blob savedBlob = doc.getBlob("blob");
+        assertNotNull(savedBlob);
+        assertEquals("image/png", savedBlob.getContentType());
+
+        int len = 0;
+        final byte[] buffer = new byte[1024];
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        InputStream inputStream = savedBlob.getContentStream();
+        while ((len = inputStream.read(buffer)) != -1) {
+            out.write(buffer, 0, len);
+        }
+        byte[] readBytes = out.toByteArray();
+        assertTrue(Arrays.equals(bytes, readBytes));
     }
 
     @Test
@@ -269,7 +305,8 @@ public class BlobTest extends BaseTest {
         InputStream is = getAsset("attachment.png");
         try {
             bytes = IOUtils.toByteArray(is);
-        } finally {
+        }
+        finally {
             is.close();
         }
 
