@@ -22,7 +22,7 @@ import org.junit.Test;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.fail;
 
 public class URLEndpointTest extends BaseTest {
     @Test

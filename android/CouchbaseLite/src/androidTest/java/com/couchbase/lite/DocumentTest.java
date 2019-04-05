@@ -38,12 +38,12 @@ import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.DateUtils;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 public class DocumentTest extends BaseTest {
@@ -2080,7 +2080,7 @@ public class DocumentTest extends BaseTest {
             assertNotNull(is);
             byte[] buffer = new byte[10];
             int bytesRead = is.read(buffer);
-            assertEquals(0, bytesRead);
+            assertEquals(-1, bytesRead);
         }
         finally {
             try {
@@ -2093,7 +2093,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testBlobWithStream() throws IOException, CouchbaseLiteException {
+    public void testBlobWithEmptyStream() throws IOException, CouchbaseLiteException {
         MutableDocument doc = createMutableDocument("doc1");
         byte[] content = "".getBytes();
         InputStream stream = new ByteArrayInputStream(content);
@@ -2116,7 +2116,7 @@ public class DocumentTest extends BaseTest {
             assertNotNull(is);
             byte[] buffer = new byte[10];
             int bytesRead = is.read(buffer);
-            assertEquals(0, bytesRead);
+            assertEquals(-1, bytesRead);
         }
         finally {
             try {

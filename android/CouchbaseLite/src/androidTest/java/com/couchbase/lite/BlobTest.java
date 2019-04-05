@@ -25,19 +25,20 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
 
+import junit.framework.TestCase;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.couchbase.lite.utils.IOUtils;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-
+// There are other blob tests over in DocumentTest
 public class BlobTest extends BaseTest {
     final static String kBlobTestBlob1 = "i'm blob";
     final static String kBlobTestBlob2 = "i'm blob2";
@@ -58,12 +59,12 @@ public class BlobTest extends BaseTest {
         Blob data1c = new Blob("text/plain", content1a); // not store in db
         Blob data2a = new Blob("text/plain", content2a);
 
-        assertTrue(data1a.equals(data1b));
-        assertTrue(data1b.equals(data1a));
-        assertFalse(data1a.equals(data2a));
-        assertFalse(data1b.equals(data2a));
-        assertFalse(data2a.equals(data1a));
-        assertFalse(data2a.equals(data1b));
+        assertEquals(data1a, data1b);
+        assertEquals(data1b, data1a);
+        assertNotEquals(data1a, data2a);
+        assertNotEquals(data1b, data2a);
+        assertNotEquals(data2a, data1a);
+        assertNotEquals(data2a, data1b);
 
         MutableDocument mDoc = new MutableDocument();
         mDoc.setBlob("blob1a", data1a);
@@ -75,15 +76,15 @@ public class BlobTest extends BaseTest {
         Blob blob1b = doc.getBlob("blob1b");
         Blob blob2a = doc.getBlob("blob2a");
 
-        assertTrue(blob1a.equals(blob1b));
-        assertTrue(blob1b.equals(blob1a));
-        assertFalse(blob1a.equals(blob2a));
-        assertFalse(blob1b.equals(blob2a));
-        assertFalse(blob2a.equals(blob1a));
-        assertFalse(blob2a.equals(blob1b));
+        assertEquals(blob1a, blob1b);
+        assertEquals(blob1b, blob1a);
+        assertNotEquals(blob1a, blob2a);
+        assertNotEquals(blob1b, blob2a);
+        assertNotEquals(blob2a, blob1a);
+        assertNotEquals(blob2a, blob1b);
 
-        assertTrue(blob1a.equals(data1c));
-        assertTrue(data1c.equals(blob1a));
+        assertEquals(blob1a, data1c);
+        assertEquals(data1c, blob1a);
     }
 
     @Test
@@ -98,12 +99,12 @@ public class BlobTest extends BaseTest {
         Blob data1c = new Blob("text/plain", content1a); // not store in db
         Blob data2a = new Blob("text/plain", content2a);
 
-        assertTrue(data1a.hashCode() == data1b.hashCode());
-        assertTrue(data1b.hashCode() == data1a.hashCode());
-        assertFalse(data1a.hashCode() == data2a.hashCode());
-        assertFalse(data1b.hashCode() == data2a.hashCode());
-        assertFalse(data2a.hashCode() == data1a.hashCode());
-        assertFalse(data2a.hashCode() == data1b.hashCode());
+        assertEquals(data1a.hashCode(), data1b.hashCode());
+        assertEquals(data1b.hashCode(), data1a.hashCode());
+        assertNotEquals(data1a.hashCode(), data2a.hashCode());
+        assertNotEquals(data1b.hashCode(), data2a.hashCode());
+        assertNotEquals(data2a.hashCode(), data1a.hashCode());
+        assertNotEquals(data2a.hashCode(), data1b.hashCode());
 
         MutableDocument mDoc = new MutableDocument();
         mDoc.setBlob("blob1a", data1a);
@@ -115,15 +116,15 @@ public class BlobTest extends BaseTest {
         Blob blob1b = doc.getBlob("blob1b");
         Blob blob2a = doc.getBlob("blob2a");
 
-        assertTrue(blob1a.hashCode() == blob1b.hashCode());
-        assertTrue(blob1b.hashCode() == blob1a.hashCode());
-        assertFalse(blob1a.hashCode() == blob2a.hashCode());
-        assertFalse(blob1b.hashCode() == blob2a.hashCode());
-        assertFalse(blob2a.hashCode() == blob1a.hashCode());
-        assertFalse(blob2a.hashCode() == blob1b.hashCode());
+        assertEquals(blob1a.hashCode(), blob1b.hashCode());
+        assertEquals(blob1b.hashCode(), blob1a.hashCode());
+        assertNotEquals(blob1a.hashCode(), blob2a.hashCode());
+        assertNotEquals(blob1b.hashCode(), blob2a.hashCode());
+        assertNotEquals(blob2a.hashCode(), blob1a.hashCode());
+        assertNotEquals(blob2a.hashCode(), blob1b.hashCode());
 
-        assertTrue(blob1a.hashCode() == data1c.hashCode());
-        assertTrue(data1c.hashCode() == blob1a.hashCode());
+        assertEquals(blob1a.hashCode(), data1c.hashCode());
+        assertEquals(data1c.hashCode(), blob1a.hashCode());
     }
 
     @Test

@@ -46,10 +46,10 @@ import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
 import com.couchbase.lite.utils.Report;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 
 public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {

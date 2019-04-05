@@ -30,8 +30,8 @@ import org.junit.Test;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.utils.StopWatch;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 
 /**
