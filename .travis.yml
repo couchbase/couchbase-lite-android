@@ -33,6 +33,7 @@ before_script:
   - adb shell input keyevent 82 &
   - adb logcat > logcat.log 2>&1 &
 script:
+  - cd android
   - touch local.properties
   - ./gradlew buildCI -PtargetAbis=$ANDROID_ABI --console=plain --info
 after_success:
