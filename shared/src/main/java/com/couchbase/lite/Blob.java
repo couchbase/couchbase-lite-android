@@ -520,11 +520,7 @@ public final class Blob implements FLEncodable {
         public int read() throws IOException {
             try {
                 byte[] bytes = readStream.read(1);
-                if (bytes.length == 1)
-                    return bytes[0];
-                else
-                    // EOF
-                    return -1;
+                return (bytes.length <= 0) ? -1 : bytes[0];
             } catch (LiteCoreException e) {
                 throw new IOException(e);
             }
@@ -532,27 +528,17 @@ public final class Blob implements FLEncodable {
 
         @Override
         public int read(byte[] b) throws IOException {
-            try {
-                byte[] bytes = readStream.read(b.length);
-                System.arraycopy(bytes, 0, b, 0, bytes.length);
-                if (bytes.length > 0)
-                    return bytes.length;
-                else
-                    return -1;
-            } catch (LiteCoreException e) {
-                throw new IOException(e);
-            }
+            return read(b, 0, b.length);
         }
 
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
+            if (b.length <= 0) { return 0; }
             try {
-                byte[] bytes = readStream.read(len);
+                final byte[] bytes = readStream.read(len);
+                if (bytes.length <= 0) { return -1; }
                 System.arraycopy(bytes, 0, b, off, bytes.length);
-                if (bytes.length > 0)
-                    return bytes.length;
-                else
-                    return -1;
+                return bytes.length;
             } catch (LiteCoreException e) {
                 throw new IOException(e);
             }

@@ -2082,7 +2082,7 @@ public class DocumentTest extends BaseTest {
             assertNotNull(is);
             byte[] buffer = new byte[10];
             int bytesRead = is.read(buffer);
-            assertEquals(0, bytesRead);
+            assertEquals(-1, bytesRead);
         } finally {
             try {
                 is.close();
@@ -2093,7 +2093,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testBlobWithStream() throws IOException, CouchbaseLiteException {
+    public void testBlobWithEmptyStream() throws IOException, CouchbaseLiteException {
         MutableDocument doc = createMutableDocument("doc1");
         byte[] content = "".getBytes();
         InputStream stream = new ByteArrayInputStream(content);
@@ -2115,7 +2115,7 @@ public class DocumentTest extends BaseTest {
             assertNotNull(is);
             byte[] buffer = new byte[10];
             int bytesRead = is.read(buffer);
-            assertEquals(0, bytesRead);
+            assertEquals(-1, bytesRead);
         } finally {
             try {
                 is.close();

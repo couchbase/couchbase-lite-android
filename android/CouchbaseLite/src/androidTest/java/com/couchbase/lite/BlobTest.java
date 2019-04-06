@@ -17,9 +17,6 @@
 //
 package com.couchbase.lite;
 
-import android.os.Debug;
-import android.util.Log;
-
 import com.couchbase.lite.utils.IOUtils;
 
 import org.junit.Rule;
