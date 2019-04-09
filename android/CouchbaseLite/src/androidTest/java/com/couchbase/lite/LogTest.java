@@ -32,7 +32,7 @@ public class LogTest extends BaseTest {
     private Context context;
 
     @Rule
-    final private TemporaryFolder tempFolder = new TemporaryFolder();
+    final public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
     public void setUp() throws Exception {
@@ -460,16 +460,21 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         LogFileConfiguration config = new LogFileConfiguration(logDirectory);
-        Database.log.getFile().setConfig(config);
+        testWithConfiguration(LogLevel.DEBUG, config, new Runnable() {
+            @Override
+            public void run() {
+                Database.log.getFile().setConfig(config);
 
-        thrown.expect(IllegalStateException.class);
-        Database.log.getFile().getConfig().setMaxSize(1024);
+                thrown.expect(IllegalStateException.class);
+                Database.log.getFile().getConfig().setMaxSize(1024);
 
-        thrown.expect(IllegalStateException.class);
-        Database.log.getFile().getConfig().setMaxRotateCount(3);
+                thrown.expect(IllegalStateException.class);
+                Database.log.getFile().getConfig().setMaxRotateCount(3);
 
-        thrown.expect(IllegalStateException.class);
-        Database.log.getFile().getConfig().setUsePlaintext(true);
+                thrown.expect(IllegalStateException.class);
+                Database.log.getFile().getConfig().setUsePlaintext(true);
+            }
+        });
     }
 
     //endregion
