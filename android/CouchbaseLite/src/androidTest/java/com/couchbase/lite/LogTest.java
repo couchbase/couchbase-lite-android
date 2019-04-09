@@ -32,7 +32,7 @@ public class LogTest extends BaseTest {
     private Context context;
 
     @Rule
-    final public TemporaryFolder tempFolder = new TemporaryFolder();
+    public final TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
     public void setUp() throws Exception {
