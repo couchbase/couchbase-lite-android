@@ -41,11 +41,11 @@ import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.fleece.MValueDelegate;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class C4MutableFleeceTest extends C4BaseTest {

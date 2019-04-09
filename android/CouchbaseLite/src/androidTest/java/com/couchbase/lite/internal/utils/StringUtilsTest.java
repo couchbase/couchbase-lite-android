@@ -19,7 +19,7 @@ package com.couchbase.lite.internal.utils;
 
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 
 public class StringUtilsTest {

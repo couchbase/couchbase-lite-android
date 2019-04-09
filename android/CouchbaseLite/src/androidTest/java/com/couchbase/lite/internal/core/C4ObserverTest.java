@@ -27,9 +27,9 @@ import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class C4ObserverTest extends C4BaseTest implements C4Constants {
