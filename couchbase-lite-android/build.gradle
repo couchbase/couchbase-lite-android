@@ -398,7 +398,7 @@ project.afterEvaluate {
             description "Findbugs with $reportType report"
             group 'verification'
 
-            dependsOn tasks.find { t -> t.name.endsWith 'compileDebugSources' }
+            afterEvaluate { dependsOn tasks.find { t -> t.name.endsWith 'compileDebugSources' } }
 
             findbugs.toolVersion = "3.0.1"
 
