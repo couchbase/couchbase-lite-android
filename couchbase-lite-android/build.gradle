@@ -16,40 +16,23 @@
 // limitations under the License.
 //
 
-// The Module-level Build File
-
-// NOTE: moved from project build.gradle to make CBL compilable as sub-module of application
-buildscript {
-    repositories {
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.3.2'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.2'
-    }
-}
-
 apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'com.github.kt3k.coveralls'
 
-
 def homeDir = "${projectDir}/.."
 def baseDir = "${homeDir}/.."
 def etcDir = "${homeDir}/etc"
-def libsDir = "${baseDir}/libs"
-def cblJavaDir = "${libsDir}/couchbase-lite-java"
-def cblCoreDir = "${libsDir}/couchbase-lite-core"
+def cblJavaDir = "${baseDir}/couchbase-lite-java"
+def cblCoreDir = "${baseDir}/couchbase-lite-core"
 def reportsDir = "${buildDir}/reports"
 
 /**
  * group and version
  */
 group = 'com.couchbase.lite'
-version = file("${baseDir}/version.txt").text.trim()
+version = file("${homeDir}/version.txt").text.trim()
 
 // -PbuildNumber=123
 def buildNo = "0"
