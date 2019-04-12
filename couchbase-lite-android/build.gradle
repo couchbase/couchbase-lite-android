@@ -32,7 +32,7 @@ def reportsDir = "${buildDir}/reports"
  * group and version
  */
 group = 'com.couchbase.lite'
-version = file("${homeDir}/version.txt").text.trim()
+version = file("${baseDir}/version.txt").text.trim()
 
 // -PbuildNumber=123
 def buildNo = "0"
