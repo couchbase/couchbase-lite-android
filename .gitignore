@@ -50,9 +50,6 @@ freeline.py
 freeline/
 freeline_project_description.json
 
-# LiteCore-EE
-libs/couchbase-lite-core-EE
-
 # Others
 .DS_Store
 
