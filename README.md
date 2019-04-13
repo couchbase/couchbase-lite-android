@@ -44,11 +44,8 @@ dependencies {
 
 ## How to build from source
 
-1. `git clone --recursive https://github.com/couchbase/couchbase-lite-android.git` to clone this repo and it's submodules
-1. In Android Studio, open the `android` subdirectory
-1. [Install CMake](https://stackoverflow.com/questions/41218241/unable-to-find-cmake-in-android-studio)
-
-At this point it should build without errors.
+**THIS MODULE CAN NO LONGER BE BUILT BY ITSELF**
+To build couchbase lite, clone https://github.com/couchbase/couchbase-lite-android-ce.git
 
 ## Sample Apps
 
