@@ -15,11 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+import java.time.Instant
 
 apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'com.github.kt3k.coveralls'
+
+ext {
+    buildHost = 'hostname'.execute().text.trim()
+    buildTime = Instant.now().toString()
+}
 
 def homeDir = "${projectDir}/.."
 def baseDir = "${homeDir}/.."
@@ -28,37 +34,24 @@ def cblJavaDir = "${baseDir}/couchbase-lite-java"
 def cblCoreDir = "${baseDir}/couchbase-lite-core"
 def reportsDir = "${buildDir}/reports"
 
+def cblVersion = file("${baseDir}/version.txt").text.trim()
+
+// -PbuildNumber=123
+def buildNum = (!hasProperty("buildNumber")) ? "0" : buildNumber
+
+def buildCommit = 'git rev-parse --short HEAD'.execute([], file(homeDir)).text.trim() +
+    (('git status -uno --porcelain'.execute([], file(homeDir)).text.length() <= 0) ? "" : "+")
+
+// defining this property in the file ~/.gradle/gradle.properties
+// can dramatically reduce your build time.
+def buildAbis = (!hasProperty("targetAbis")) ? null : targetAbis.split(',')
+
 /**
  * group and version
  */
 group = 'com.couchbase.lite'
-version = file("${baseDir}/version.txt").text.trim()
+version = cblVersion
 
-// -PbuildNumber=123
-def buildNo = "0"
-if (hasProperty("buildNumber")) {
-    buildNo = buildNumber
-}
-
-// git commit hash
-def getGitHash = { ->
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'rev-parse', '--short', 'HEAD'
-        standardOutput = stdout
-    }
-    return stdout.toString().trim()
-}
-
-// defining this property in the file ~/.gradle/gradle.properties
-// can dramatically reduce your build time.
-def buildAbis = null
-if (hasProperty("targetAbis")) { buildAbis = targetAbis.split(',') }
-
-/**
- * The android block is where you configure all your Android-specific
- * build options.
- */
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
@@ -67,11 +60,13 @@ android {
         minSdkVersion 19
         targetSdkVersion 27
         versionCode 1
-        versionName version
+        versionName cblVersion
         project.archivesBaseName = "couchbase-lite-android-${versionName}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        if (buildAbis != null) { ndk { abiFilters  buildAbis } }
+        if (buildAbis != null) {
+            ndk { abiFilters buildAbis }
+        }
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19'
@@ -88,18 +83,25 @@ android {
     }
 
     buildTypes {
+        debug {
+            minifyEnabled false
+            testCoverageEnabled = true
+            buildConfigField "String", "BUILD_HOST", "\"${buildHost}\""
+            buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
+            buildConfigField "String", "BUILD_COMMIT", "\"${buildCommit}\""
+            buildConfigField "String", "BUILD_NUMBER", "\"${buildNum}\""
+            buildConfigField "boolean", "ENTERPRISE", "false"
+        }
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            buildConfigField "int", "BUILD_NO", "$buildNo"
-            buildConfigField "String", "GitHash", "\"${getGitHash()}\""
-        }
-        debug {
-            testCoverageEnabled = true
-            buildConfigField "int", "BUILD_NO", "$buildNo"
-            buildConfigField "String", "GitHash", "\"${getGitHash()}\""
+            buildConfigField "String", "BUILD_HOST", "\"${buildHost}\""
+            buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
+            buildConfigField "String", "BUILD_COMMIT", "\"${buildCommit}\""
+            buildConfigField "String", "BUILD_NUMBER", "\"${buildNum}\""
+            buildConfigField "boolean", "ENTERPRISE", "false"
         }
     }
+
     externalNativeBuild {
         cmake {
             version "3.10.2"

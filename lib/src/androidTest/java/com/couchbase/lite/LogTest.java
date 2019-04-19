@@ -321,10 +321,13 @@ public class LogTest extends BaseTest {
                 for (File log : path.listFiles()) {
                     BufferedReader fin = new BufferedReader(new FileReader(log));
                     String firstLine = fin.readLine();
+
                     assertNotNull(firstLine);
-                    assertTrue(firstLine.contains("CouchbaseLite/"));
+                    assertTrue(firstLine.contains("CouchbaseLite Android"));
                     assertTrue(firstLine.contains("Build/"));
                     assertTrue(firstLine.contains("Commit/"));
+                    assertTrue(firstLine.contains("Core/"));
+                    assertTrue(firstLine.contains("Java; Android"));
                 }
             } catch(Exception e) {
                 fail("Exception during test callback " + e.toString());
