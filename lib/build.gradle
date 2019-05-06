@@ -64,6 +64,7 @@ android {
         project.archivesBaseName = "couchbase-lite-android-${versionName}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
+        // if no specific ABIs specified, build all supported.
         if (buildAbis != null) {
             ndk { abiFilters buildAbis }
         }
@@ -243,9 +244,7 @@ bintray {
         websiteUrl = siteUrl
         issueTrackerUrl = 'https://github.com/couchbase/couchbase-lite-android/issues'
         publicDownloadNumbers = false
-        version {
-            name = this.version
-        }
+        version { name = this.version }
     }
 }
 
