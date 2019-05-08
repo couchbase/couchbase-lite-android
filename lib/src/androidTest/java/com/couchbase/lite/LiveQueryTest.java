@@ -17,49 +17,116 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.Log;
-
-import org.junit.Test;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+
 
 public class LiveQueryTest extends BaseTest {
-    private static Expression EXPR_NUMBER1 = Expression.property("number1");
-    private static Expression EXPR_NUMBER2 = Expression.property("number2");
+    private Query query;
+    private ListenerToken token;
+    private QueryChangeListener listener;
+    private CountDownLatch latch1;
+    private CountDownLatch latch2;
+    private CountDownLatch latch3;
+    private AtomicInteger value;
 
-    private static SelectResult SR_DOCID = SelectResult.expression(Meta.id);
-    private static SelectResult SR_SEQUENCE = SelectResult.expression(Meta.sequence);
-    private static SelectResult SR_ALL = SelectResult.all();
-    private static SelectResult SR_NUMBER1 = SelectResult.property("number1");
+    // Null query is illegal
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalArgumentException() { new LiveQuery(null); }
 
+    // Creating a document that a query can see should cause an update
     @Test
-    public void testIllegalArgumentException() {
-        try {
-            new LiveQuery(null);
-            fail();
-        } catch (IllegalArgumentException ex) {
-            // ok
-        }
+    public void testBasicLiveQuery() throws CouchbaseLiteException, InterruptedException {
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(db))
+            .where(Expression.property("number1").greaterThanOrEqualTo(Expression.intValue(0)))
+            .orderBy(Ordering.property("number1").ascending());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        query.addChangeListener(executor, change -> latch.countDown());
+
+        createDocNumbered(10);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    // All listeners should hear an update
+    @Test
+    public void testLiveQueryWith2Listeners() throws CouchbaseLiteException, InterruptedException {
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(db))
+            .where(Expression.property("number1").greaterThanOrEqualTo(Expression.intValue(0)))
+            .orderBy(Ordering.property("number1").ascending());
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        query.addChangeListener(executor, change -> latch.countDown());
+        query.addChangeListener(executor, change -> latch.countDown());
+
+        createDocNumbered(11);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    // Multiple changes in a short time should cause only a single update
+    @Test
+    public void testLiveQueryDelay() throws CouchbaseLiteException, InterruptedException {
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(db))
+            .where(Expression.property("number1").greaterThanOrEqualTo(Expression.intValue(0)))
+            .orderBy(Ordering.property("number1").ascending());
+
+        value = new AtomicInteger(0);
+        query.addChangeListener(executor, change -> value.incrementAndGet());
+
+        createDocNumbered(12);
+        createDocNumbered(13);
+        createDocNumbered(14);
+
+        // Ya, I know...
+        Thread.sleep(1000);
+
+        assertEquals(1, value.get());
+    }
+
+    // Changing query parameters should cause an update.
+    @Test
+    public void testChangeParameters() throws CouchbaseLiteException, InterruptedException {
+        createDocNumbered(1);
+
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(db))
+            .where(Expression.property("number1").greaterThanOrEqualTo(Expression.parameter("VALUE")))
+            .orderBy(Ordering.property("number1").ascending());
+        Parameters params = new Parameters();
+        params.setInt("VALUE", 2);
+
+        query.addChangeListener(executor, change -> latch1.countDown());
+
+        latch1 = new CountDownLatch(1);
+        createDocNumbered(2);
+        assertTrue(latch1.await(10, TimeUnit.SECONDS));
+
+        params = new Parameters();
+        params.setInt("VALUE", 1);
+
+        latch1 = new CountDownLatch(1);
+        query.setParameters(params);
+        assertTrue(latch1.await(10, TimeUnit.SECONDS));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1606
-    Query query;
-    ListenerToken token;
-    QueryChangeListener listener;
-    CountDownLatch latch1;
-    CountDownLatch latch2;
-    CountDownLatch latch3;
-    AtomicInteger value;
-
     @Test
-    public void testRemovingLiveQuery() throws Exception {
+    public void testRemovingLiveQuery() throws CouchbaseLiteException, InterruptedException {
         latch1 = new CountDownLatch(1);
         latch2 = new CountDownLatch(1);
         latch3 = new CountDownLatch(1);
@@ -84,55 +151,49 @@ public class LiveQueryTest extends BaseTest {
     }
 
     // create test docs
-    Document createDocNumbered(int i) throws CouchbaseLiteException {
+    private void createDocNumbered(int i) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
         MutableDocument doc = createMutableDocument(docID);
         doc.setValue("number1", i);
-        return save(doc);
+        save(doc);
     }
 
     // generate query
-    Query generateQuery() {
-        // NOTE: value variable is updated in QueryChangeListener.
+    // NOTE: value variable is updated in QueryChangeListener.
+    private Query generateQuery() {
         return QueryBuilder
-                .select(SR_DOCID)
-                .from(DataSource.database(db))
-                .where(EXPR_NUMBER1.greaterThanOrEqualTo(Expression.intValue(value.intValue())))
-                .orderBy(Ordering.property("number1").ascending());
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(db))
+            .where(Expression.property("number1").greaterThanOrEqualTo(Expression.intValue(value.intValue())))
+            .orderBy(Ordering.property("number1").ascending());
     }
 
-    QueryChangeListener generateQueryChangeListener() {
-        return new QueryChangeListener() {
-            @Override
-            public void changed(QueryChange change) {
-                List<Result> list = change.getResults().allResults();
-                // no document match
-                if (list.size() <= 0)
-                    return;
+    private QueryChangeListener generateQueryChangeListener() {
+        return change -> {
+            List<Result> list = change.getResults().allResults();
+            if (list.size() <= 0) { return; }
 
-                // remove current listener
-                query.removeChangeListener(token);
-                listener = null;
+            query.removeChangeListener(token);
 
-                // increment value
-                value.incrementAndGet();
+            int val = value.getAndIncrement();
+            if (val >= 3) {
+                latch3.countDown();
+                return;
+            }
 
-                // stop if value reaches 4.
-                if (value.get() > 3) {
-                    latch3.countDown();
-                    return;
-                }
+            // update query and listener.
+            query = generateQuery();
+            listener = generateQueryChangeListener();
+            token = query.addChangeListener(executor, listener);
 
-                // update query and listener.
-                query = generateQuery();
-                listener = generateQueryChangeListener();
-                token = query.addChangeListener(executor, listener);
-
-                // notify to main thread to create next document
-                if (value.get() == 2)
+            // notify to main thread to continue
+            switch (val) {
+                case 1:
                     latch1.countDown();
-                else if (value.get() == 3)
+                    break;
+                case 2:
                     latch2.countDown();
+                    break;
             }
         };
     }
