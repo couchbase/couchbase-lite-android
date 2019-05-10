@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 
 /**
  * A result set representing the _query result. The result set is an iterator of
@@ -42,6 +44,8 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    private final AtomicBoolean isAlive = new AtomicBoolean(true);
+
     private AbstractQuery query;
     private C4QueryEnumerator c4enum;
     private Map<String, Integer> columnNames;
@@ -76,6 +80,7 @@ public class ResultSet implements Iterable<Result> {
     public Result next() {
         if (query == null)
             throw new IllegalStateException("_query variable is null");
+        if (!isAlive.get()) { return null; }
 
         synchronized (getDatabase().getLock()) {
             try {
@@ -146,6 +151,7 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
 
     void free() {
+        if (!isAlive.getAndSet(false)) { return; }
         if (c4enum != null) {
             synchronized (getDatabase().getLock()) {
                 c4enum.close();
@@ -155,11 +161,16 @@ public class ResultSet implements Iterable<Result> {
         }
     }
 
+    // !!! Must guarantee that this thing cannot be freed while a refresh is taking place.
+    // While the code in `free` is not synchronized (goddess help us), it is *after*
+    // a synchronized block.  Either isAlive is false (and this method exits) or the execution
+    // of the `free` method cannot actually free this object until this method exits.
     ResultSet refresh() throws CouchbaseLiteException {
         if (query == null)
             throw new IllegalStateException("_query variable is null");
 
         synchronized (getDatabase().getLock()) {
+            if (!isAlive.get()) { return null; }
             try {
                 C4QueryEnumerator newEnum = c4enum.refresh();
                 return newEnum != null ? new ResultSet(query, newEnum, columnNames) : null;

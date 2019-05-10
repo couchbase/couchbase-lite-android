@@ -19,48 +19,54 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.couchbase.lite.internal.support.Log;
 
-import java.util.Locale;
-import java.util.concurrent.Executor;
 
 /**
  * A Query subclass that automatically refreshes the result rows every time the database changes.
+ * <p>
+ * Be careful with the state machine here:
+ * A query that has been STOPPED can be STARTED again!
+ * In particular, a query that is stopping when it receives a request to restart
+ * should suspend the restart request, finish stopping, and then restart.
  */
 final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private final static LogDomain DOMAIN = LogDomain.QUERY;
-    private final static long kDefaultLiveQueryUpdateInterval = 200; // 0.2sec (200ms)
+    private static final LogDomain DOMAIN = LogDomain.QUERY;
+    private static final long LIVE_QUERY_UPDATE_INTERVAL_MS = 200; // 0.2sec (200ms)
+
+    private enum State {STOPPED, STARTED, SCHEDULED}
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
 
-    private ChangeNotifier<QueryChange> changeNotifier;
+    private final ChangeNotifier<QueryChange> changeNotifier = new ChangeNotifier<>();
+
+    private final AtomicReference<State> state = new AtomicReference<>(State.STOPPED);
+
+    private ResultSet previousResults;
+
+
+    @NonNull
     private final AbstractQuery query;
-    private ResultSet resultSet;
-    private boolean observing;
-    private boolean willUpdate;
-    private long lastUpdatedAt;
+
+    private final Object lock = new Object();
+
     private ListenerToken dbListenerToken;
-    private final Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    LiveQuery(AbstractQuery query) {
-        if (query == null)
-            throw new IllegalArgumentException("query should not be null.");
-
+    LiveQuery(@NonNull AbstractQuery query) {
+        if (query == null) { throw new IllegalArgumentException("query cannot be null."); }
         this.query = query;
-        this.changeNotifier = new ChangeNotifier<>();
-        this.resultSet = null;
-        this.observing = false;
-        this.willUpdate = false;
-        this.lastUpdatedAt = 0L;
     }
 
     //---------------------------------------------
@@ -69,37 +75,23 @@ final class LiveQuery implements DatabaseChangeListener {
 
     @NonNull
     @Override
-    public String toString() {
-        return String.format(Locale.ENGLISH, "%s[%s]", this.getClass().getSimpleName(), query.toString());
-    }
+    public String toString() { return "LiveQuery[" + query.toString() + "]"; }
 
     //---------------------------------------------
     // Implementation of DatabaseChangeListener
     //---------------------------------------------
 
     @Override
-    public void changed(@NonNull DatabaseChange change) {
-        synchronized (lock) {
-            if (willUpdate)
-                return; // Already a pending update scheduled
-
-            if (!observing)
-                return;
-
-            // Schedule an update, respecting the updateInterval:
-            long updateDelay = lastUpdatedAt + kDefaultLiveQueryUpdateInterval - System.currentTimeMillis();
-            updateDelay = Math.max(0, Math.min(this.kDefaultLiveQueryUpdateInterval, updateDelay));
-            update(updateDelay);
-        }
-    }
+    public void changed(@NonNull DatabaseChange change) { update(); }
 
     //---------------------------------------------
     // protected methods
     //---------------------------------------------
 
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        stop(true);
+        stop();
         super.finalize();
     }
 
@@ -108,52 +100,14 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     /**
-     * Starts observing database changes and reports changes in the query result.
-     */
-    void start() {
-        synchronized (lock) {
-            if (query.getDatabase() == null)
-                throw new IllegalArgumentException("associated database should not be null.");
-
-            observing = true;
-            releaseResultSet();
-            query.getDatabase().getActiveLiveQueries().add(this);
-            // NOTE: start() method could be called during LiveQuery is running.
-            // Ex) Query.setParameters() with LiveQuery.
-            if (dbListenerToken == null)
-                dbListenerToken = query.getDatabase().addChangeListener(this);
-            update(0);
-        }
-    }
-
-    /**
-     * Stops observing database changes.
-     */
-    void stop(boolean removeFromList) {
-        synchronized (lock) {
-            observing = false;
-            willUpdate = false; // cancels the delayed update started by -databaseChanged
-            if (query != null && query.getDatabase() != null && dbListenerToken != null) {
-                query.getDatabase().removeChangeListener(dbListenerToken);
-                dbListenerToken = null;
-            }
-            if (removeFromList && query != null && query.getDatabase() != null)
-                query.getDatabase().getActiveLiveQueries().remove(this);
-            releaseResultSet();
-        }
-    }
-
-    /**
      * Adds a change listener.
      * <p>
      * NOTE: this method is synchronized with Query level.
      */
     ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
-        synchronized (lock) {
-            if (!observing)
-                start();
-            return changeNotifier.addChangeListener(executor, listener);
-        }
+        final ChangeListenerToken token = changeNotifier.addChangeListener(executor, listener);
+        start(false);
+        return token;
     }
 
     /**
@@ -162,77 +116,97 @@ final class LiveQuery implements DatabaseChangeListener {
      * NOTE: this method is synchronized with Query level.
      */
     void removeChangeListener(ListenerToken token) {
+        if (changeNotifier.removeChangeListener(token) <= 0) { stop(); }
+    }
+
+    /**
+     * Starts observing database changes and reports changes in the query result.
+     */
+    void start(boolean shouldClearResults) {
+        final Database db = query.getDatabase();
+        if (db == null) { throw new IllegalArgumentException("live query database cannot be null."); }
+
         synchronized (lock) {
-            if (changeNotifier.removeChangeListener(token) == 0)
-                stop(true);
+            if (state.compareAndSet(State.STOPPED, State.STARTED)) {
+                db.getActiveLiveQueries().add(this);
+                dbListenerToken = db.addChangeListener(this);
+            }
+            else {
+                // Here if the live query was already running.  This can happen in two ways:
+                // 1) when adding another listener
+                // 2) when the query parameters have changed.
+                // In either case we may want to kick off a new query.
+                // In the latter case the current query results are irrelevant.
+                if (shouldClearResults) { releaseResultSetSynchronized(); }
+            }
         }
+
+        update();
     }
 
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
-    /**
-     * NOTE: update(long delay) is only called from synchronzied LiveQuery methods by lock.
-     *
-     * @param delay millisecond
-     */
-    private void update(long delay) {
-        if (willUpdate)
-            return; // Already a pending update scheduled
-
-        if (!observing)
-            return;
-
-        willUpdate = true;
-
-        query.getDatabase().scheduleOnQueryExecutor(new Runnable() {
-            @Override
-            public void run() {
-                update();
-            }
-        }, delay);
-    }
-
-    /**
-     * NOTE: update() method is called from only ExecutorService for LiveQuery which is
-     * a single thread. But update changes and refers some instant variables
-     */
-    private void update() {
+    private void stop() {
         synchronized (lock) {
-            if (!observing)
-                return;
+            final State oldState = state.getAndSet(State.STOPPED);
+            if (State.STOPPED == oldState) { return; }
 
-            try {
-                Log.i(DOMAIN, "%s: Querying...", this);
-                ResultSet oldResultSet = resultSet;
-                ResultSet newResultSet;
-                if (oldResultSet == null)
-                    newResultSet = query.execute();
-                else
-                    newResultSet = oldResultSet.refresh();
-
-                willUpdate = false;
-                lastUpdatedAt = System.currentTimeMillis();
-
-                if (newResultSet != null) {
-                    if (oldResultSet != null)
-                        Log.i(DOMAIN, "%s: Changed!", this);
-                    resultSet = newResultSet;
-                    changeNotifier.postChange(new QueryChange(this.query, resultSet, null));
-                } else {
-                    Log.i(DOMAIN, "%s: ...no change", this);
-                }
-            } catch (CouchbaseLiteException e) {
-                changeNotifier.postChange(new QueryChange(this.query, null, e));
+            final Database db = query.getDatabase();
+            if (db != null) {
+                db.getActiveLiveQueries().remove(this);
+                db.removeChangeListener(dbListenerToken);
+                dbListenerToken = null;
             }
+
+            releaseResultSetSynchronized();
         }
     }
 
-    private void releaseResultSet() {
-        if (resultSet != null) {
-            resultSet.free();
-            resultSet = null;
+    private void update() {
+        if (!state.compareAndSet(State.STARTED, State.SCHEDULED)) { return; }
+        query.getDatabase().scheduleOnQueryExecutor(
+            new Runnable() {
+                @Override
+                public void run() { refreshResults();  }
+            },
+            LIVE_QUERY_UPDATE_INTERVAL_MS);
+    }
+
+    // Runs on the query.database.queryExecutor
+    // Assumes that call to `previousResults.refresh` is safe, even if previousResults has been freed.
+    private void refreshResults() {
+        try {
+            final ResultSet prevResults;
+            synchronized (lock) {
+                if (!state.compareAndSet(State.SCHEDULED, State.STARTED)) { return; }
+                prevResults = previousResults;
+            }
+
+            final ResultSet newResults = (prevResults == null) ? query.execute() : prevResults.refresh();
+            Log.i(DOMAIN, "LiveQuery refresh: %s > %s", prevResults, newResults);
+            if (newResults == null) { return; }
+
+            boolean update = false;
+            synchronized (lock) {
+                if (state.get() != State.STOPPED) {
+                    previousResults = newResults;
+                    update = true;
+                }
+            }
+
+            // Listeners may be notified even after the LiveQuery has been stopped.
+            if (update) { changeNotifier.postChange(new QueryChange(query, newResults, null)); }
         }
+        catch (CouchbaseLiteException err) {
+            changeNotifier.postChange(new QueryChange(query, null, err));
+        }
+    }
+
+    private void releaseResultSetSynchronized() {
+        if (previousResults == null) { return; }
+        previousResults.free();
+        previousResults = null;
     }
 }
