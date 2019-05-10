@@ -120,7 +120,7 @@ abstract class AbstractQuery implements Query {
         // https://github.com/couchbase/couchbase-lite-android/issues/1727
         // Shouldn't call start() method inside the lock to prevent deadlock:
         if (liveQuery != null)
-            liveQuery.start();
+            liveQuery.start(true);
     }
 
     /**
