@@ -131,9 +131,14 @@ android {
     }
 
     lintOptions {
-        disable 'InvalidPackage', 'UseSparseArrays', 'AuthLeak', 'BadHostnameVerifier'
+        disable 'UseSparseArrays'
         abortOnError false
     }
+}
+
+repositories {
+    google()
+    jcenter()
 }
 
 dependencies {
@@ -142,6 +147,7 @@ dependencies {
 
     implementation 'com.squareup.okhttp3:okhttp:3.9.1'
 
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     testImplementation 'junit:junit:4.12'
 
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

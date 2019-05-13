@@ -44,9 +44,9 @@ public class BaseReplicatorTest extends BaseTest {
     private static final String[] ACTIVITY_NAMES = {"stopped", "offline", "connecting", "idle", "busy"};
     private static final String OTHERDB = "otherdb";
 
-    Database otherDB;
-    Replicator repl;
-    long timeout;  // seconds
+    protected Database otherDB;
+    protected Replicator repl;
+    protected long timeout;  // seconds
 
     protected URLEndpoint getRemoteEndpoint(String dbName, boolean secure) throws URISyntaxException {
         String uri = (secure ? "wss://" : "ws://") + config.remoteHost() + ":" + (secure ? config
@@ -204,7 +204,7 @@ public class BaseReplicatorTest extends BaseTest {
         super.setUp();
 
         timeout = 15; // seconds
-        otherDB = open(OTHERDB);
+        otherDB = openDB(OTHERDB);
         assertTrue(otherDB.isOpen());
         assertNotNull(otherDB);
 

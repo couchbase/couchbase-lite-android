@@ -2347,7 +2347,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testEqualityDifferentDB() throws CouchbaseLiteException {
-        Database otherDB = open("other");
+        Database otherDB = openDB("other");
         try {
             MutableDocument doc1a = new MutableDocument("doc1");
             MutableDocument doc1b = new MutableDocument("doc1");
@@ -2369,7 +2369,7 @@ public class DocumentTest extends BaseTest {
             sDoc1b = otherDB.getDocument("doc1");
             assertFalse(sDoc1b.equals(sDoc1a));
 
-            Database sameDB = open(db.getName());
+            Database sameDB = openDB(db.getName());
             try {
                 Document anotherDoc1a = sameDB.getDocument("doc1");
                 assertTrue(anotherDoc1a.equals(sDoc1a));

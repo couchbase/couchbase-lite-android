@@ -1080,7 +1080,7 @@ public class DatabaseTest extends BaseTest {
     public void testDeleteWithDefaultDirDB() throws CouchbaseLiteException {
         String dbName = "db";
         try {
-            Database database = open(dbName);
+            Database database = openDB(dbName);
             File path = new File(database.getPath());
             assertNotNull(path);
             assertTrue(path.exists());

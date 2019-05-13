@@ -39,7 +39,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
-import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
@@ -55,7 +54,7 @@ import static org.junit.Assert.fail;
 public class BaseTest {
     public static final String TAG = "Test";
 
-    protected final static String kDatabaseName = "testdb";
+    protected final static String TEST_DB = "testdb";
 
     protected Config config;
     private File dir = null;
@@ -115,7 +114,7 @@ public class BaseTest {
         setDir(new File(ctxt.getFilesDir(), "CouchbaseLiteTest"));
 
         // database exist, delete it
-        deleteDatabase(kDatabaseName);
+        deleteDatabase(TEST_DB);
 
         // clean dir
         FileUtils.cleanDirectory(dir);
@@ -138,10 +137,10 @@ public class BaseTest {
         try {
             closeDB();
             // database exist, delete it
-            deleteDatabase(kDatabaseName);
+            deleteDatabase(TEST_DB);
         }
         catch (CouchbaseLiteException ignore) {
-            Report.log("Failed closing DB: " + kDatabaseName, ignore);
+            Report.log("Failed closing DB: " + TEST_DB, ignore);
         }
 
         // clean dir
@@ -179,7 +178,7 @@ public class BaseTest {
         }
     }
 
-    protected Database open(String name) throws CouchbaseLiteException {
+    protected Database openDB(String name) throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration();
         config.setDirectory(dir.getAbsolutePath());
         return new Database(name, config);
@@ -187,7 +186,7 @@ public class BaseTest {
 
     protected void openDB() throws CouchbaseLiteException {
         assertNull(db);
-        db = open(kDatabaseName);
+        db = openDB(TEST_DB);
         assertNotNull(db);
     }
 
