@@ -56,7 +56,7 @@ public class QueryPerfTest extends PerfTest {
             System.err.print(String.format("Starting iteration #%d...\n", i + 1));
             int count = query();
             if (count != docs)
-                Log.e(TAG, String.format(Locale.ENGLISH, "Query result count doe not match!!! actual -> %d / expected -> %d", count, docs));
+                Log.e(TAG, String.format(Locale.ENGLISH, "Query result count does not match! Actual -> %; expected -> %d", count, docs));
         }
         System.err.print(String.format("Query %5d docs:  ", docs));
         bench.printReport(null);

@@ -30,6 +30,8 @@ class TestConflictResolver(private var resolver: (Conflict) -> Document?) : Conf
 }
 
 class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
+
+    // !!! FIXME: implement
     @Ignore("feature not yet implemented")
     @Test
     fun testConflictHandlerRemoteWins() {
@@ -67,6 +69,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         assertEquals(exp.keys, savedDoc.toMap().keys)
     }
 
+    // !!! FIXME: implement
     @Ignore("feature not yet implemented")
     @Test
     fun testConflictHandlerLocalWins() {
@@ -104,6 +107,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         assertEquals(exp.keys, savedDoc.toMap().keys)
     }
 
+    // !!! FIXME: implement
     @Ignore("feature not yet implemented")
     @Test
     fun testConflictHandlerNullDoc() {
@@ -136,6 +140,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         assertNull(db.getDocument("doc"))
     }
 
+    // !!! FIXME: implement
     @Ignore("feature not yet implemented")
     @Test
     fun testConflictHandlerDeletedLocalWins() {
@@ -166,6 +171,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         assertNull(db.getDocument("doc"))
     }
 
+    // !!! FIXME: implement
     @Ignore("feature not yet implemented")
     @Test
     fun testConflictHandlerDeletedRemoteWins() {
