@@ -1795,10 +1795,7 @@ public class DatabaseTest extends BaseTest {
             fail();
         }
         catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.NOT_FOUND) {
-                ;// expected
-            }
-            else { fail(); }
+            if (e.getCode() != CBLError.Code.NOT_FOUND) { fail(); }
         }
 
         db.delete(doc1b);

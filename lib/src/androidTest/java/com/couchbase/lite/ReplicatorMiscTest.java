@@ -61,7 +61,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testReplicatedDocument() {
         String docID = "someDocumentID";
         int flags = C4Constants.DocumentFlags.DELETED;
-        C4Error error = new C4Error(1, CBLError.Code.BUSY, 0);
+        CouchbaseLiteException error = new CouchbaseLiteException(CBLError.Domain.CBLITE, CBLError.Code.BUSY);
         ReplicatedDocument doc = new ReplicatedDocument(docID, flags, error, true);
 
         assertEquals(doc.getID(), docID);

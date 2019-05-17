@@ -24,20 +24,22 @@ import java.util.concurrent.Executor;
 
 
 final class DefaultExecutor implements Executor {
-
     private static volatile DefaultExecutor instance;
 
     public static DefaultExecutor getInstance() {
-        if (instance == null) { instance = new DefaultExecutor(); }
+        if (instance == null) {
+            synchronized (DefaultExecutor.class) {
+                if (instance == null) { instance = new DefaultExecutor(); }
+            }
+        }
         return instance;
     }
+
+
     private final Handler handler = new Handler(Looper.getMainLooper());
 
-    private DefaultExecutor() {
-    }
+    private DefaultExecutor() { }
 
     @Override
-    public void execute(Runnable runnable) {
-        handler.post(runnable);
-    }
+    public void execute(Runnable runnable) { handler.post(runnable); }
 }
