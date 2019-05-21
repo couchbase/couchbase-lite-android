@@ -55,7 +55,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         // Pull:
         config = makeConfig(false, true, false, target)
 
-        val resolver = TestConflictResolver() { conflict -> conflict.remoteDocument }
+        val resolver = TestConflictResolver { conflict -> conflict.remoteDocument }
         config.conflictResolver = resolver
         run(config, 0, null)
 
@@ -93,7 +93,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         // Pull:
         config = makeConfig(false, true, false, target)
 
-        val resolver = TestConflictResolver() { conflict -> conflict.localDocument }
+        val resolver = TestConflictResolver { conflict -> conflict.localDocument }
         config.conflictResolver = resolver
         run(config, 0, null)
 
@@ -131,7 +131,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         // Pull:
         config = makeConfig(false, true, false, target)
 
-        val resolver = TestConflictResolver() { conflict -> null }
+        val resolver = TestConflictResolver { null }
         config.conflictResolver = resolver
         run(config, 0, null)
 
@@ -162,7 +162,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         // Pull:
         config = makeConfig(false, true, false, target)
 
-        val resolver = TestConflictResolver() { conflict -> null }
+        val resolver = TestConflictResolver { null }
         config.conflictResolver = resolver
         run(config, 0, null)
 
@@ -193,7 +193,7 @@ class ReplicatorConflictResolutionTests : BaseReplicatorTest() {
         // Pull:
         config = makeConfig(false, true, false, target)
 
-        val resolver = TestConflictResolver() { conflict -> null }
+        val resolver = TestConflictResolver { null }
         config.conflictResolver = resolver
         run(config, 0, null)
 
