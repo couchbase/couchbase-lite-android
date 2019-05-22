@@ -20,23 +20,46 @@ import android.support.annotation.NonNull;
 
 import java.io.File;
 import java.lang.ref.SoftReference;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.couchbase.lite.internal.AndroidExecutionService;
+import com.couchbase.lite.internal.ExecutionService;
 
 
 public final class CouchbaseLite {
-    private static SoftReference<Context> context;
+    private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
+    private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
 
     private CouchbaseLite() {}
 
     public static void init(@NonNull Context ctxt) {
-        CouchbaseLite.context = new SoftReference<>(ctxt.getApplicationContext());
+        if (ctxt == null) { throw new IllegalArgumentException("Context may not be null"); }
+
+        final SoftReference<Context> currentContext = CONTEXT.get();
+        if (currentContext != null) { return; }
+
+        CONTEXT.compareAndSet(null, new SoftReference<>(ctxt.getApplicationContext()));
+    }
+
+    public static ExecutionService getExecutionService() {
+        ExecutionService executionService = EXECUTION_SERVICE.get();
+        if (executionService == null) {
+            EXECUTION_SERVICE.compareAndSet(null, new AndroidExecutionService());
+            executionService = EXECUTION_SERVICE.get();
+        }
+        return executionService;
     }
 
     @NonNull
     static Context getContext() {
-        final Context ctxt = (context == null) ? null : context.get();
-        if (ctxt == null) {
+        final SoftReference<Context> contextRef = CONTEXT.get();
+        if (contextRef == null) {
             throw new IllegalStateException("Null context.  Did you forget to call CouchbaseLite.init()?");
         }
+
+        final Context ctxt = contextRef.get();
+        if (ctxt == null) { throw new IllegalStateException("Context is null"); }
+
         return ctxt;
     }
 

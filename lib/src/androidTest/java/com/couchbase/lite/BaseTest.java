@@ -30,8 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -39,7 +38,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
-import com.couchbase.lite.internal.utils.ExecutorUtils;
+import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
@@ -53,27 +52,26 @@ import static org.junit.Assert.fail;
 
 public class BaseTest {
     public static final String TAG = "Test";
-
-    protected final static String TEST_DB = "testdb";
+    public final static String TEST_DB = "testdb";
 
     protected Config config;
-    private File dir = null;
-    protected Database db = null;
-    ExecutorService executor = null;
+    protected Database db;
+    protected ExecutionService.CloseableExecutor executor;
+
+    private File dir;
 
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    protected File getDir() {
-        return dir;
-    }
+    protected File getDir() { return dir; }
 
     protected void setDir(File dir) {
         assertNotNull(dir);
         this.dir = dir;
     }
 
-    // https://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the-emulator?noredirect=1&lq=1
+    // https://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the
+    // -emulator?noredirect=1&lq=1
     private static String getSystemProperty(String name) throws Exception {
         Class<?> systemPropertyClazz = Class.forName("android.os.SystemProperties");
         return (String) systemPropertyClazz
@@ -99,7 +97,7 @@ public class BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        executor = Executors.newSingleThreadExecutor();
+        executor = CouchbaseLite.getExecutionService().getSerialExecutor();
 
         final Context ctxt = InstrumentationRegistry.getTargetContext();
 
@@ -146,7 +144,7 @@ public class BaseTest {
         // clean dir
         FileUtils.cleanDirectory(getDir());
 
-        ExecutorUtils.shutdownAndAwaitTermination(executor, 60);
+        executor.stop(60, TimeUnit.SECONDS);
         executor = null;
     }
 

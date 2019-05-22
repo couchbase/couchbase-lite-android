@@ -17,12 +17,13 @@
 //
 package com.couchbase.lite;
 
-import org.junit.Test;
-
 import java.util.concurrent.Executor;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+
 
 public class ReplicatorChangeListenerTokenTest {
     @Test
@@ -30,7 +31,8 @@ public class ReplicatorChangeListenerTokenTest {
         try {
             new ReplicatorChangeListenerToken(null, null);
             fail();
-        } catch (IllegalArgumentException ex) {
+        }
+        catch (IllegalArgumentException ex) {
             // ok
         }
     }
@@ -39,14 +41,12 @@ public class ReplicatorChangeListenerTokenTest {
     public void testGetExecutor() {
         Executor executor = new Executor() {
             @Override
-            public void execute(Runnable runnable) {
-            }
+            public void execute(Runnable runnable) { }
         };
 
         ReplicatorChangeListener listener = new ReplicatorChangeListener() {
             @Override
-            public void changed(ReplicatorChange change) {
-            }
+            public void changed(ReplicatorChange change) { }
         };
 
         // custom Executor
@@ -55,6 +55,6 @@ public class ReplicatorChangeListenerTokenTest {
 
         // UI thread Executor
         token = new ReplicatorChangeListenerToken(null, listener);
-        assertEquals(DefaultExecutor.getInstance(), token.getExecutor());
+        assertEquals(CouchbaseLite.getExecutionService().getMainExecutor(), token.getExecutor());
     }
 }
