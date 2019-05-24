@@ -627,6 +627,6 @@ public class ConcurrencyTest extends BaseTest {
 
     private void checkForFailure() {
         AssertionError failure = testFailure.get();
-        if (failure != null) { throw failure; }
+        if (failure != null) { throw new AssertionError(failure); }
     }
 }
