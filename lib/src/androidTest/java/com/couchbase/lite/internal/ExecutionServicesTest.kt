@@ -100,7 +100,7 @@ class ExecutionServicesTest {
     @Test(expected = RejectedExecutionException::class)
     fun testStoppedSerialExecutorRejects() {
         val executor = executionService.serialExecutor
-        executor.stop(0, TimeUnit.SECONDS)
+        assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
         executor.execute { Log.d(LogDomain.ALL, "This test is about to fail!") }
     }
 
@@ -126,7 +126,7 @@ class ExecutionServicesTest {
             finishLatch.countDown()
         }
 
-        executor.stop(0, TimeUnit.SECONDS)
+        assertFalse(executor.stop(0, TimeUnit.SECONDS))
 
         try {
             executor.execute { Log.d(LogDomain.ALL, "This test is about to fail!") }
@@ -139,6 +139,8 @@ class ExecutionServicesTest {
 
         try { assertTrue(finishLatch.await(5, TimeUnit.SECONDS)) }
         catch (ignore: InterruptedException) { }
+
+        assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
     // The concurrent executor can executes out of order.
@@ -185,7 +187,7 @@ class ExecutionServicesTest {
     @Test(expected = RejectedExecutionException::class)
     fun testStoppedConcurrentExecutorRejects() {
         val executor = executionService.concurrentExecutor
-        executor.stop(0, TimeUnit.SECONDS)
+        assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
         executor.execute { Log.d(LogDomain.ALL, "This test is about to fail!") }
     }
 
@@ -212,7 +214,7 @@ class ExecutionServicesTest {
             finishLatch.countDown()
         }
 
-        executor.stop(0, TimeUnit.SECONDS)
+        assertFalse(executor.stop(0, TimeUnit.SECONDS))
 
         try {
             executor.execute { Log.d(LogDomain.ALL, "This test is about to fail!") }
@@ -225,6 +227,8 @@ class ExecutionServicesTest {
 
         try { assertTrue(finishLatch.await(5, TimeUnit.SECONDS)) }
         catch (ignore: InterruptedException) { }
+
+        assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
     // The scheduler schedules on the passed queue, with the proper delay.

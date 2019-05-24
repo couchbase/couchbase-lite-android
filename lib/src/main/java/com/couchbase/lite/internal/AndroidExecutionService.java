@@ -27,28 +27,57 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public final class AndroidExecutionService implements ExecutionService {
 
     // thin wrapper around the AsyncTask's THREAD_POOL_EXECUTOR
     private static class ConcurrentExecutor implements CloseableExecutor {
-        private final AtomicBoolean stopped = new AtomicBoolean();
+        private final Executor executor;
+        private CountDownLatch stopLatch;
+        private int running;
+
+        private ConcurrentExecutor(Executor executor) { this.executor = executor; }
 
         @Override
-        public void execute(Runnable task) {
-            if (stopped.get()) { throw new RejectedExecutionException("Executor has been stopped"); }
-            AsyncTask.THREAD_POOL_EXECUTOR.execute(task);
+        public synchronized void execute(Runnable task) {
+            if (stopLatch != null) { throw new RejectedExecutionException("Executor has been stopped"); }
+
+            running++;
+
+            executor.execute(() -> {
+                try { task.run(); }
+                finally { finishTask(); }
+            });
         }
 
         @Override
-        public void stop(long timeout, @NonNull TimeUnit unit) {
-            stopped.set(true);
+        public boolean stop(long timeout, @NonNull TimeUnit unit) {
+            final CountDownLatch latch;
+            synchronized (this) {
+                if (stopLatch == null) { stopLatch = new CountDownLatch(running); }
+                if (running <= 0) { return true; }
+                latch = stopLatch;
+            }
+
+            try { return latch.await(timeout, unit); }
+            catch (InterruptedException ignore) { }
+
+            return false;
+        }
+
+        private void finishTask() {
+            final CountDownLatch latch;
+            synchronized (this) {
+                running--;
+                latch = stopLatch;
+            }
+
+            if (latch != null) { latch.countDown(); }
         }
     }
 
-    // Lifted directly from AsyncTask
+    // Patterned after AsyncTask's executor
     private static class SerialExecutor implements CloseableExecutor {
         private final ArrayDeque<Runnable> tasks = new ArrayDeque<>();
         private final Executor executor;
@@ -69,28 +98,32 @@ public final class AndroidExecutionService implements ExecutionService {
             if (running == null) { scheduleNext(); }
         }
 
-        private synchronized void scheduleNext() {
-            running = tasks.poll();
-
-            if (running != null) {
-                executor.execute(running);
-                return;
-            }
-
-            if (stopLatch != null) { stopLatch.countDown(); }
-        }
-
         @Override
-        public void stop(long timeout, @NonNull TimeUnit unit) {
+        public boolean stop(long timeout, @NonNull TimeUnit unit) {
             final CountDownLatch latch;
+            final int n;
             synchronized (this) {
-                if (stopLatch == null) { stopLatch = new CountDownLatch(1); }
-                if (running == null) { return; }
+                n = (running == null) ? 0 : tasks.size() + 1;
+
+                if (stopLatch == null) { stopLatch = new CountDownLatch(n); }
+
+                if (n <= 0) { return true; }
+
                 latch = stopLatch;
             }
 
-            try { latch.await(timeout, unit); }
+            try { return latch.await(timeout, unit); }
             catch (InterruptedException ignore) { }
+
+            return false;
+        }
+
+        private synchronized void scheduleNext() {
+            if (stopLatch != null) { stopLatch.countDown(); }
+
+            running = tasks.poll();
+
+            if (running != null) { executor.execute(running); }
         }
     }
 
@@ -104,7 +137,7 @@ public final class AndroidExecutionService implements ExecutionService {
 
         mainThreadExecutor = mainHandler::post;
 
-        concurrentExecutor = new ConcurrentExecutor();
+        concurrentExecutor = new ConcurrentExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @NonNull
