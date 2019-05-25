@@ -134,56 +134,56 @@ public class QueryTest extends BaseTest {
         return df.format(new Date(timestamp)).replace(".000", "");
     }
 
+    // !!! Flakey
     @Test
     public void testQueryDocumentExpiration() throws CouchbaseLiteException, Exception {
-        Date dto5 = new Date(System.currentTimeMillis() + 500L);
-        Date dto20 = new Date(System.currentTimeMillis() + 2000L);
-        Date dto30 = new Date(System.currentTimeMillis() + 3000L);
-        Date dto40 = new Date(System.currentTimeMillis() + 4000L);
-        long  dto60InMS = System.currentTimeMillis() + 6000L;
+        long now = System.currentTimeMillis();
 
+        // this one should expire
         MutableDocument doc = new MutableDocument("doc");
-        MutableDocument doc10 = new MutableDocument("doc10");
-        MutableDocument doc1 = new MutableDocument("doc1");
-        MutableDocument doc2 = new MutableDocument("doc2");
-        MutableDocument doc3 = new MutableDocument("doc3");
-
         doc.setInt("answer", 42);
         doc.setString("notHere", "string");
         save(doc);
+        db.setDocumentExpiration("doc", new Date(now + 500L));
 
+        // this one is deleted
+        MutableDocument doc10 = new MutableDocument("doc10");
         doc10.setInt("answer", 42);
         doc10.setString("notHere", "string");
         save(doc10);
-
-        db.setDocumentExpiration("doc10", dto20); //deleted doc
+        db.setDocumentExpiration("doc10", new Date(now + 2000L)); //deleted doc
         db.delete(doc10);
 
+        // should be in the result set
+        MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setInt("answer", 42);
         doc1.setString("a", "string");
         save(doc1);
+        db.setDocumentExpiration("doc1", new Date(now + 2000L));
 
+        // should be in the result set
+        MutableDocument doc2 = new MutableDocument("doc2");
         doc2.setInt("answer", 42);
         doc2.setString("b", "string");
         save(doc2);
+        db.setDocumentExpiration("doc2", new Date(now + 3000L));
 
+        // should be in the result set
+        MutableDocument doc3 = new MutableDocument("doc3");
         doc3.setInt("answer", 42);
         doc3.setString("c", "string");
         save(doc3);
-
-        db.setDocumentExpiration("doc", dto5); //expired doc
-        db.setDocumentExpiration("doc1", dto20);
-        db.setDocumentExpiration("doc2", dto30);
-        db.setDocumentExpiration("doc3", dto40);
+        db.setDocumentExpiration("doc3", new Date(now + 4000L));
 
         Thread.sleep(1000);
 
+        // This should get all but the one that has expired
+        // and the one that was deleted
         Query query = QueryBuilder.select(SR_DOCID, SR_EXPIRATION)
                 .from(DataSource.database(db))
-                .where(Meta.expiration
-                        .lessThan(Expression.longValue(dto60InMS)));
+                .where(Meta.expiration.lessThan(Expression.longValue(now + 6000L)));
 
-        assertEquals(query.execute().allResults().size(), 3);
+         assertEquals(query.execute().allResults().size(), 3);
     }
 
     @Test

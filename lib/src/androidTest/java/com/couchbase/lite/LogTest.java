@@ -3,30 +3,31 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
-import com.couchbase.lite.internal.support.Log;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.UUID;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import com.couchbase.lite.internal.support.Log;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 
 public class LogTest extends BaseTest {
     private Context context;
@@ -46,7 +47,7 @@ public class LogTest extends BaseTest {
         LogTestLogger customLogger = new LogTestLogger();
         Database.log.setCustom(customLogger);
 
-        for(int i = 5; i >= 1; i--) {
+        for (int i = 5; i >= 1; i--) {
             customLogger.getLines().clear();
             customLogger.setLevel(LogLevel.values()[i]);
             Log.v(LogDomain.DATABASE, "TEST VERBOSE");
@@ -84,48 +85,53 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         LogFileConfiguration config = new LogFileConfiguration(logDirectory)
-                .setUsePlaintext(true)
-                .setMaxRotateCount(0);
+            .setUsePlaintext(true)
+            .setMaxRotateCount(0);
 
-        testWithConfiguration(LogLevel.INFO, config, () -> {
-            LogLevel levels[] = {
+        testWithConfiguration(
+            LogLevel.INFO, config,
+            () -> {
+                LogLevel levels[] = {
                     LogLevel.NONE,
                     LogLevel.ERROR,
                     LogLevel.WARNING,
                     LogLevel.INFO,
                     LogLevel.VERBOSE
-            };
-            for (LogLevel level : levels) {
-                Database.log.getFile().setLevel(level);
-                Log.v(LogDomain.DATABASE, "TEST VERBOSE");
-                Log.i(LogDomain.DATABASE, "TEST INFO");
-                Log.w(LogDomain.DATABASE, "TEST WARNING");
-                Log.e(LogDomain.DATABASE, "TEST ERROR");
-            }
+                };
 
-            try {
-                for (File log : path.listFiles()) {
-                    BufferedReader fin = new BufferedReader(new FileReader(log));
-                    int lineCount = 0;
-                    while (fin.readLine() != null) {
-                        lineCount++;
-                    }
+                for (LogLevel level : levels) {
+                    Database.log.getFile().setLevel(level);
+                    Log.v(LogDomain.DATABASE, "TEST VERBOSE");
+                    Log.i(LogDomain.DATABASE, "TEST INFO");
+                    Log.w(LogDomain.DATABASE, "TEST WARNING");
+                    Log.e(LogDomain.DATABASE, "TEST ERROR");
+                }
 
-                    // One meta line per log, so the actual logging lines is X - 1
-                    if (log.getAbsolutePath().contains("verbose")) {
-                        assertEquals(2, lineCount);
-                    } else if (log.getAbsolutePath().contains("info")) {
-                        assertEquals(3, lineCount);
-                    } else if (log.getAbsolutePath().contains("warning")) {
-                        assertEquals(4, lineCount);
-                    } else if (log.getAbsolutePath().contains("error")) {
-                        assertEquals(5, lineCount);
+                try {
+                    for (File log : path.listFiles()) {
+                        BufferedReader fin = new BufferedReader(new FileReader(log));
+                        int lineCount = 0;
+                        while (fin.readLine() != null) { lineCount++; }
+
+                        // One meta line per log, so the actual logging lines is X - 1
+                        if (log.getAbsolutePath().contains("verbose")) {
+                            assertEquals(2, lineCount);
+                        }
+                        else if (log.getAbsolutePath().contains("info")) {
+                            assertEquals(3, lineCount);
+                        }
+                        else if (log.getAbsolutePath().contains("warning")) {
+                            assertEquals(4, lineCount);
+                        }
+                        else if (log.getAbsolutePath().contains("error")) {
+                            assertEquals(5, lineCount);
+                        }
                     }
                 }
-            } catch(Exception e) {
-                fail("Exception during test callback " + e.toString());
-            }
-        });
+                catch (Exception e) {
+                    fail("Exception during test callback " + e.toString());
+                }
+            });
     }
 
     @Test
@@ -141,7 +147,7 @@ public class LogTest extends BaseTest {
             assertTrue(files != null);
             assertTrue(files.length > 0);
             File lastModifiedFile = files[0];
-            for(File log : files) {
+            for (File log : files) {
                 if (log.lastModified() > lastModifiedFile.lastModified()) {
                     lastModifiedFile = log;
                 }
@@ -155,7 +161,8 @@ public class LogTest extends BaseTest {
                 assertTrue(bytes[1] == (byte) 0xB2);
                 assertTrue(bytes[2] == (byte) 0xAB);
                 assertTrue(bytes[3] == (byte) 0x1B);
-            } catch(Exception e) {
+            }
+            catch (Exception e) {
                 fail("Exception during test callback " + e.toString());
             }
         });
@@ -181,7 +188,7 @@ public class LogTest extends BaseTest {
             assertTrue(files.length > 0);
 
             File lastModifiedFile = files[0];
-            for(File log : files) {
+            for (File log : files) {
                 if (log.lastModified() > lastModifiedFile.lastModified()) {
                     lastModifiedFile = log;
                 }
@@ -194,7 +201,8 @@ public class LogTest extends BaseTest {
                 String contentsOfLastModified = new String(b, StandardCharsets.US_ASCII);
                 assertTrue(contentsOfLastModified.contains(uuidString));
 
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 fail("Exception during test callback " + e.toString());
             }
         });
@@ -224,8 +232,8 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         final LogFileConfiguration config = new LogFileConfiguration(logDirectory)
-                .setUsePlaintext(true)
-                .setMaxSize(1024);
+            .setUsePlaintext(true)
+            .setMaxSize(1024);
 
         testWithConfiguration(LogLevel.DEBUG, config, () -> {
             // this should create two files, as the 1KB logs + extra header
@@ -246,7 +254,7 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         final LogFileConfiguration config = new LogFileConfiguration(logDirectory)
-                .setUsePlaintext(true);
+            .setUsePlaintext(true);
         testWithConfiguration(LogLevel.NONE, config, () -> {
             String uuidString = UUID.randomUUID().toString();
             writeAllLogs(uuidString);
@@ -259,7 +267,8 @@ public class LogTest extends BaseTest {
                     String contents = new String(b, StandardCharsets.US_ASCII);
                     assertFalse(contents.contains(uuidString));
                 }
-            } catch(Exception e) {
+            }
+            catch (Exception e) {
                 fail("Exception during test callback " + e.toString());
             }
         });
@@ -270,12 +279,12 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         LogFileConfiguration config = new LogFileConfiguration(logDirectory)
-                .setUsePlaintext(true);
+            .setUsePlaintext(true);
         testWithConfiguration(LogLevel.NONE, config, () -> {
             String uuidString = UUID.randomUUID().toString();
             writeAllLogs(uuidString);
 
-                try {
+            try {
                 for (File log : path.listFiles()) {
                     byte[] b = new byte[(int) log.length()];
                     FileInputStream fileInputStream = new FileInputStream(log);
@@ -302,7 +311,8 @@ public class LogTest extends BaseTest {
                     assertTrue(contents.contains(uuidString));
                 }
 
-            } catch(Exception e) {
+            }
+            catch (Exception e) {
                 fail("Exception during test callback " + e.toString());
             }
         });
@@ -313,11 +323,11 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         LogFileConfiguration config = new LogFileConfiguration(logDirectory)
-                .setUsePlaintext(true);
+            .setUsePlaintext(true);
         testWithConfiguration(LogLevel.VERBOSE, config, () -> {
             writeOneKiloByteOfLog();
 
-                try {
+            try {
                 for (File log : path.listFiles()) {
                     BufferedReader fin = new BufferedReader(new FileReader(log));
                     String firstLine = fin.readLine();
@@ -329,7 +339,8 @@ public class LogTest extends BaseTest {
                     assertTrue(firstLine.contains("Core/"));
                     assertTrue(firstLine.contains("Java; Android"));
                 }
-            } catch(Exception e) {
+            }
+            catch (Exception e) {
                 fail("Exception during test callback " + e.toString());
             }
         });
@@ -340,17 +351,17 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         LogFileConfiguration config = new LogFileConfiguration(logDirectory)
-                .setUsePlaintext(true);
+            .setUsePlaintext(true);
         testWithConfiguration(LogLevel.DEBUG, config, () -> {
             String uuid = UUID.randomUUID().toString();
             String message = "test message";
             CouchbaseLiteException error = new CouchbaseLiteException(uuid);
-                Log.v(LogDomain.DATABASE, message, error);
-                Log.i(LogDomain.DATABASE, message, error);
-                Log.w(LogDomain.DATABASE, message, error);
-                Log.e(LogDomain.DATABASE, message, error);
-                Log.d(LogDomain.DATABASE, message, error);
-                try {
+            Log.v(LogDomain.DATABASE, message, error);
+            Log.i(LogDomain.DATABASE, message, error);
+            Log.w(LogDomain.DATABASE, message, error);
+            Log.e(LogDomain.DATABASE, message, error);
+            Log.d(LogDomain.DATABASE, message, error);
+            try {
                 for (File log : path.listFiles()) {
                     byte[] b = new byte[(int) log.length()];
                     FileInputStream fileInputStream = new FileInputStream(log);
@@ -358,7 +369,8 @@ public class LogTest extends BaseTest {
                     String contents = new String(b, StandardCharsets.US_ASCII);
                     assertTrue(contents.contains(uuid));
                 }
-            } catch(Exception e) {
+            }
+            catch (Exception e) {
                 fail("Exception during test callback " + e.toString());
             }
         });
@@ -369,18 +381,18 @@ public class LogTest extends BaseTest {
         final File path = tempFolder.newFolder();
         final String logDirectory = emptyDirectory(path.getAbsolutePath());
         LogFileConfiguration config = new LogFileConfiguration(logDirectory)
-                .setUsePlaintext(true);
+            .setUsePlaintext(true);
         testWithConfiguration(LogLevel.DEBUG, config, () -> {
             String uuid1 = UUID.randomUUID().toString();
             String uuid2 = UUID.randomUUID().toString();
             String message = "test message %s";
             CouchbaseLiteException error = new CouchbaseLiteException(uuid1);
-                Log.v(LogDomain.DATABASE, message, error, uuid2);
-                Log.i(LogDomain.DATABASE, message, error, uuid2);
-                Log.w(LogDomain.DATABASE, message, error, uuid2);
-                Log.e(LogDomain.DATABASE, message, error, uuid2);
-                Log.d(LogDomain.DATABASE, message, error, uuid2);
-                try {
+            Log.v(LogDomain.DATABASE, message, error, uuid2);
+            Log.i(LogDomain.DATABASE, message, error, uuid2);
+            Log.w(LogDomain.DATABASE, message, error, uuid2);
+            Log.e(LogDomain.DATABASE, message, error, uuid2);
+            Log.d(LogDomain.DATABASE, message, error, uuid2);
+            try {
                 for (File log : path.listFiles()) {
                     byte[] b = new byte[(int) log.length()];
                     FileInputStream fileInputStream = new FileInputStream(log);
@@ -389,7 +401,8 @@ public class LogTest extends BaseTest {
                     assertTrue(contents.contains(uuid1));
                     assertTrue(contents.contains(uuid2));
                 }
-            } catch(Exception e) {
+            }
+            catch (Exception e) {
                 fail("Exception during test callback " + e.toString());
             }
         });
@@ -403,16 +416,16 @@ public class LogTest extends BaseTest {
         LogFileConfiguration config;
 
         thrown.expect(IllegalArgumentException.class);
-        config = new LogFileConfiguration((String)null);
+        config = new LogFileConfiguration((String) null);
 
         thrown.expect(IllegalArgumentException.class);
         config = new LogFileConfiguration((LogFileConfiguration) null);
 
         final File path1 = tempFolder.newFolder();
         config = new LogFileConfiguration(path1.getAbsolutePath())
-                .setMaxRotateCount(rotateCount)
-                .setMaxSize(maxSize)
-                .setUsePlaintext(usePlainText);
+            .setMaxRotateCount(rotateCount)
+            .setMaxSize(maxSize)
+            .setUsePlaintext(usePlainText);
         assertEquals(config.getMaxRotateCount(), rotateCount);
         assertEquals(config.getMaxSize(), maxSize);
         assertEquals(config.usesPlaintext(), usePlainText);
@@ -435,14 +448,14 @@ public class LogTest extends BaseTest {
         testWithConfiguration(LogLevel.DEBUG, config, () -> {
             Database.log.getFile().setConfig(config);
 
-                thrown.expect(IllegalStateException.class);
-                Database.log.getFile().getConfig().setMaxSize(1024);
+            thrown.expect(IllegalStateException.class);
+            Database.log.getFile().getConfig().setMaxSize(1024);
 
-                thrown.expect(IllegalStateException.class);
-                Database.log.getFile().getConfig().setMaxRotateCount(3);
+            thrown.expect(IllegalStateException.class);
+            Database.log.getFile().getConfig().setMaxRotateCount(3);
 
-                thrown.expect(IllegalStateException.class);
-                Database.log.getFile().getConfig().setUsePlaintext(true);
+            thrown.expect(IllegalStateException.class);
+            Database.log.getFile().getConfig().setUsePlaintext(true);
         });
     }
 
@@ -483,7 +496,8 @@ public class LogTest extends BaseTest {
         Database.log.getFile().setLevel(level);
         try {
             r.run();
-        } finally {
+        }
+        finally {
             Database.log.getFile().setLevel(LogLevel.INFO);
             Database.log.getFile().setConfig(old);
             Database.log.getConsole().setDomains(domains);
@@ -491,9 +505,9 @@ public class LogTest extends BaseTest {
         }
     }
 
-    private static String emptyDirectory(String path){
+    private static String emptyDirectory(String path) {
         File f = new File(path);
-        if(f.exists()) {
+        if (f.exists()) {
             for (File log : f.listFiles()) {
                 log.delete();
             }
@@ -537,7 +551,7 @@ class LogTestLogger implements Logger {
 
     @Override
     public void log(LogLevel level, LogDomain domain, String message) {
-        if(level.compareTo(_level) < 0) {
+        if (level.compareTo(_level) < 0) {
             return;
         }
 

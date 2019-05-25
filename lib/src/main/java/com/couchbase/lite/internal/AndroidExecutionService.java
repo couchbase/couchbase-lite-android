@@ -151,7 +151,7 @@ public final class AndroidExecutionService implements ExecutionService {
     public CloseableExecutor getConcurrentExecutor() { return concurrentExecutor; }
 
     /**
-     * This runs a task on the main thread for just long enough to enough to enqueue the passed task
+     * This runs a task on Android's main thread for just long enough to enough to enqueue the passed task
      * on the passed executor.  It occupies space in the main looper's message queue
      * but takes no significant time processing, there.
      * If the target executor refuses the task, it is just dropped on the floor.
@@ -177,9 +177,8 @@ public final class AndroidExecutionService implements ExecutionService {
     }
 
     /**
-     * This runs a task on the main thread for just long enough to enough to enqueue the passed task
-     * on the passed executor.  It occupies space in the main looper's message queue
-     * but takes no significant time processing, there.
+     * Best effort, delete the passed task (obtained from postDelayedOnExecutor, above)
+     * from the wait queue.  If it is already in the Executor, well, there you go.
      *
      * @param task the task to be executed.
      */
