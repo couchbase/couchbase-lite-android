@@ -1092,9 +1092,7 @@ public class DatabaseTest extends BaseTest {
                 Database.delete(dbName, null);
                 fail();
             }
-            catch (IllegalArgumentException ex) {
-                // ok
-            }
+            catch (IllegalArgumentException expected) { }
             assertTrue(path.exists());
         }
         finally {
@@ -1102,7 +1100,7 @@ public class DatabaseTest extends BaseTest {
         }
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testDeleteOpeningDBWithDefaultDir() throws CouchbaseLiteException {
         String dbName = "db";
 
@@ -1114,11 +1112,8 @@ public class DatabaseTest extends BaseTest {
             assertTrue(path.exists());
 
             // Java/Android does not allow null as directory parameter
-            try {
-                Database.delete(dbName, null);
-                fail();
-            }
-            catch (IllegalArgumentException ignore) { }
+
+            Database.delete(dbName, null);
         }
         finally {
             db.delete();
@@ -1158,18 +1153,11 @@ public class DatabaseTest extends BaseTest {
         }
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testDeleteNonExistingDBWithDefaultDir() {
-        try {
-            Database.delete("notexistdb", null);
-            fail();
-        }
-        catch (IllegalArgumentException e) {
-            // expected
-        }
-        catch (CouchbaseLiteException e) {
-            e.printStackTrace();
-        }
+        try { Database.delete("notexistdb", null); }
+        catch (CouchbaseLiteException e) { }
+        fail();
     }
 
     @Test
@@ -1184,18 +1172,12 @@ public class DatabaseTest extends BaseTest {
         }
     }
 
-    @Test
+    // NOTE: Android/Java does not allow to use null as directory parameters
+    //       This test is not valid for Android Java. Will keep this test
+    //       for unit test consistency with other platforms
+    @Test(expected = IllegalArgumentException.class)
     public void testDatabaseExistsWithDefaultDir() {
-        // NOTE: Android/Java does not allow to use null as directory parameters
-        //       This test is not valid for Android Java. Will keep this test
-        //       for unit test consistency with other platforms
-
-        try {
-            Database.exists("db", null);
-            fail();
-        }
-        catch (IllegalArgumentException ex) {
-        }
+        Database.exists("db", null);
     }
 
 
@@ -1223,15 +1205,9 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists("db", getDir()));
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testDatabaseExistsAgainstNonExistDBWithDefaultDir() {
-        try {
-            Database.exists("nonexist", null);
-            fail();
-        }
-        catch (IllegalArgumentException e) {
-            // expected
-        }
+        Database.exists("notexistdb", null);
     }
 
     @Test
