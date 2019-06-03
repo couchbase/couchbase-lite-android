@@ -45,8 +45,6 @@ public class ConcurrencyTest extends BaseTest {
         void verify(int n, T result);
     }
 
-    private final AtomicReference<AssertionError> testFailure = new AtomicReference<>();
-
     @Test
     public void testConcurrentCreate() throws CouchbaseLiteException {
         if (!config.concurrentTestsEnabled()) { return; }
@@ -604,29 +602,5 @@ public class ConcurrencyTest extends BaseTest {
         }
 
         checkForFailure();
-    }
-
-    private void runSafely(Runnable test) {
-        try { test.run(); }
-        catch (AssertionError failure) {
-            log(LogLevel.DEBUG, "Test failed: " + failure);
-            testFailure.compareAndSet(null, failure);
-        }
-    }
-
-    private void runSafelyInThread(CountDownLatch latch, Runnable test) {
-        new Thread(() -> {
-            try { test.run(); }
-            catch (AssertionError failure) {
-                log(LogLevel.DEBUG, "Test failed: " + failure);
-                testFailure.compareAndSet(null, failure);
-            }
-            finally { latch.countDown(); }
-        }).start();
-    }
-
-    private void checkForFailure() {
-        AssertionError failure = testFailure.get();
-        if (failure != null) { throw new AssertionError(failure); }
     }
 }

@@ -30,7 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -54,50 +56,29 @@ public class BaseTest {
     public static final String TAG = "Test";
     public final static String TEST_DB = "testdb";
 
+    protected interface Execution {
+        void run() throws CouchbaseLiteException;
+    }
+
+    interface Validator<T> {
+        void validate(final T doc);
+    }
+
     protected Config config;
     protected Database db;
     protected ExecutionService.CloseableExecutor executor;
+
+    private AtomicReference<AssertionError> testFailure;
 
     private File dir;
 
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    protected File getDir() { return dir; }
-
-    protected void setDir(File dir) {
-        assertNotNull(dir);
-        this.dir = dir;
-    }
-
-    // https://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the
-    // -emulator?noredirect=1&lq=1
-    private static String getSystemProperty(String name) throws Exception {
-        Class<?> systemPropertyClazz = Class.forName("android.os.SystemProperties");
-        return (String) systemPropertyClazz
-            .getMethod("get", new Class[] {String.class}).invoke(systemPropertyClazz, new Object[] {name});
-    }
-
-    protected static boolean isEmulator() {
-        try {
-            boolean goldfish = getSystemProperty("ro.hardware").contains("goldfish");
-            boolean emu = getSystemProperty("ro.kernel.qemu").length() > 0;
-            boolean sdk = getSystemProperty("ro.product.model").equals("sdk");
-            return goldfish || emu || sdk;
-        }
-        catch (Exception e) {
-            return false;
-        }
-    }
-
-    protected static boolean isARM() {
-        String arch = System.getProperty("os.arch").toLowerCase();
-        return arch.indexOf("arm") != -1;
-    }
-
     @Before
     public void setUp() throws Exception {
         executor = CouchbaseLite.getExecutionService().getSerialExecutor();
+        testFailure = new AtomicReference<>();
 
         final Context ctxt = InstrumentationRegistry.getTargetContext();
 
@@ -120,16 +101,6 @@ public class BaseTest {
         openDB();
     }
 
-    private InputStream openTestPropertiesFile() throws IOException {
-        final AssetManager assets = CouchbaseLite.getContext().getAssets();
-        try {
-            return assets.open(Config.EE_TEST_PROPERTIES_FILE);
-        }
-        catch (IOException e) {
-            return assets.open(Config.TEST_PROPERTIES_FILE);
-        }
-    }
-
     @After
     public void tearDown() {
         try {
@@ -146,6 +117,30 @@ public class BaseTest {
 
         executor.stop(60, TimeUnit.SECONDS);
         executor = null;
+    }
+
+    protected File getDir() { return dir; }
+
+    protected void setDir(File dir) {
+        assertNotNull(dir);
+        this.dir = dir;
+    }
+
+    protected static boolean isEmulator() {
+        try {
+            boolean goldfish = getSystemProperty("ro.hardware").contains("goldfish");
+            boolean emu = getSystemProperty("ro.kernel.qemu").length() > 0;
+            boolean sdk = getSystemProperty("ro.product.model").equals("sdk");
+            return goldfish || emu || sdk;
+        }
+        catch (Exception e) {
+            return false;
+        }
+    }
+
+    protected static boolean isARM() {
+        String arch = System.getProperty("os.arch").toLowerCase();
+        return arch.indexOf("arm") != -1;
     }
 
     protected void deleteDatabase(String dbName) throws CouchbaseLiteException {
@@ -249,10 +244,6 @@ public class BaseTest {
         return savedDoc;
     }
 
-    interface Validator<T> {
-        void validate(final T doc);
-    }
-
     protected Document save(MutableDocument doc, Validator<Document> validator) throws CouchbaseLiteException {
         validator.validate(doc);
         db.save(doc);
@@ -339,8 +330,28 @@ public class BaseTest {
         return counter1;
     }
 
-    protected interface Execution {
-        void run() throws CouchbaseLiteException;
+    protected void runSafely(Runnable test) {
+        try { test.run(); }
+        catch (AssertionError failure) {
+            log(LogLevel.DEBUG, "Test failed: " + failure);
+            testFailure.compareAndSet(null, failure);
+        }
+    }
+
+    protected void runSafelyInThread(CountDownLatch latch, Runnable test) {
+        new Thread(() -> {
+            try { test.run(); }
+            catch (AssertionError failure) {
+                log(LogLevel.DEBUG, "Test failed: " + failure);
+                testFailure.compareAndSet(null, failure);
+            }
+            finally { latch.countDown(); }
+        }).start();
+    }
+
+    protected void checkForFailure() {
+        AssertionError failure = testFailure.get();
+        if (failure != null) { throw new AssertionError(failure); }
     }
 
     protected static void expectError(String domain, int code, Execution execution) {
@@ -372,5 +383,23 @@ public class BaseTest {
                 android.util.Log.e("CouchbaseLite/" + TAG, message);
                 break;
         }
+    }
+
+    private InputStream openTestPropertiesFile() throws IOException {
+        final AssetManager assets = CouchbaseLite.getContext().getAssets();
+        try {
+            return assets.open(Config.EE_TEST_PROPERTIES_FILE);
+        }
+        catch (IOException e) {
+            return assets.open(Config.TEST_PROPERTIES_FILE);
+        }
+    }
+
+    // https://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the
+    // -emulator?noredirect=1&lq=1
+    private static String getSystemProperty(String name) throws Exception {
+        Class<?> systemPropertyClazz = Class.forName("android.os.SystemProperties");
+        return (String) systemPropertyClazz
+            .getMethod("get", new Class[] {String.class}).invoke(systemPropertyClazz, new Object[] {name});
     }
 }
