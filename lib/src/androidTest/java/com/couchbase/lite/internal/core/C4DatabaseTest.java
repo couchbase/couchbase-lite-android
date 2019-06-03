@@ -175,21 +175,6 @@ public class C4DatabaseTest extends C4BaseTest {
         }
     }
 
-    // - "Database Transaction"
-    @Test
-    public void testDatabaseTransaction() throws LiteCoreException {
-        assertEquals(0, db.getDocumentCount());
-        assertFalse(db.isInTransaction());
-        db.beginTransaction();
-        assertTrue(db.isInTransaction());
-        db.beginTransaction();
-        assertTrue(db.isInTransaction());
-        db.endTransaction(true);
-        assertTrue(db.isInTransaction());
-        db.endTransaction(true);
-        assertFalse(db.isInTransaction());
-    }
-
     // - "Database CreateRawDoc"
     @Test
     public void testDatabaseCreateRawDoc() throws LiteCoreException {
