@@ -68,12 +68,5 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertTrue(doc.flags().contains(DocumentFlag.DocumentFlagsDeleted));
         assertEquals(doc.getError().getDomain(), CBLError.Domain.CBLITE);
         assertEquals(doc.getError().getCode(), CBLError.Code.BUSY);
-
-        String replicatedDocumentInString = "ReplicatedDocument {" +
-            ", document id =" + docID +
-            ", error code =" + error.getCode() +
-            ", error domain=" + error.getDomain() +
-            '}';
-        assertEquals(doc.toString(), replicatedDocumentInString);
     }
 }
