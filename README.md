@@ -7,6 +7,10 @@
 
 Couchbase Lite 2.0 has a completely new set of APIs. The implementation is on top of [Couchbase Lite Core](https://github.com/couchbase/couchbase-lite-core), which is also a new cross-platform implementation of database CRUD and query features, as well as document versioning.
 
+## Issues
+Please file any issues concerning the Couchbase Lite Android product in the root project, couchbase-lite-android-ce,
+[here](https://github.com/couchbase/couchbase-lite-android-ce)
+
 ## Requirements
 
 - Android 4.4+ (API 19+)
@@ -25,7 +29,7 @@ Add the following in the dependencies section of the application's build.gradle 
 
 ```
 dependencies {
-    implementation 'com.couchbase.lite:couchbase-lite-android:2.0.0'
+    implementation 'com.couchbase.lite:couchbase-lite-android:2.5.0'
 }
 ```
 
