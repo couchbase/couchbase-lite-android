@@ -106,7 +106,7 @@ public class DatabaseTest extends BaseTest {
     List<String> createDocs(int n) throws CouchbaseLiteException {
         List<String> docs = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            MutableDocument doc = createMutableDocument(String.format(Locale.US, "doc_%03d", i));
+            MutableDocument doc = new MutableDocument(String.format(Locale.US, "doc_%03d", i));
             doc.setValue("key", i);
             Document savedDoc = save(doc);
             docs.add(savedDoc.getId());
@@ -396,7 +396,7 @@ public class DatabaseTest extends BaseTest {
         {
             final int NUM_DOCS = 10;//1000;
             for (int i = 0; i < NUM_DOCS; i++) {
-                MutableDocument doc = createMutableDocument(String.format(Locale.US, "doc_%03d", i));
+                MutableDocument doc = new MutableDocument(String.format(Locale.US, "doc_%03d", i));
                 doc.setValue("key", i);
                 save(doc);
             }
@@ -513,7 +513,7 @@ public class DatabaseTest extends BaseTest {
     public void testSaveDocToClosedDB() throws CouchbaseLiteException {
         db.close();
 
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("key", 1);
 
         try {
@@ -530,7 +530,7 @@ public class DatabaseTest extends BaseTest {
         // Delete db:
         deleteDatabase(db);
 
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("key", 1);
 
         try {
@@ -547,7 +547,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testDeletePreSaveDoc() {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("key", 1);
         try {
             db.delete(doc);
@@ -695,7 +695,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testPurgePreSaveDoc() {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         try {
             db.purge(doc);
             fail();
@@ -1315,7 +1315,7 @@ public class DatabaseTest extends BaseTest {
 
         for (int i = 0; i < NUM_DOCS; i++) {
             String docID = String.format(Locale.US, "doc_%03d", i);
-            MutableDocument doc = createMutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docID);
             doc.setValue("name", docID);
             byte[] data = docID.getBytes();
             Blob blob = new Blob("text/plain", data);

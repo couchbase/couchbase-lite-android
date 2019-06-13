@@ -605,7 +605,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         // "because the documents were purged and the replicator is already past them"
         assertEquals(0L, db.getCount());
-        run(config, 0, null, false, true);
+        run(config, 0, null, false, true, null);
 
         // "because the replicator was reset"
         assertEquals(2L, db.getCount());

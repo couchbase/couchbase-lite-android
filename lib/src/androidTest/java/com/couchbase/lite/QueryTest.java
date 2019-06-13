@@ -287,12 +287,12 @@ public class QueryTest extends BaseTest {
     @Test
     public void testWhereNullOrMissing() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
-        MutableDocument doc1 = createMutableDocument("doc1");
+        MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setValue("name", "Scott");
         doc1.setValue("address", null);
         save(doc1);
 
-        MutableDocument doc2 = createMutableDocument("doc2");
+        MutableDocument doc2 = new MutableDocument("doc2");
         doc2.setValue("name", "Tiger");
         doc2.setValue("address", "123 1st ave.");
         doc2.setValue("age", 20);
@@ -1035,7 +1035,7 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testArrayFunctions() throws Exception {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         MutableArray array = new MutableArray();
         array.addValue("650-123-0001");
         array.addValue("650-123-0002");
@@ -1092,7 +1092,7 @@ public class QueryTest extends BaseTest {
     public void testMathFunctions() throws Exception {
         double num = 0.6;
 
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("number", num);
         save(doc);
 
@@ -1165,7 +1165,7 @@ public class QueryTest extends BaseTest {
     @Test
     public void testStringFunctions() throws Exception {
         final String str = "  See you 18r  ";
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("greeting", str);
         save(doc);
 
@@ -1318,7 +1318,7 @@ public class QueryTest extends BaseTest {
     public void testUnicodeCollationWithLocale() throws Exception {
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter : letters) {
-            MutableDocument doc = createMutableDocument();
+            MutableDocument doc = new MutableDocument();
             doc.setValue("string", letter);
             save(doc);
         }
@@ -1465,7 +1465,7 @@ public class QueryTest extends BaseTest {
         );
 
         for (List<Object> data : testData) {
-            MutableDocument mDoc = createMutableDocument();
+            MutableDocument mDoc = new MutableDocument();
             mDoc.setValue("value", data.get(0));
             Document doc = save(mDoc);
 
@@ -1789,7 +1789,7 @@ public class QueryTest extends BaseTest {
     }
 
     private Document createTaskDocument(String title, boolean complete) throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument();
+        MutableDocument doc = new MutableDocument();
         doc.setString("type", "task");
         doc.setString("title", title);
         doc.setBoolean("complete", complete);
@@ -2326,7 +2326,7 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testMissingValue() throws CouchbaseLiteException {
-        MutableDocument doc1 = createMutableDocument("doc1");
+        MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setValue("name", "Scott");
         doc1.setValue("address", null);
         save(doc1);

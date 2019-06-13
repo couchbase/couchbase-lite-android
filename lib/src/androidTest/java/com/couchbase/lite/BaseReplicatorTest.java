@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.couchbase.lite.utils.Config;
+import com.couchbase.lite.utils.Fn;
 import com.couchbase.lite.utils.Report;
 
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PULL;
@@ -47,6 +48,43 @@ public class BaseReplicatorTest extends BaseTest {
     protected Database otherDB;
     protected Replicator repl;
     protected long timeout;  // seconds
+
+    @Before
+    public void setUp() throws Exception {
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+
+        super.setUp();
+
+        timeout = 15; // seconds
+        otherDB = openDB(OTHERDB);
+        assertTrue(otherDB.isOpen());
+        assertNotNull(otherDB);
+
+        try { Thread.sleep(500); }
+        catch (Exception ignore) { }
+    }
+
+    @After
+    public void tearDown() {
+        if (!otherDB.isOpen()) {
+            Report.log("expected otherDB to be open", new Exception());
+        }
+
+        try {
+            if (otherDB != null) {
+                otherDB.close();
+                otherDB = null;
+            }
+            deleteDatabase(OTHERDB);
+        }
+        catch (CouchbaseLiteException e) {
+            Report.log("Failed closing DB", e);
+        }
+
+        super.tearDown();
+
+        try { Thread.sleep(500); } catch (Exception ignore) { }
+    }
 
     protected URLEndpoint getRemoteEndpoint(String dbName, boolean secure) throws URISyntaxException {
         String uri = (secure ? "wss://" : "ws://") + config.remoteHost() + ":" + (secure ? config
@@ -77,7 +115,7 @@ public class BaseReplicatorTest extends BaseTest {
 
     protected Replicator run(final Replicator r, final int code, final String domain)
         throws InterruptedException {
-        return run(r, code, domain, false, false);
+        return run(r, code, domain, false, false, null);
     }
 
     protected Replicator run(
@@ -85,7 +123,7 @@ public class BaseReplicatorTest extends BaseTest {
         final int code,
         final String domain,
         final boolean ignoreErrorAtStopped) throws InterruptedException {
-        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, false);
+        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, false, null);
     }
 
     protected Replicator run(
@@ -93,8 +131,10 @@ public class BaseReplicatorTest extends BaseTest {
         final int code,
         final String domain,
         final boolean ignoreErrorAtStopped,
-        final boolean reset) throws InterruptedException {
-        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, reset);
+        final boolean reset,
+        final Fn.Consumer<Replicator> onReady)
+        throws InterruptedException {
+        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, reset, null);
     }
 
     protected Replicator run(
@@ -102,7 +142,8 @@ public class BaseReplicatorTest extends BaseTest {
         final int code,
         final String domain,
         final boolean ignoreErrorAtStopped,
-        final boolean reset)
+        final boolean reset,
+        final Fn.Consumer<Replicator> onReady)
         throws InterruptedException {
         repl = r;
         final CountDownLatch latch = new CountDownLatch(1);
@@ -111,49 +152,52 @@ public class BaseReplicatorTest extends BaseTest {
         ListenerToken token = repl.addChangeListener(
             executor,
             change -> {
+                final Replicator.Status status = change.getStatus();
+                final CouchbaseLiteException error = status.getError();
+
+                final String activity = ACTIVITY_NAMES[status.getActivityLevel().getValue()];
+                final long completed = status.getProgress().getCompleted();
+                final long total = status.getProgress().getTotal();
+
+                log(
+                    LogLevel.INFO,
+                    "ReplicatorChangeListener.changed() status: " + activity
+                        + "(" + completed + "/" + total + "), lastError: " + error);
+
                 try {
-                    Replicator.Status status = change.getStatus();
-                    CouchbaseLiteException error = status.getError();
-                    String activity = ACTIVITY_NAMES[status.getActivityLevel().getValue()];
-                    long completed = status.getProgress().getCompleted();
-                    long total = status.getProgress().getTotal();
-                    log(LogLevel.INFO, "ReplicatorChangeListener.changed() status: " + activity +
-                        "(" + completed + "/" + total + "), lastError: " + error);
-                    if (r.getConfig().isContinuous()) {
-                        if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE &&
-                            status.getProgress().getCompleted() == status.getProgress().getTotal()) {
-                            if (code != 0) {
+                    if (!r.getConfig().isContinuous()) {
+                        if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                            if (code == 0) {
+                                if (!ignoreErrorAtStopped) { assertNull(error); }
+                            }
+                            else {
+                                assertNotNull(error);
                                 assertEquals(code, error.getCode());
                                 if (domain != null) { assertEquals(domain, error.getDomain()); }
                             }
+                            latch.countDown();
+                        }
+                    }
+                    else {
+                        if ((status.getActivityLevel() == Replicator.ActivityLevel.IDLE)
+                            && (status.getProgress().getCompleted() == status.getProgress().getTotal())) {
+                            if (code == 0) { assertNull(error); }
                             else {
-                                assertNull(error);
+                                assertEquals(code, error.getCode());
+                                if (domain != null) { assertEquals(domain, error.getDomain()); }
                             }
                             latch.countDown();
                         }
                         else if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
-                            if (code != 0) {
+                            if (code == 0) {
+                                // TBD
+                            }
+                            else {
                                 assertNotNull(error);
                                 assertEquals(code, error.getCode());
                                 assertEquals(domain, error.getDomain());
                                 latch.countDown();
                             }
-                            else {
-                                // TBD
-                            }
-                        }
-                    }
-                    else {
-                        if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
-                            if (code != 0) {
-                                assertNotNull(error);
-                                assertEquals(code, error.getCode());
-                                if (domain != null) { assertEquals(domain, error.getDomain()); }
-                            }
-                            else {
-                                if (!ignoreErrorAtStopped) { assertNull(error); }
-                            }
-                            latch.countDown();
                         }
                     }
                 }
@@ -162,9 +206,9 @@ public class BaseReplicatorTest extends BaseTest {
                 }
             });
 
-        if (reset) {
-            repl.resetCheckpoint();
-        }
+        if (reset) { repl.resetCheckpoint(); }
+
+        if (onReady != null) { onReady.accept(repl); }
 
         repl.start();
         boolean success = latch.await(timeout, TimeUnit.SECONDS);
@@ -195,42 +239,5 @@ public class BaseReplicatorTest extends BaseTest {
         finally {
             repl.removeChangeListener(token);
         }
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
-
-        super.setUp();
-
-        timeout = 15; // seconds
-        otherDB = openDB(OTHERDB);
-        assertTrue(otherDB.isOpen());
-        assertNotNull(otherDB);
-
-        try { Thread.sleep(500); }
-        catch (Exception e) { }
-    }
-
-    @After
-    public void tearDown() {
-        if (!otherDB.isOpen()) {
-            Report.log("expected otherDB to be open", new Exception());
-        }
-
-        try {
-            if (otherDB != null) {
-                otherDB.close();
-                otherDB = null;
-            }
-            deleteDatabase(OTHERDB);
-        }
-        catch (CouchbaseLiteException e) {
-            Report.log("Failed closing DB", e);
-        }
-
-        super.tearDown();
-
-        try { Thread.sleep(500); } catch (Exception ignore) { }
     }
 }

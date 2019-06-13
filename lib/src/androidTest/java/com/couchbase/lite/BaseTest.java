@@ -49,6 +49,7 @@ import com.couchbase.lite.utils.Report;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
@@ -218,22 +219,10 @@ public class BaseTest {
             JSONObject json = new JSONObject(line);
             Map<String, Object> props = JsonUtils.fromJson(json);
             String docId = String.format(Locale.ENGLISH, "doc-%03d", n);
-            MutableDocument doc = createMutableDocument(docId);
+            MutableDocument doc = new MutableDocument(docId);
             doc.setData(props);
             save(doc);
         }
-    }
-
-    protected MutableDocument createMutableDocument() {
-        return new MutableDocument();
-    }
-
-    protected MutableDocument createMutableDocument(String id) {
-        return new MutableDocument(id);
-    }
-
-    protected MutableDocument createMutableDocument(String id, Map<String, Object> map) {
-        return new MutableDocument(id, map);
     }
 
     protected Document save(MutableDocument doc) throws CouchbaseLiteException {
@@ -255,18 +244,18 @@ public class BaseTest {
 
     // helper method to save document
     protected Document generateDocument(String docID) throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument(docID);
+        MutableDocument doc = new MutableDocument(docID);
         doc.setValue("key", 1);
         save(doc);
         Document savedDoc = db.getDocument(docID);
-        assertEquals(1, db.getCount());
+        assertTrue(db.getCount() > 0);
         assertEquals(1, savedDoc.getSequence());
         return savedDoc;
     }
 
     protected String createDocNumbered(int i, int num) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
-        MutableDocument doc = createMutableDocument(docID);
+        MutableDocument doc = new MutableDocument(docID);
         doc.setValue("number1", i);
         doc.setValue("number2", num - i);
         save(doc);

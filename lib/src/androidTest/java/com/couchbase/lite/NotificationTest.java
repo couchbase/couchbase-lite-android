@@ -49,7 +49,7 @@ public class NotificationTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 0; i < 10; i++) {
-                    MutableDocument doc = createMutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                    MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                     doc.setValue("type", "demo");
                     try {
                         save(doc);
@@ -65,8 +65,8 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testDocumentChange()
             throws InterruptedException, CouchbaseLiteException {
-        MutableDocument mDocA = createMutableDocument("A");
-        MutableDocument mDocB = createMutableDocument("B");
+        MutableDocument mDocA = new MutableDocument("A");
+        MutableDocument mDocB = new MutableDocument("B");
 
         // save doc
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -157,7 +157,7 @@ public class NotificationTest extends BaseTest {
                 @Override
                 public void run() {
                     for (int i = 0; i < 10; i++) {
-                        MutableDocument doc = createMutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                        MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                         doc.setValue("type", "demo");
                         try {
                             save(doc);
@@ -178,7 +178,7 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testAddSameChangeListeners()
             throws InterruptedException, CouchbaseLiteException {
-        MutableDocument doc1 = createMutableDocument("doc1");
+        MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setValue("name", "Scott");
         Document savedDoc1 = save(doc1);
 
@@ -217,7 +217,7 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testRemoveDocumentChangeListener()
             throws InterruptedException, CouchbaseLiteException {
-        MutableDocument doc1 = createMutableDocument("doc1");
+        MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setValue("name", "Scott");
         Document savedDoc1 = save(doc1);
 

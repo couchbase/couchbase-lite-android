@@ -48,7 +48,7 @@ public class ErrorCaseTest extends BaseTest {
     // -- DatabaseTest
     @Test
     public void testDeleteUnsavedDocument() {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         try {
             db.delete(doc);
@@ -64,7 +64,7 @@ public class ErrorCaseTest extends BaseTest {
 
     @Test
     public void testSaveSavedMutableDocument() throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
         doc.setValue("age", 20);
@@ -76,7 +76,7 @@ public class ErrorCaseTest extends BaseTest {
 
     @Test
     public void testDeleteSavedMutableDocument() throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
         db.delete(doc);
@@ -85,7 +85,7 @@ public class ErrorCaseTest extends BaseTest {
 
     @Test
     public void testDeleteDocAfterPurgeDoc() throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
 
@@ -105,7 +105,7 @@ public class ErrorCaseTest extends BaseTest {
 
     @Test
     public void testDeleteDocAfterDeleteDoc() throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
 
@@ -118,7 +118,7 @@ public class ErrorCaseTest extends BaseTest {
 
     @Test
     public void testPurgeDocAfterDeleteDoc() throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
 
@@ -131,7 +131,7 @@ public class ErrorCaseTest extends BaseTest {
 
     @Test
     public void testPurgeDocAfterPurgeDoc() throws CouchbaseLiteException {
-        MutableDocument doc = createMutableDocument("doc1");
+        MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
 

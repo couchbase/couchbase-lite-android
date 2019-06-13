@@ -76,7 +76,7 @@ public class ResultTest extends BaseTest {
 
     private String prepareData(int i) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
-        MutableDocument mDoc = createMutableDocument(docID);
+        MutableDocument mDoc = new MutableDocument(docID);
         if (i % 2 == 1)
             DocumentTest.populateData(mDoc);
         else

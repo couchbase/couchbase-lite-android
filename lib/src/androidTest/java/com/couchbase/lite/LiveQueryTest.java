@@ -153,7 +153,7 @@ public class LiveQueryTest extends BaseTest {
     // create test docs
     private void createDocNumbered(int i) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
-        MutableDocument doc = createMutableDocument(docID);
+        MutableDocument doc = new MutableDocument(docID);
         doc.setValue("number1", i);
         save(doc);
     }
