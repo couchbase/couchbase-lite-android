@@ -42,7 +42,6 @@ import static org.junit.Assert.assertTrue;
 
 
 public class BaseReplicatorTest extends BaseTest {
-    private static final String[] ACTIVITY_NAMES = {"stopped", "offline", "connecting", "idle", "busy"};
     private static final String OTHERDB = "otherdb";
 
     protected Database otherDB;
@@ -143,80 +142,25 @@ public class BaseReplicatorTest extends BaseTest {
         final String domain,
         final boolean ignoreErrorAtStopped,
         final boolean reset,
-        final Fn.Consumer<Replicator> onReady)
-        throws InterruptedException {
+        final Fn.Consumer<Replicator> onReady) {
         repl = r;
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicReference<AssertionError> replicationFailure = new AtomicReference<>(null);
 
-        ListenerToken token = repl.addChangeListener(
-            executor,
-            change -> {
-                final Replicator.Status status = change.getStatus();
-                final CouchbaseLiteException error = status.getError();
+        TestReplicatorChangeListener listener = new TestReplicatorChangeListener(r, domain, code, ignoreErrorAtStopped);
 
-                final String activity = ACTIVITY_NAMES[status.getActivityLevel().getValue()];
-                final long completed = status.getProgress().getCompleted();
-                final long total = status.getProgress().getTotal();
-
-                log(
-                    LogLevel.INFO,
-                    "ReplicatorChangeListener.changed() status: " + activity
-                        + "(" + completed + "/" + total + "), lastError: " + error);
-
-                try {
-                    if (!r.getConfig().isContinuous()) {
-                        if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
-                            if (code == 0) {
-                                if (!ignoreErrorAtStopped) { assertNull(error); }
-                            }
-                            else {
-                                assertNotNull(error);
-                                assertEquals(code, error.getCode());
-                                if (domain != null) { assertEquals(domain, error.getDomain()); }
-                            }
-                            latch.countDown();
-                        }
-                    }
-                    else {
-                        if ((status.getActivityLevel() == Replicator.ActivityLevel.IDLE)
-                            && (status.getProgress().getCompleted() == status.getProgress().getTotal())) {
-                            if (code == 0) { assertNull(error); }
-                            else {
-                                assertEquals(code, error.getCode());
-                                if (domain != null) { assertEquals(domain, error.getDomain()); }
-                            }
-                            latch.countDown();
-                        }
-                        else if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
-                            if (code == 0) {
-                                // TBD
-                            }
-                            else {
-                                assertNotNull(error);
-                                assertEquals(code, error.getCode());
-                                assertEquals(domain, error.getDomain());
-                                latch.countDown();
-                            }
-                        }
-                    }
-                }
-                catch (AssertionError e) {
-                    replicationFailure.set(e);
-                }
-            });
+        ListenerToken token = repl.addChangeListener(executor, listener);
 
         if (reset) { repl.resetCheckpoint(); }
 
         if (onReady != null) { onReady.accept(repl); }
 
         repl.start();
-        boolean success = latch.await(timeout, TimeUnit.SECONDS);
+        boolean success = listener.awaitCompletion(timeout, TimeUnit.SECONDS);
         repl.removeChangeListener(token);
 
         // see if the replication succeeded
-        AssertionError err = replicationFailure.get();
+        AssertionError err = listener.getFailureReason();
         if (err != null) { throw err; }
+
         assertTrue(success);
 
         return repl;
@@ -227,10 +171,7 @@ public class BaseReplicatorTest extends BaseTest {
         ListenerToken token = repl.addChangeListener(
             executor,
             change -> {
-                Replicator.Status status = change.getStatus();
-                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
-                    latch.countDown();
-                }
+                if (change.getStatus().getActivityLevel() == Replicator.ActivityLevel.STOPPED) { latch.countDown(); }
             });
         try {
             repl.stop();
