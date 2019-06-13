@@ -23,15 +23,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
-const val docID = "doc1"
+private const val docID = "doc1"
 
+
+// These tests are largely translations of Jay Vavachan's Obj-C tests
 class SaveConflictResolutionTests : BaseTest() {
 
-    //
+    /**
+     * 1. Test conflict handler that just returns true without modifying the document.
+     * 2. Test conflict handler that modifying the document and returns true.
+     * 3. Make sure that the document is saved correctly for both scenarios.
+     */
     @Test
     fun testConflictHandler() {
         val doc = MutableDocument(docID)
-
         doc.setString("location", "Olympia")
         save(doc)
 
@@ -86,66 +91,10 @@ class SaveConflictResolutionTests : BaseTest() {
         assertEquals(5L, curDoc.generation())
     }
 
-    // keep the new doc, replacing the deleted doc
-    @Test
-    fun testConflictHandlerWithDeletedOldDoc1() {
-        generateDocument(docID)
-
-        assertEquals(1, db.getDocument(docID).generation())
-
-        val doc1a = db.getDocument(docID)
-        val doc1b = db.getDocument(docID).toMutable()
-
-        db.delete(doc1a, ConcurrencyControl.LAST_WRITE_WINS)
-
-        doc1b.setString("location", "Olympia")
-
-        val succeeded = db.save(doc1b) { cur: MutableDocument, old: Document? ->
-            assertNotNull(cur)
-            assertNull(old)
-            true
-        }
-        assertTrue(succeeded)
-
-        assertEquals(doc1b, db.getDocument(docID))
-    }
-
-    // ignore the new doc, keeping the deletion.
-    @Test
-    fun testConflictHandlerWithDeletedOldDoc2() {
-        generateDocument(docID)
-
-        assertEquals(1, db.getDocument(docID).generation())
-
-        val doc1a = db.getDocument(docID).toMutable()
-        val doc1b = db.getDocument(docID).toMutable()
-
-        db.delete(doc1a, ConcurrencyControl.LAST_WRITE_WINS)
-
-        doc1b.setString("location", "Olympia")
-
-        var succeeded = false
-        try {
-            succeeded = db.save(doc1b) { cur: MutableDocument, old: Document? ->
-                assertNull(old)
-                assertNotNull(cur)
-                false
-            }
-            fail("save should not succeed!")
-        } catch (err: CouchbaseLiteException) {
-            assertEquals(CBLError.Code.CONFLICT, err.code)
-        }
-        assertFalse(succeeded)
-
-        assertNull(db.getDocument(docID))
-
-        val c4doc = db.c4Database.get(docID, false)
-        assertNotNull(c4doc)
-        assertTrue(c4doc.deleted())
-    }
-
-    // when the conflict handler returns false
-    // failing the conflict handler causes no change
+    /**
+     * 1. Test conflict handler that return false.
+     * 2. Make sure that the save method return false as well and the original document has no change.
+     */
     @Test
     fun testCancelConflictHandler() {
         val doc = MutableDocument(docID)
@@ -212,56 +161,80 @@ class SaveConflictResolutionTests : BaseTest() {
         assertEquals(3, newDoc.generation())
     }
 
+    /**
+     * 1. Test conflict handler that has an old doc as a deleted doc.
+     * 2. Make sure that the old doc is null.
+     * 3. Make sure that if returning true, the doc is saved correctly.
+     *    If returning false, the document should be deleted as no change.
+     */
     @Test
-    fun testCancelConflictHandlerCalledTwice() {
-        val doc = MutableDocument(docID)
-        doc.setString("location", "Olympia")
-        save(doc)
+    fun testConflictHandlerWithDeletedOldDoc1() {
+        generateDocument(docID)
+
+        assertEquals(1, db.getDocument(docID).generation())
+
+        val doc1a = db.getDocument(docID)
+        val doc1b = db.getDocument(docID).toMutable()
+
+        db.delete(doc1a, ConcurrencyControl.LAST_WRITE_WINS)
+
+        doc1b.setString("location", "Olympia")
+
+        val succeeded = db.save(doc1b) { cur: MutableDocument, old: Document? ->
+            assertNotNull(cur)
+            assertNull(old)
+            true
+        }
+        assertTrue(succeeded)
+
+        assertEquals(doc1b, db.getDocument(docID))
+    }
+
+    /**
+     * 1. Test conflict handler that has an old doc as a deleted doc.
+     * 2. Make sure that the old doc is null.
+     * 3. Make sure that if returning true, the doc is saved correctly.
+     *    If returning false, the document should be deleted as no change.
+     */
+    @Test
+    fun testConflictHandlerWithDeletedOldDoc2() {
+        generateDocument(docID)
 
         assertEquals(1, db.getDocument(docID).generation())
 
         val doc1a = db.getDocument(docID).toMutable()
         val doc1b = db.getDocument(docID).toMutable()
 
-        doc1a.setString("artist", "Sheep Jones")
-        db.save(doc1a)
+        db.delete(doc1a, ConcurrencyControl.LAST_WRITE_WINS)
 
-        assertEquals(2, db.getDocument(docID).generation())
+        doc1b.setString("location", "Olympia")
 
-        doc1b.setString("artist", "Holly Sears")
-
-        var count = 0
-        var succeeded = db.save(doc1b) { cur: MutableDocument, old: Document? ->
-                count++
-                val doc1c = db.getDocument(docID).toMutable()
-                if (!doc1c.getBoolean("second update")) {
-                    assertEquals(2L, cur.generation())
-                    assertEquals(2L, old?.generation())
-                    doc1c.setBoolean("second update", true)
-                    save(doc1c)
-                    assertEquals(3L, db.getDocument(docID).generation())
-                }
-                val data = old?.toMap()?.toMutableMap() ?: mutableMapOf()
-                for (key in cur.keys) { data[key] = cur.getValue(key) }
-                cur.setData(data)
-                cur.setString("edit", "local")
-                true
+        var succeeded = false
+        try {
+            succeeded = db.save(doc1b) { cur: MutableDocument, old: Document? ->
+                assertNull(old)
+                assertNotNull(cur)
+                false
             }
-        assertTrue(succeeded)
+            fail("save should not succeed!")
+        } catch (err: CouchbaseLiteException) {
+            assertEquals(CBLError.Code.CONFLICT, err.code)
+        }
+        assertFalse(succeeded)
 
-        assertEquals(2, count)
+        assertNull(db.getDocument(docID))
 
-        val newDoc = db.getDocument(docID)
-        assertEquals(4, newDoc.generation()) // ??? is this right?
-        assertEquals(newDoc.getString("location"), "Olympia")
-        assertEquals(newDoc.getString("artist"), "Holly Sears")
-        assertEquals(newDoc.getString("edit"), "local")
+        val c4doc = db.c4Database.get(docID, false)
+        assertNotNull(c4doc)
+        assertTrue(c4doc.deleted())
     }
 
+    /**
+     * 1. Test that an exception thrown from the conflict handler is captured and rethrown to the save method correctly.
+     */
     @Test
     fun testConflictHandlerThrowsException() {
         val doc = MutableDocument(docID)
-
         doc.setString("location", "Olympia")
         save(doc)
 
@@ -291,10 +264,67 @@ class SaveConflictResolutionTests : BaseTest() {
         assertEquals(2L, db.getDocument(docID).generation())
     }
 
+    /**
+     * 1. Test conflict handler that just returns true with modifying the document.
+     *    It's possible that the conflict might happen again after trying to save the resolved document to the database.
+     * 2. We could simulate this situation by update the local document before returning a resolved doc
+     *    and make sure that the conflict resolver is called again.
+     * 3. Make sure that the document is saved correctly with updated information, called twice.
+     */
+    @Test
+    fun testCancelConflictHandlerCalledTwice() {
+        val doc = MutableDocument(docID)
+        doc.setString("location", "Olympia")
+        save(doc)
+
+        assertEquals(1, db.getDocument(docID).generation())
+
+        val doc1a = db.getDocument(docID).toMutable()
+        val doc1b = db.getDocument(docID).toMutable()
+
+        doc1a.setString("artist", "Sheep Jones")
+        db.save(doc1a)
+
+        assertEquals(2, db.getDocument(docID).generation())
+
+        doc1b.setString("artist", "Holly Sears")
+
+        var count = 0
+        var succeeded = db.save(doc1b) { cur: MutableDocument, old: Document? ->
+            count++
+            val doc1c = db.getDocument(docID).toMutable()
+            if (!doc1c.getBoolean("second update")) {
+                assertEquals(2L, cur.generation())
+                assertEquals(2L, old?.generation())
+                doc1c.setBoolean("second update", true)
+                save(doc1c)
+                assertEquals(3L, db.getDocument(docID).generation())
+            }
+            val data = old?.toMap()?.toMutableMap() ?: mutableMapOf()
+            for (key in cur.keys) { data[key] = cur.getValue(key) }
+            cur.setData(data)
+            cur.setString("edit", "local")
+            true
+        }
+        assertTrue(succeeded)
+
+        assertEquals(2, count)
+
+        val newDoc = db.getDocument(docID)
+        assertEquals(4, newDoc.generation())
+        assertEquals(newDoc.getString("location"), "Olympia")
+        assertEquals(newDoc.getString("artist"), "Holly Sears")
+        assertEquals(newDoc.getString("edit"), "local")
+    }
+
+    /**
+     * 1. Get and make some changes to doc1a.
+     * 2. Purge doc1b.
+     * 3. Save doc1a, which should return false with error NotFound.
+     */
     @Test
     fun testConflictHandlerWhenDocumentIsPurged() {
         val doc = MutableDocument(docID)
-
         doc.setString("location", "Olympia")
         save(doc)
 
