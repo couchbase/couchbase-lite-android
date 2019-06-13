@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +57,20 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertEquals(doc.isPush(), isPush);
         assertEquals(doc.getReplicator(), repl);
         assertEquals(doc.getDocuments(), docs);
+    }
+
+    // https://issues.couchbase.com/browse/CBL-89
+    // Thanks to @James Flather for the ready-made test code
+    @Test
+    public void testStopBeforeStart() throws URISyntaxException {
+        new Replicator(makeConfig(true, false, false, new URLEndpoint(new URI("wss://foo")))).stop();
+    }
+
+    // https://issues.couchbase.com/browse/CBL-88
+    // Thanks to @James Flather for the ready-made test code
+    @Test
+    public void testStatusBeforeStart() throws URISyntaxException {
+        new Replicator(makeConfig(true, false, false, new URLEndpoint(new URI("wss://foo")))).getStatus();
     }
 
     @Test
