@@ -277,6 +277,16 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
+    public final void testMutateEmptyDocument() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument("doc");
+        db.save(doc);
+
+        doc = db.getDocument("doc").toMutable();
+        doc.setString("foo", "bar");
+        db.save(doc);
+    }
+
+    @Test
     public void testGetValueFromDocument() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         save(doc, d -> {
