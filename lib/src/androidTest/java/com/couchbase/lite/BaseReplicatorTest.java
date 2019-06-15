@@ -107,21 +107,15 @@ public class BaseReplicatorTest extends BaseTest {
         return config;
     }
 
-    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain)
-        throws InterruptedException {
+    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain){
         return run(config, code, domain, false);
-    }
-
-    protected Replicator run(final Replicator r, final int code, final String domain)
-        throws InterruptedException {
-        return run(r, code, domain, false, false, null);
     }
 
     protected Replicator run(
         final ReplicatorConfiguration config,
         final int code,
         final String domain,
-        final boolean ignoreErrorAtStopped) throws InterruptedException {
+        final boolean ignoreErrorAtStopped) {
         return run(new Replicator(config), code, domain, ignoreErrorAtStopped, false, null);
     }
 
@@ -131,9 +125,12 @@ public class BaseReplicatorTest extends BaseTest {
         final String domain,
         final boolean ignoreErrorAtStopped,
         final boolean reset,
-        final Fn.Consumer<Replicator> onReady)
-        throws InterruptedException {
-        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, reset, null);
+        final Fn.Consumer<Replicator> onReady) {
+        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, reset, onReady);
+    }
+
+    protected Replicator run(final Replicator r, final int code, final String domain) {
+        return run(r, code, domain, false, false, null);
     }
 
     protected Replicator run(
