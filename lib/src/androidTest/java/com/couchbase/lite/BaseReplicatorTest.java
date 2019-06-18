@@ -107,7 +107,7 @@ public class BaseReplicatorTest extends BaseTest {
         return config;
     }
 
-    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain){
+    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain) {
         return run(config, code, domain, false);
     }
 
