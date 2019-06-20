@@ -95,15 +95,30 @@ public class BaseReplicatorTest extends BaseTest {
         return makeConfig(push, pull, continuous, this.db, target);
     }
 
+    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, ConflictResolver resolver) {
+        return makeConfig(push, pull, false, this.db, new DatabaseEndpoint(otherDB), resolver);
+    }
+
     protected ReplicatorConfiguration makeConfig(
         boolean push,
         boolean pull,
         boolean continuous,
         Database db,
         Endpoint target) {
+        return makeConfig(push, pull, continuous, db, target, null);
+    }
+
+    protected ReplicatorConfiguration makeConfig(
+        boolean push,
+        boolean pull,
+        boolean continuous,
+        Database db,
+        Endpoint target,
+        ConflictResolver resolver) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
         config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
         config.setContinuous(continuous);
+        if (resolver != null) { config.setConflictResolver(resolver); }
         return config;
     }
 
