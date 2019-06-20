@@ -447,8 +447,8 @@ coveralls {
 }
 
 task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest'])
-
 task checkLocal(dependsOn: ['smoketest', 'connectedDebugAndroidTest'])
 
-task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'connectedAndroidTest'])
+task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'assemble'])
+task testCI(dependsOn: ['buildCI', 'connectedAndroidTest'])
 
