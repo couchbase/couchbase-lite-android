@@ -95,10 +95,6 @@ public class BaseReplicatorTest extends BaseTest {
         return makeConfig(push, pull, continuous, this.db, target);
     }
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, ConflictResolver resolver) {
-        return makeConfig(push, pull, false, this.db, new DatabaseEndpoint(otherDB), resolver);
-    }
-
     protected ReplicatorConfiguration makeConfig(
         boolean push,
         boolean pull,
