@@ -191,11 +191,29 @@ task sourcesJar(type: Jar) {
     classifier = 'sources'
 }
 
+// Say something once, why say it again?  Because gradle.
+// This is the only way I could figure out, to get some of these things onto the javadoc classpath
+// This is just and extreme hack.  My apologies.
+configurations { javadocDeps }
+dependencies {
+    javadocDeps files("${buildDir}/generated/source/buildConfig/debug")
+    javadocDeps files("${buildDir}/generated/source/buildConfig/release")
+    javadocDeps 'com.android.support:support-annotations:28.0.0'
+    javadocDeps 'com.google.code.findbugs:annotations:3.0.1'
+    javadocDeps 'com.squareup.okhttp3:okhttp:3.9.1'
+}
+
 // Generate javadoc
 task javadoc(type: Javadoc) {
+    afterEvaluate { dependsOn tasks.getByName("compileDebugJavaWithJavac") }
     failOnError false
+
     source android.sourceSets.main.java.srcDirs
+
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.default
+    classpath += configurations.javadocDeps
+    
     options {
         title = "Couchbase Lite ${project.version}"
         memberLevel = JavadocMemberLevel.PUBLIC
@@ -205,14 +223,7 @@ task javadoc(type: Javadoc) {
         locale = 'en_US'
         links "https://docs.oracle.com/javase/7/docs/api/"
         linksOffline "https://developer.android.com/reference/", "${project.android.sdkDirectory}/docs/reference"
-    }
-
-    include 'com/couchbase/lite/*'
-    exclude '**/internal/**'
-
-    /* Turn off javadoc 8 overly pedantic lint checking */
-    if (JavaVersion.current().isJava8Compatible()) {
-        options.addStringOption('Xdoclint:none', '-quiet')
+        addStringOption('Xdoclint:none', '-quiet')
     }
 }
 
