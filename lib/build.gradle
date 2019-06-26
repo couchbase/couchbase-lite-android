@@ -110,6 +110,7 @@ android {
             path "${cblJavaDir}/CMakeLists.txt"
         }
     }
+
     sourceSets {
         main {
             java.srcDirs = [
@@ -143,7 +144,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.android.support:support-annotations:28.0.0'
+    compileOnly 'com.android.support:support-annotations:27.1.1'
     compileOnly 'com.google.code.findbugs:annotations:3.0.1'
 
     implementation 'com.squareup.okhttp3:okhttp:3.9.1'
@@ -176,43 +177,46 @@ def mavenRepoPass = properties.getProperty('maven.repo.pass')
 //  which is in .../build/intermediates, causing subsequent
 //  builds to fail.
 // ----------------------------------------------------------------
-clean.doFirst {
-    delete "${projectDir}/.externalNativeBuild"
-}
+clean.doFirst { delete "${projectDir}/.externalNativeBuild" }
 
 // ----------------------------------------------------------------
 // javadoc.jar and source.jar
 // ----------------------------------------------------------------
 
-// Generate source.jar
-task sourcesJar(type: Jar) {
-    baseName = project.name
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
+// Say something once, why say it again?  Because gradle.
+// This is the only way I could figure out, to get some of these things onto the javadoc classpath
+// This is just and extreme hack.  My apologies.
+configurations { javadocDeps }
+dependencies {
+    javadocDeps files("${buildDir}/generated/source/buildConfig/debug")
+    javadocDeps files("${buildDir}/generated/source/buildConfig/release")
+    javadocDeps 'com.android.support:support-annotations:27.1.1'
+    javadocDeps 'com.google.code.findbugs:annotations:3.0.1'
+    javadocDeps 'com.squareup.okhttp3:okhttp:3.9.1'
 }
 
 // Generate javadoc
 task javadoc(type: Javadoc) {
+    afterEvaluate { dependsOn tasks.getByName("compileDebugJavaWithJavac") }
+
     failOnError false
+
     source android.sourceSets.main.java.srcDirs
+
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.compile
+    classpath += configurations.javadocDeps
+
     options {
-        title = "Couchbase Lite ${project.version}"
+        title = "Couchbase Lite Community Edition ${project.version}"
         memberLevel = JavadocMemberLevel.PUBLIC
         docEncoding = 'UTF-8'
         encoding = 'UTF-8'
         charSet = 'UTF-8'
         locale = 'en_US'
-        links "https://docs.oracle.com/javase/7/docs/api/"
+        links "https://docs.oracle.com/javase/8/docs/api/"
         linksOffline "https://developer.android.com/reference/", "${project.android.sdkDirectory}/docs/reference"
-    }
-
-    include 'com/couchbase/lite/*'
-    exclude '**/internal/**'
-
-    /* Turn off javadoc 8 overly pedantic lint checking */
-    if (JavaVersion.current().isJava8Compatible()) {
-        options.addStringOption('Xdoclint:none', '-quiet')
+        addStringOption('Xdoclint:none', '-quiet')
     }
 }
 
@@ -221,6 +225,13 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     baseName = project.name
     classifier = 'javadoc'
     from javadoc.destinationDir
+}
+
+// Generate source.jar
+task sourcesJar(type: Jar) {
+    baseName = project.name
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
 }
 
 // ----------------------------------------------------------------
@@ -449,6 +460,6 @@ coveralls {
 task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest'])
 task checkLocal(dependsOn: ['smoketest', 'connectedDebugAndroidTest'])
 
-task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'assemble'])
+task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'assembleRelease'])
 task testCI(dependsOn: ['buildCI', 'connectedAndroidTest'])
 

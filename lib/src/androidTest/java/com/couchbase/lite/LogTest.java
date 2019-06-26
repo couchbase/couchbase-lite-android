@@ -109,9 +109,15 @@ public class LogTest extends BaseTest {
 
                 try {
                     for (File log : path.listFiles()) {
+                        android.util.Log.d("###", "Log file: " + log.getCanonicalPath());
+
                         BufferedReader fin = new BufferedReader(new FileReader(log));
                         int lineCount = 0;
-                        while (fin.readLine() != null) { lineCount++; }
+                        String l;
+                        while ((l = fin.readLine()) != null) {
+                            android.util.Log.d("###", "    " + l);
+                            lineCount++;
+                        }
 
                         // One meta line per log, so the actual logging lines is X - 1
                         if (log.getAbsolutePath().contains("verbose")) {
