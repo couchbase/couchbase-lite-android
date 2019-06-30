@@ -138,24 +138,29 @@ public class C4BaseTest {
 
     private byte[] createFleeceBody(Map<String, Object> body) throws LiteCoreException {
         FLEncoder enc = new FLEncoder();
-        enc.beginDict(body != null ? body.size() : 0);
-        for (String key : body.keySet()) {
-            enc.writeKey(key);
-            enc.writeValue(body.get(key));
-        }
-        enc.endDict();
-        return enc.finish();
+        try {
+            enc.beginDict(body != null ? body.size() : 0);
+            for (String key : body.keySet()) {
+                enc.writeKey(key);
+                enc.writeValue(body.get(key));
+            }
+            enc.endDict();
+            return enc.finish();
+        } finally { enc.free(); }
     }
 
     protected byte[] json2fleece(String json) throws LiteCoreException {
         boolean commit = false;
         db.beginTransaction();
+        FLSliceResult body = null;
         try {
-            byte[] bytes = db.encodeJSON(json5(json).getBytes()).getBuf();
+            body = db.encodeJSON(json5(json).getBytes());
+            byte[] bytes = body.getBuf();
             commit = true;
             return bytes;
         }
         finally {
+            if (body != null) body.free();;
             db.endTransaction(commit);
         }
     }
@@ -176,9 +181,7 @@ public class C4BaseTest {
             assertNotNull(output);
             Assert.assertArrayEquals(input, output);
         }
-        finally {
-            enc.free();
-        }
+        finally { enc.free(); }
     }
 
     @After

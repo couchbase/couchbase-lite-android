@@ -25,7 +25,7 @@ import java.util.Map;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.AllocSlice;
-import com.couchbase.lite.internal.fleece.Encoder;
+import com.couchbase.lite.internal.fleece.FLEncoder;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -100,12 +100,14 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected List<String> run(Map<String, Object> params) throws LiteCoreException {
         List<String> docIDs = new ArrayList<>();
         C4QueryOptions opts = new C4QueryOptions();
-        C4QueryEnumerator e = query.run(opts, encodeParameters(params));
+        AllocSlice encodedParams = encodeParameters(params);
+        C4QueryEnumerator e = query.run(opts, encodedParams);
         assertNotNull(e);
         while (e.next()) {
             docIDs.add(e.getColumns().getValueAt(0).asString());
         }
-        e.free();
+        if (e != null) e.free();
+        if (encodedParams != null) encodedParams.free();
         return docIDs;
     }
 
@@ -116,20 +118,25 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected List<List<List<Long>>> runFTS(Map<String, Object> params) throws LiteCoreException {
         List<List<List<Long>>> matches = new ArrayList<>();
         C4QueryOptions opts = new C4QueryOptions();
-        C4QueryEnumerator e = query.run(opts, encodeParameters(params));
+        AllocSlice encodedParams = encodeParameters(params);
+        C4QueryEnumerator e = query.run(opts,encodedParams);
         assertNotNull(e);
         while (e.next()) {
             List<List<Long>> match = new ArrayList<>();
             for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatchs(i).toList()); }
             matches.add(match);
         }
-        e.free();
+        if (e != null) e.free();
+        if (encodedParams != null) encodedParams.free();
         return matches;
     }
 
     private AllocSlice encodeParameters(Map<String, Object> params) throws LiteCoreException {
-        Encoder encoder = new Encoder();
-        encoder.write(params);
-        return encoder.finish();
+        FLEncoder encoder = new FLEncoder();
+        try {
+            encoder.write(params);
+            return encoder.finish2();
+        }
+        finally { encoder.free(); }
     }
 }
