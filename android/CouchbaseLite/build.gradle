@@ -30,10 +30,16 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.0'
+        classpath 'com.android.tools.build:gradle:3.4.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.2'
     }
+}
+
+// -PbuildNumber=123
+def buildNo = "0"
+if (hasProperty("buildNumber")) {
+    buildNo = buildNumber;
 }
 
 /**
@@ -41,12 +47,6 @@ buildscript {
  */
 group   = 'com.couchbase.lite'
 version = file("${projectDir}/../../version.txt").text.trim()
-
-// -PbuildNumber=123
-def buildNo = "0"
-if (hasProperty("buildNumber")) {
-    buildNo = buildNumber;
-}
 
 // git commit hash
 def getGitHash = { ->
@@ -64,7 +64,7 @@ def getGitHash = { ->
  */
 android {
     compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         minSdkVersion 19
@@ -74,7 +74,7 @@ android {
         project.archivesBaseName = "couchbase-lite-android-${versionName}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         ndk {
-            abiFilters 'x86', 'armeabi-v7a', 'arm64-v8a'
+            abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }
         externalNativeBuild {
             cmake {
@@ -100,6 +100,7 @@ android {
     }
     externalNativeBuild {
         cmake {
+            version "3.10.2"
             path "${projectDir}/../../libs/couchbase-lite-core/CMakeLists.txt"
         }
     }
@@ -235,7 +236,7 @@ bintray {
         issueTrackerUrl = 'https://github.com/couchbase/couchbase-lite-android/issues'
         publicDownloadNumbers = false
         version {
-            name = this.version
+            name = "${project.version}"
         }
     }
 }
@@ -276,32 +277,34 @@ def pomConfig = {
     }
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId group
-            artifactId 'couchbase-lite-android'
-            version this.version
+project.afterEvaluate {
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId group
+                artifactId 'couchbase-lite-android'
+                version "${project.version}"
 
-            artifact bundleRelease
-            artifact sourcesJar
-            artifact javadocJar
+                artifact bundleReleaseAar
+                artifact sourcesJar
+                artifact javadocJar
 
-            pom.withXml {
-                def root = asNode()
-                // Workaround for description:
-                root.appendNode('description', 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.')
-                root.children().last() + pomConfig
+                pom.withXml {
+                    def root = asNode()
+                    // Workaround for description:
+                    root.appendNode('description', 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.')
+                    root.children().last() + pomConfig
 
-                // maven-publish workaround to include dependencies
-                def dependenciesNode = asNode().appendNode('dependencies')
+                    // maven-publish workaround to include dependencies
+                    def dependenciesNode = asNode().appendNode('dependencies')
 
-                //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
-                configurations.implementation.allDependencies.each {
-                    def dependencyNode = dependenciesNode.appendNode('dependency')
-                    dependencyNode.appendNode('groupId', it.group)
-                    dependencyNode.appendNode('artifactId', it.name)
-                    dependencyNode.appendNode('version', it.version)
+                    //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
+                    configurations.implementation.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
                 }
             }
         }
