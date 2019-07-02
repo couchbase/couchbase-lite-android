@@ -295,10 +295,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private C4ReplicationFilter c4ReplPushFilter;
     private C4ReplicationFilter c4ReplPullFilter;
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
-    private int retryCount;
     private CouchbaseLiteException lastError;
     private String desc = null;
     private ScheduledExecutorService handler;
+    private int retryCount;
     private ScheduledFuture<?> retryFuture;
     private NetworkReachabilityManager reachabilityManager = null;
     private Map<String, Object> responseHeaders = null; // Do something with these (for auth)
@@ -345,7 +345,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             Log.i(DOMAIN, "%s: Starting", this);
-            retryCount = 0;
+            resetRetryCount();
             _start();
         }
     }
