@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -294,10 +295,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private C4ReplicationFilter c4ReplPushFilter;
     private C4ReplicationFilter c4ReplPullFilter;
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
-    private int retryCount;
     private CouchbaseLiteException lastError;
     private String desc = null;
     private ScheduledExecutorService handler;
+    private int retryCount;
+    private ScheduledFuture<?> retryFuture;
     private NetworkReachabilityManager reachabilityManager = null;
     private Map<String, Object> responseHeaders = null; // Do something with these (for auth)
     private boolean resetCheckpoint = false; // Reset the replicator checkpoint.
@@ -343,7 +345,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             Log.i(DOMAIN, "%s: Starting", this);
-            retryCount = 0;
+            resetRetryCount();
             _start();
         }
     }
@@ -500,8 +502,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         synchronized (lock) {
             if (c4repl == null) {
                 Log.i(DOMAIN, "%s: Server may now be reachable; retrying...", this);
-                retryCount = 0;
-                retry();
+                resetRetryCount();
+                scheduleRetry(0);
             }
         }
     }
@@ -708,8 +710,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         notifyDocumentEnded(update);
     }
 
-    private void notifyDocumentEnded(DocumentReplication update)
-    {
+    private void notifyDocumentEnded(DocumentReplication update) {
         synchronized (docEndedListenerTokens) {
             for (DocumentReplicationListenerToken token : docEndedListenerTokens)
                 token.notify(update);
@@ -758,7 +759,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     c4Status.setActivityLevel(kC4Offline);
                 }
             } else if (c4Status.getActivityLevel() > kC4Connecting) {
-                retryCount = 0;
+                resetRetryCount();
                 if (reachabilityManager != null)
                     reachabilityManager.removeNetworkReachabilityListener(this);
             }
@@ -776,8 +777,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
             // If Stopped:
             if (c4Status.getActivityLevel() == kC4Stopped) {
-                // Stopped
-                this.clearRepl();
+                cancelScheduledRetry();
+                clearRepl();
                 config.getDatabase().getActiveReplications().remove(this); // this is likely to dealloc me
             }
         }
@@ -803,12 +804,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             // On transient error, retry periodically, with exponential backoff:
             int delay = retryDelay(++retryCount);
             Log.i(DOMAIN, "%s: Transient error (%s); will retry in %d sec...", this, c4err, delay);
-            handler.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    retry();
-                }
-            }, delay, TimeUnit.SECONDS);
+            scheduleRetry(delay);
         } else {
             Log.i(DOMAIN, "%s: Network error (%s); will retry when network changes...", this, c4err);
         }
@@ -821,6 +817,31 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private static int retryDelay(int retryCount) {
         int delay = 1 << Math.min(retryCount, 30);
         return Math.min(delay, kMaxRetryDelay);
+    }
+
+    private void scheduleRetry(long delay) {
+        cancelScheduledRetry();
+        retryFuture = handler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                retry();
+            }
+        }, delay, TimeUnit.SECONDS);
+    }
+
+    private void cancelScheduledRetry() {
+        if (retryFuture != null && !retryFuture.isDone()) {
+            Log.v(DOMAIN, "%s Cancel the pending scheduled retry", this);
+            retryFuture.cancel(false);
+        }
+        retryFuture = null;
+    }
+
+    private void resetRetryCount() {
+        if (retryCount > 0) {
+            retryCount = 0;
+            Log.v(DOMAIN, "%s Reset retry count to zero", this);
+        }
     }
 
     private void updateStateProperties(C4ReplicatorStatus status) {
@@ -863,7 +884,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         reachabilityManager.addNetworkReachabilityListener(this);
     }
 
-    // - (void) clearRepl
     private void clearRepl() {
         if (c4repl != null) {
             c4repl.free();
@@ -871,7 +891,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         }
     }
 
-    // - (NSString*) description
     private String description() {
         return String.format(Locale.ENGLISH, "%s[%s%s%s %s %s]",
                 Replicator.class.getSimpleName(),
@@ -882,8 +901,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 config.getTarget());
     }
 
-    private void setProgressLevel(ReplicatorProgressLevel level)
-    {
+    private void setProgressLevel(ReplicatorProgressLevel level) {
         progressLevel = level;
     }
 
