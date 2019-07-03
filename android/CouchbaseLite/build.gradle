@@ -36,17 +36,17 @@ buildscript {
     }
 }
 
-/**
- * group and version
- */
-group   = 'com.couchbase.lite'
-version = file("${projectDir}/../../version.txt").text.trim()
-
 // -PbuildNumber=123
 def buildNo = "0"
 if (hasProperty("buildNumber")) {
     buildNo = buildNumber;
 }
+
+/**
+ * group and version
+ */
+group   = 'com.couchbase.lite'
+version = file("${projectDir}/../../version.txt").text.trim()
 
 // git commit hash
 def getGitHash = { ->
@@ -100,6 +100,7 @@ android {
     }
     externalNativeBuild {
         cmake {
+            version "3.10.2"
             path "${projectDir}/../../libs/couchbase-lite-core/CMakeLists.txt"
         }
     }
@@ -235,7 +236,7 @@ bintray {
         issueTrackerUrl = 'https://github.com/couchbase/couchbase-lite-android/issues'
         publicDownloadNumbers = false
         version {
-            name = this.version
+            name = "${project.version}"
         }
     }
 }
@@ -282,7 +283,7 @@ project.afterEvaluate {
             mavenJava(MavenPublication) {
                 groupId group
                 artifactId 'couchbase-lite-android'
-                version this.version
+                version "${project.version}"
 
                 artifact bundleReleaseAar
                 artifact sourcesJar
