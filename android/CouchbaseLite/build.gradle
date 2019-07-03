@@ -78,7 +78,6 @@ android {
         }
         externalNativeBuild {
             cmake {
-                version '3.6.0'
                 arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
                 cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 // explicitly build libs
