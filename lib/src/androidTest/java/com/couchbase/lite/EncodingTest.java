@@ -24,7 +24,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.fleece.AllocSlice;
-import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.Encoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 
 import static org.junit.Assert.assertEquals;
@@ -36,7 +36,7 @@ public class EncodingTest extends BaseTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1453
     @Test
-    public void testFLEncode() throws Exception {
+    public void testFLEncode() {
         testRoundTrip(42L);
         testRoundTrip(Long.MIN_VALUE);
         testRoundTrip("Fleece");
@@ -50,7 +50,7 @@ public class EncodingTest extends BaseTest {
     }
 
     @Test
-    public void testFLEncodeUTF8() throws Exception {
+    public void testFLEncodeUTF8() {
         testRoundTrip("Goodbye cruel world"); // one byte utf-8 chars
         testRoundTrip("Goodbye cruel £ world"); // a two byte utf-8 chars
         testRoundTrip("Goodbye cruel ᘺ world"); // a three byte utf-8 char
@@ -128,14 +128,14 @@ public class EncodingTest extends BaseTest {
             null);
     }
 
-    private void testRoundTrip(Object item) throws Exception { testRoundTrip(item, item); }
+    private void testRoundTrip(Object item) { testRoundTrip(item, item); }
 
-    private void testRoundTrip(Object item, Object expected) throws Exception {
-        final FLEncoder encoder = new FLEncoder();
-        AllocSlice slice = null;
+    private void testRoundTrip(Object item, Object expected) {
+        Encoder encoder = new Encoder();
+        assertNotNull(encoder);
         try {
-            assertTrue(encoder.writeValue(item));
-            slice = encoder.finish2();
+            assertTrue(encoder.writeObject(item));
+            AllocSlice slice = encoder.finish();
             assertNotNull(slice);
             FLValue flValue = FLValue.fromData(slice);
             assertNotNull(flValue);
@@ -143,8 +143,7 @@ public class EncodingTest extends BaseTest {
             assertEquals(expected, obj);
         }
         finally {
-            if (slice != null) slice.free();
-            encoder.free();
+            encoder.release();
         }
     }
 

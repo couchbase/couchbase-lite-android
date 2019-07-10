@@ -45,8 +45,8 @@ public class MValueDelegate implements MValue.Delegate {
     }
 
     @Override
-    public void encodeNative(FLEncoder enc, Object object) {
+    public void encodeNative(Encoder enc, Object object) {
         if (object == null) { enc.writeNull(); }
-        else { enc.writeValue(object); }
+        else { enc.writeObject(object); }
     }
 }

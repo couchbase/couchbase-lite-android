@@ -25,7 +25,7 @@ import java.util.Map;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.AllocSlice;
-import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.Encoder;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -100,18 +100,13 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected List<String> run(Map<String, Object> params) throws LiteCoreException {
         List<String> docIDs = new ArrayList<>();
         C4QueryOptions opts = new C4QueryOptions();
-        AllocSlice encodedParams = encodeParameters(params);
-        C4QueryEnumerator e = query.run(opts, encodedParams);
-        try {
-            assertNotNull(e);
-            while (e.next()) {
-                docIDs.add(e.getColumns().getValueAt(0).asString());
-            }
-            return docIDs;
-        } finally {
-            if (e != null) e.free();
-            if (encodedParams != null) encodedParams.free();
+        C4QueryEnumerator e = query.run(opts, encodeParameters(params));
+        assertNotNull(e);
+        while (e.next()) {
+            docIDs.add(e.getColumns().getValueAt(0).asString());
         }
+        e.free();
+        return docIDs;
     }
 
     protected List<List<List<Long>>> runFTS() throws LiteCoreException {
@@ -121,25 +116,20 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected List<List<List<Long>>> runFTS(Map<String, Object> params) throws LiteCoreException {
         List<List<List<Long>>> matches = new ArrayList<>();
         C4QueryOptions opts = new C4QueryOptions();
-        AllocSlice encodedParams = encodeParameters(params);
-        C4QueryEnumerator e = query.run(opts, encodedParams);
+        C4QueryEnumerator e = query.run(opts, encodeParameters(params));
         assertNotNull(e);
         while (e.next()) {
             List<List<Long>> match = new ArrayList<>();
             for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatchs(i).toList()); }
             matches.add(match);
         }
-        if (e != null) e.free();
-        if (encodedParams != null) encodedParams.free();
+        e.free();
         return matches;
     }
 
     private AllocSlice encodeParameters(Map<String, Object> params) throws LiteCoreException {
-        FLEncoder encoder = new FLEncoder();
-        try {
-            encoder.write(params);
-            return encoder.finish2();
-        }
-        finally { encoder.free(); }
+        Encoder encoder = new Encoder();
+        encoder.write(params);
+        return encoder.finish();
     }
 }

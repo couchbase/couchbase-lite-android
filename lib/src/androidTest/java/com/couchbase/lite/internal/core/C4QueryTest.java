@@ -612,4 +612,24 @@ public class C4QueryTest extends C4QueryBaseTest {
         e.free();
 
     }
+
+    // - Delete index
+    @Test
+    public void testDeleteIndex() {
+        // TODO
+    }
+
+    // - COLLATION:
+
+    // - DB Query collated
+    @Test
+    public void testDBQueryCollated() {
+        // TODO
+    }
+
+    // - DB Query aggregate collated
+    @Test
+    public void testDBQueryAggregateCollated() {
+        // TODO
+    }
 }
