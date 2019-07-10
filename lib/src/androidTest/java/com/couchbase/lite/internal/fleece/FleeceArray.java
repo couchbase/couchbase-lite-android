@@ -170,7 +170,7 @@ public class FleeceArray implements List<Object>, Encodable {
 
     // Implementation of FLEncodable
     @Override
-    public void encodeTo(Encoder enc) {
+    public void encodeTo(FLEncoder enc) {
         _array.encodeTo(enc);
     }
 
