@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -105,15 +106,22 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     }
 
     @Override
-    public Set<Entry<String, Object>> entrySet() { throw new UnsupportedOperationException(); }
+    public Set<Entry<String, Object>> entrySet() {
+        Set<Entry<String, Object>> entrySet = new HashSet<>();
+        for (String key : dict.getKeys()) {
+            entrySet.add(new AbstractMap.SimpleEntry<String, Object>(key, get(key)));
+        }
+        return entrySet;
+    }
 
-    // Implementation of FLEncodable
+    // FLEncodable
+
     @Override
-    public void encodeTo(Encoder enc) {
+    public void encodeTo(FLEncoder enc) {
         dict.encodeTo(enc);
     }
 
-    // For MValue
+    // MValue
 
     MCollection toMCollection() {
         return dict;
