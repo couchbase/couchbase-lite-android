@@ -102,13 +102,16 @@ public class C4QueryBaseTest extends C4BaseTest {
         C4QueryOptions opts = new C4QueryOptions();
         AllocSlice encodedParams = encodeParameters(params);
         C4QueryEnumerator e = query.run(opts, encodedParams);
-        assertNotNull(e);
-        while (e.next()) {
-            docIDs.add(e.getColumns().getValueAt(0).asString());
+        try {
+            assertNotNull(e);
+            while (e.next()) {
+                docIDs.add(e.getColumns().getValueAt(0).asString());
+            }
+            return docIDs;
+        } finally {
+            if (e != null) e.free();
+            if (encodedParams != null) encodedParams.free();
         }
-        if (e != null) e.free();
-        if (encodedParams != null) encodedParams.free();
-        return docIDs;
     }
 
     protected List<List<List<Long>>> runFTS() throws LiteCoreException {
@@ -119,7 +122,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         List<List<List<Long>>> matches = new ArrayList<>();
         C4QueryOptions opts = new C4QueryOptions();
         AllocSlice encodedParams = encodeParameters(params);
-        C4QueryEnumerator e = query.run(opts,encodedParams);
+        C4QueryEnumerator e = query.run(opts, encodedParams);
         assertNotNull(e);
         while (e.next()) {
             List<List<Long>> match = new ArrayList<>();

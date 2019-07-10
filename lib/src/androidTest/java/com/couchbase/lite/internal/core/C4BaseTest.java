@@ -160,7 +160,7 @@ public class C4BaseTest {
             return bytes;
         }
         finally {
-            if (body != null) body.free();;
+            if (body != null) body.free();
             db.endTransaction(commit);
         }
     }
