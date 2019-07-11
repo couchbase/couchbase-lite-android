@@ -130,7 +130,7 @@ class SaveConflictResolutionTests : BaseTest() {
         assertEquals(curDoc, doc1a)
 
         // make sure no update to revision and generation
-        assertEquals(doc1a.revID, curDoc.revID)
+        assertEquals(doc1a.revisionID, curDoc.revisionID)
         assertEquals(2, curDoc.generation())
 
         val doc1c = db.getDocument(docID).toMutable()
@@ -157,7 +157,7 @@ class SaveConflictResolutionTests : BaseTest() {
         // make sure no update to revision and generation
         val newDoc = db.getDocument(docID)
         assertEquals(newDoc, doc1c)
-        assertEquals(doc1c.revID, newDoc.revID)
+        assertEquals(doc1c.revisionID, newDoc.revisionID)
         assertEquals(3, newDoc.generation())
     }
 
