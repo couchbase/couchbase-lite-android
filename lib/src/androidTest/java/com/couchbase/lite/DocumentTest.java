@@ -40,6 +40,7 @@ import com.couchbase.lite.internal.utils.DateUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -2636,5 +2637,32 @@ public class DocumentTest extends BaseTest {
         Assert.assertNotEquals(mDoc3.hashCode(), doc2.toMutable().hashCode());
         Assert.assertNotEquals(mDoc3.hashCode(), mDoc1.hashCode());
         Assert.assertNotEquals(mDoc3.hashCode(), mDoc2.hashCode());
+    }
+
+    @Test
+    public void testRevisionIDNewDoc() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument();
+        assertNull(doc.getRevisionID());
+        db.save(doc);
+        assertNotNull(doc.getRevisionID());
+    }
+
+    @Test
+    public void testRevisionIDExistingDoc() throws CouchbaseLiteException {
+        MutableDocument mdoc = new MutableDocument("doc1");
+        db.save(mdoc);
+
+        Document doc = db.getDocument("doc1");
+        String docRevID = mdoc.getRevisionID();
+        assertEquals(mdoc.getRevisionID(), docRevID);
+
+        mdoc = doc.toMutable();
+        assertEquals(docRevID, mdoc.getRevisionID());
+
+        mdoc.setInt("int", 88);
+        db.save(mdoc);
+
+        assertEquals(docRevID, doc.getRevisionID());
+        assertNotEquals(docRevID, mdoc.getRevisionID());
     }
 }
