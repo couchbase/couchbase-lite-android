@@ -61,8 +61,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
     @After
     public void tearDown() throws Exception {
-        if (delegate != null)
-            MValue.registerDelegate(delegate);
+        if (delegate != null) { MValue.registerDelegate(delegate); }
         super.tearDown();
     }
 
@@ -110,7 +109,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             return v.toJSON5();
         }
         finally {
-            if (fleece != null) fleece.free();
+            if (fleece != null) { fleece.free(); }
         }
     }
 
@@ -177,14 +176,14 @@ public class C4MutableFleeceTest extends C4BaseTest {
             verifyDictIterator(dict);
 
             assertEquals(
-                    "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
-                    fleece2JSON(encode(dict)));
+                "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
+                fleece2JSON(encode(dict)));
             assertEquals(
-                    "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
-                    fleece2JSON(encode(root)));
+                "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
+                fleece2JSON(encode(root)));
         }
         finally {
-            if (data != null) data.free();
+            if (data != null) { data.free(); }
         }
     }
 
@@ -230,14 +229,14 @@ public class C4MutableFleeceTest extends C4BaseTest {
             nested.set(1, true);
 
             assertEquals(
-                    "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
-                    fleece2JSON(encode(array)));
+                "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
+                fleece2JSON(encode(array)));
             assertEquals(
-                    "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
-                    fleece2JSON(encode(root)));
+                "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
+                fleece2JSON(encode(root)));
         }
         finally {
-            if (data != null) data.free();
+            if (data != null) { data.free(); }
         }
     }
 
@@ -257,7 +256,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             }
         }
         finally {
-            if (data != null) data.free();
+            if (data != null) { data.free(); }
         }
     }
 
@@ -314,11 +313,11 @@ public class C4MutableFleeceTest extends C4BaseTest {
             verifyDictIterator(dict);
 
             assertEquals(
-                    "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
-                    fleece2JSON(encode(dict)));
+                "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
+                fleece2JSON(encode(dict)));
         }
         finally {
-            if (data != null) data.free();
+            if (data != null) { data.free(); }
         }
     }
 
@@ -350,14 +349,14 @@ public class C4MutableFleeceTest extends C4BaseTest {
             array.add(true);
 
             assertEquals(
-                    "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
-                    fleece2JSON(encode(root)));
+                "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
+                fleece2JSON(encode(root)));
             assertEquals(
-                    "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
-                    fleece2JSON(root.encode()));
+                "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
+                fleece2JSON(root.encode()));
         }
         finally {
-            if (data != null) data.free();
+            if (data != null) { data.free(); }
         }
     }
 
@@ -389,11 +388,11 @@ public class C4MutableFleeceTest extends C4BaseTest {
             dict.put("new", array);
             array.add(true);
             assertEquals(
-                    "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
-                    fleece2JSON(root.encode()));
+                "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
+                fleece2JSON(root.encode()));
         }
         finally {
-            if (data != null) data.free();
+            if (data != null) { data.free(); }
         }
     }
 
@@ -423,7 +422,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encode(root)));
         }
         finally {
-            if (data != null) data.free();
+            if (data != null) { data.free(); }
         }
     }
 }

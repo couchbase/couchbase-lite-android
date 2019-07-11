@@ -53,9 +53,7 @@ import static org.junit.Assert.fail;
 
 public class C4BaseTest {
     static {
-        try {
-            System.loadLibrary("LiteCoreJNI");
-        }
+        try { System.loadLibrary("LiteCoreJNI"); }
         catch (Exception e) {
             fail("ERROR: Failed to load libLiteCoreJNI.so");
         }
@@ -84,22 +82,6 @@ public class C4BaseTest {
     protected static final String kRev3ID = "3-deadbeef";
     protected byte[] kFleeceBody;
 
-    protected boolean isRevTrees() {
-        return versioning == C4Constants.DocumentVersioning.REVISION_TREES;
-    }
-
-    protected boolean isVersionVectors() {
-        return versioning == C4Constants.DocumentVersioning.VERSION_VECTORS;
-    }
-
-    public int getFlags() {
-        return flags;
-    }
-
-    public int getVersioning() {
-        return versioning;
-    }
-
     @Before
     public void setUp() throws Exception {
         context = InstrumentationRegistry.getTargetContext();
@@ -123,31 +105,29 @@ public class C4BaseTest {
         kFleeceBody = createFleeceBody(body);
     }
 
-    protected void deleteDatabaseFile(String dbFileName) {
-        deleteFile(dbFileName);
-    }
-
-    private void deleteFile(String filename) {
-        File file = new File(context.getFilesDir(), filename);
-        if (file.exists()) {
-            if (!file.delete()) {
-                Log.e(TAG, "ERROR failed to delete: dbFile=" + file);
-            }
+    @After
+    public void tearDown() throws Exception {
+        if (db != null) {
+            db.close();
+            db.free();
+            db = null;
         }
+        if (dir != null) { FileUtils.cleanDirectory(dir); }
     }
 
-    private byte[] createFleeceBody(Map<String, Object> body) throws LiteCoreException {
-        FLEncoder enc = new FLEncoder();
-        try {
-            enc.beginDict(body != null ? body.size() : 0);
-            for (String key : body.keySet()) {
-                enc.writeKey(key);
-                enc.writeValue(body.get(key));
-            }
-            enc.endDict();
-            return enc.finish();
-        } finally { enc.free(); }
+    public int getFlags() { return flags; }
+
+    public int getVersioning() { return versioning; }
+
+    protected boolean isRevTrees() {
+        return versioning == C4Constants.DocumentVersioning.REVISION_TREES;
     }
+
+    protected boolean isVersionVectors() {
+        return versioning == C4Constants.DocumentVersioning.VERSION_VECTORS;
+    }
+
+    protected void deleteDatabaseFile(String dbFileName) { deleteFile(dbFileName); }
 
     protected byte[] json2fleece(String json) throws LiteCoreException {
         boolean commit = false;
@@ -160,7 +140,7 @@ public class C4BaseTest {
             return bytes;
         }
         finally {
-            if (body != null) body.free();
+            if (body != null) { body.free(); }
             db.endTransaction(commit);
         }
     }
@@ -182,16 +162,6 @@ public class C4BaseTest {
             Assert.assertArrayEquals(input, output);
         }
         finally { enc.free(); }
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (db != null) {
-            db.close();
-            db.free();
-            db = null;
-        }
-        if (dir != null) { FileUtils.cleanDirectory(dir); }
     }
 
     protected void reopenDB() throws LiteCoreException {
@@ -289,7 +259,7 @@ public class C4BaseTest {
     // Read a file that contains a JSON document per line. Every line becomes a document.
     protected long importJSONLines(InputStream is, String idPrefix, double timeout, boolean verbose)
         throws LiteCoreException, IOException {
-        Log.i(TAG, String.format("Reading data from input stream ..."));
+        Log.i(TAG, "Reading data from input stream ...");
         StopWatch st = new StopWatch();
         long numDocs = 0;
         boolean commit = false;
@@ -355,15 +325,6 @@ public class C4BaseTest {
         return json;
     }
 
-    private InputStream openTestPropertiesFile() throws IOException {
-        try {
-            return context.getAssets().open(Config.EE_TEST_PROPERTIES_FILE);
-        }
-        catch (IOException e) {
-            return context.getAssets().open(com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE);
-        }
-    }
-
     List<C4BlobKey> addDocWithAttachments(String docID, List<String> attachments, String contentType)
         throws LiteCoreException {
         List<C4BlobKey> keys = new ArrayList<>();
@@ -399,5 +360,37 @@ public class C4BaseTest {
         body.free();
         doc.free();
         return keys;
+    }
+
+    private InputStream openTestPropertiesFile() throws IOException {
+        try {
+            return context.getAssets().open(Config.EE_TEST_PROPERTIES_FILE);
+        }
+        catch (IOException e) {
+            return context.getAssets().open(com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE);
+        }
+    }
+
+    private void deleteFile(String filename) {
+        File file = new File(context.getFilesDir(), filename);
+        if (file.exists()) {
+            if (!file.delete()) {
+                Log.e(TAG, "ERROR failed to delete: dbFile=" + file);
+            }
+        }
+    }
+
+    private byte[] createFleeceBody(Map<String, Object> body) throws LiteCoreException {
+        FLEncoder enc = new FLEncoder();
+        try {
+            enc.beginDict(body != null ? body.size() : 0);
+            for (String key : body.keySet()) {
+                enc.writeKey(key);
+                enc.writeValue(body.get(key));
+            }
+            enc.endDict();
+            return enc.finish();
+        }
+        finally { enc.free(); }
     }
 }

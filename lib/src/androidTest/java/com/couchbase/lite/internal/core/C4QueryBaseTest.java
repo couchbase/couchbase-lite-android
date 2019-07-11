@@ -108,9 +108,10 @@ public class C4QueryBaseTest extends C4BaseTest {
                 docIDs.add(e.getColumns().getValueAt(0).asString());
             }
             return docIDs;
-        } finally {
-            if (e != null) e.free();
-            if (encodedParams != null) encodedParams.free();
+        }
+        finally {
+            if (e != null) { e.free(); }
+            if (encodedParams != null) { encodedParams.free(); }
         }
     }
 
@@ -129,8 +130,8 @@ public class C4QueryBaseTest extends C4BaseTest {
             for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatchs(i).toList()); }
             matches.add(match);
         }
-        if (e != null) e.free();
-        if (encodedParams != null) encodedParams.free();
+        if (e != null) { e.free(); }
+        if (encodedParams != null) { encodedParams.free(); }
         return matches;
     }
 

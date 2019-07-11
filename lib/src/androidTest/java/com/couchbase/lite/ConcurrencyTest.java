@@ -212,7 +212,6 @@ public class ConcurrencyTest extends BaseTest {
                     }
                     catch (CouchbaseLiteException e) { fail(); }
                 }
-                ;
             });
 
         final CountDownLatch latch2 = new CountDownLatch(1);
