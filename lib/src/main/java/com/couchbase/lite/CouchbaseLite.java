@@ -20,20 +20,32 @@ import android.support.annotation.NonNull;
 
 import java.io.File;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Constructor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.ExecutionService;
+import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public final class CouchbaseLite {
+    private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
+
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
 
+    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
+
+    // Utility class
     private CouchbaseLite() {}
 
     public static void init(@NonNull Context ctxt) {
-        if (ctxt == null) { throw new IllegalArgumentException("Context may not be null"); }
+        Preconditions.checkArgNotNull(ctxt, "context");
+
+        loadSystemLibrary(LITECORE_JNI_LIBRARY);
 
         final SoftReference<Context> currentContext = CONTEXT.get();
         if (currentContext != null) { return; }
@@ -78,5 +90,35 @@ public final class CouchbaseLite {
         if ((dir.exists() || dir.mkdirs()) && dir.isDirectory()) { return path; }
 
         throw new IllegalStateException("Cannot create or access temp directory at " + path);
+    }
+
+    private static void loadSystemLibrary(String libName) {
+        if (LOADED.getAndSet(true)) { return; }
+
+        if (!load(libName)) { Log.e(LogDomain.DATABASE, "Cannot load native library"); }
+        else { Log.v(LogDomain.DATABASE, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'"); }
+
+        initMValue();
+    }
+
+    // TODO: Need to update for CBL Java.
+    private static boolean load(String libName) {
+        try {
+            System.loadLibrary(libName);
+            return true;
+        }
+        catch (UnsatisfiedLinkError ignore) { }
+        return false;
+    }
+
+    private static void initMValue() {
+        try {
+            final Constructor c = Class.forName("com.couchbase.lite.MValueDelegate").getDeclaredConstructor();
+            c.setAccessible(true);
+            MValue.registerDelegate((MValue.Delegate) c.newInstance());
+        }
+        catch (Exception e) {
+            throw new IllegalStateException("Cannot initialize MValue delegate", e);
+        }
     }
 }

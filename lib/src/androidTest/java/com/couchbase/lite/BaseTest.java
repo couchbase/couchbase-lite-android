@@ -78,18 +78,14 @@ public class BaseTest {
 
     @Before
     public void setUp() throws Exception {
+        final Context ctxt = InstrumentationRegistry.getTargetContext();
+        CouchbaseLite.init(ctxt);
+
         executor = CouchbaseLite.getExecutionService().getSerialExecutor();
         testFailure = new AtomicReference<>();
 
-        final Context ctxt = InstrumentationRegistry.getTargetContext();
-
-        CouchbaseLite.init(ctxt);
-        try {
-            config = new Config(openTestPropertiesFile());
-        }
-        catch (IOException e) {
-            fail("Failed to load test.properties");
-        }
+        try { config = new Config(openTestPropertiesFile()); }
+        catch (IOException e) { fail("Failed to load test.properties"); }
 
         setDir(new File(ctxt.getFilesDir(), "CouchbaseLiteTest"));
 

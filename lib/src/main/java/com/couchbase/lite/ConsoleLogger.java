@@ -23,6 +23,7 @@ import android.util.Log;
 import java.util.EnumSet;
 
 import com.couchbase.lite.internal.core.C4Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -55,13 +56,12 @@ public final class ConsoleLogger implements Logger {
      * @param domains The domains to make active
      */
     public void setDomains(@NonNull EnumSet<LogDomain> domains) {
-        if (domains == null) { throw new IllegalArgumentException("domains cannot be null."); }
-
+        Preconditions.checkArgNotNull(domains, "domains");
         logDomains = domains;
     }
 
     private void setCallbackLevel(@NonNull LogLevel level) {
-        if (level == null) { throw new IllegalArgumentException("level cannot be null."); }
+        Preconditions.checkArgNotNull(level, "level");
 
         LogLevel callbackLevel = level;
         final Logger custom = Database.log.getCustom();
@@ -74,9 +74,7 @@ public final class ConsoleLogger implements Logger {
 
     @NonNull
     @Override
-    public LogLevel getLevel() {
-        return logLevel;
-    }
+    public LogLevel getLevel() { return logLevel; }
 
     /**
      * Sets the overall logging level that will be written to
@@ -85,7 +83,7 @@ public final class ConsoleLogger implements Logger {
      * @param level The maximum level to include in the logs
      */
     public void setLevel(@NonNull LogLevel level) {
-        if (level == null) { throw new IllegalArgumentException("level cannot be null."); }
+        Preconditions.checkArgNotNull(level, "level");
 
         if (logLevel == level) { return; }
 

@@ -37,6 +37,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 
+import com.couchbase.lite.CouchbaseLite;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -52,13 +53,6 @@ import static org.junit.Assert.fail;
 
 
 public class C4BaseTest {
-    static {
-        try { System.loadLibrary("LiteCoreJNI"); }
-        catch (Exception e) {
-            fail("ERROR: Failed to load libLiteCoreJNI.so");
-        }
-    }
-
     protected static final String TAG = "C4Test";
 
     protected int encryptionAlgorithm() {
@@ -85,12 +79,11 @@ public class C4BaseTest {
     @Before
     public void setUp() throws Exception {
         context = InstrumentationRegistry.getTargetContext();
-        try {
-            config = new Config(openTestPropertiesFile());
-        }
-        catch (FileNotFoundException e) {
-            config = new Config();
-        }
+        CouchbaseLite.init(context);
+
+        try { config = new Config(openTestPropertiesFile()); }
+        catch (FileNotFoundException e) { config = new Config(); }
+
         String tempdir = context.getCacheDir().getAbsolutePath();
         if (tempdir != null) { C4.setenv("TMPDIR", tempdir, 1); }
         String dbFilename = "cbl_core_test.sqlite3";
