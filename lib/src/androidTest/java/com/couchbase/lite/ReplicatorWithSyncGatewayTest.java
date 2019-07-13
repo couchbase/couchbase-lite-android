@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.utils.Config;
+import com.couchbase.lite.utils.ReplicatorIntegrationTest;
 
 
 /**
@@ -43,36 +44,31 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     @Before
     public void setUp() throws Exception {
         config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
-        if (config.replicatorTestsEnabled()) { super.setUp(); }
+        super.setUp();
     }
 
     @After
-    public void tearDown() {
-        if (config.replicatorTestsEnabled()) { super.tearDown(); }
-    }
+    public void tearDown() { super.tearDown(); }
 
     @Test
+    @ReplicatorIntegrationTest
     public void testEmptyPullFromRemoteDB() throws Exception {
-        if (!config.replicatorTestsEnabled()) { return; }
-
         Endpoint target = getRemoteEndpoint("scratch", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         run(config, 0, null);
     }
 
     @Test
+    @ReplicatorIntegrationTest
     public void testAuthenticationFailure() throws Exception {
-        if (!config.replicatorTestsEnabled()) { return; }
-
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         run(config, CBLError.Code.HTTP_AUTH_REQUIRED, CBLError.Domain.CBLITE);
     }
 
     @Test
+    @ReplicatorIntegrationTest
     public void testAuthenticatedPullWithIncorrectPassword() throws Exception {
-        if (!config.replicatorTestsEnabled()) { return; }
-
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
@@ -80,10 +76,8 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     }
 
     @Test
+    @ReplicatorIntegrationTest
     public void testAuthenticatedPull() throws Exception {
-        if (!config.replicatorTestsEnabled()) { return; }
-
-
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
@@ -91,9 +85,8 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     }
 
     @Test
+    @ReplicatorIntegrationTest
     public void testSessionAuthenticatorPull() throws Exception {
-        if (!config.replicatorTestsEnabled()) { return; }
-
         // Obtain Sync-Gateway Session ID
         SessionAuthenticator auth = getSessionAuthenticatorFromSG();
         Endpoint target = getRemoteEndpoint("seekrit", false);
@@ -102,7 +95,7 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         run(config, 0, null);
     }
 
-    SessionAuthenticator getSessionAuthenticatorFromSG() throws Exception {
+    private SessionAuthenticator getSessionAuthenticatorFromSG() throws Exception {
         // Obtain Sync-Gateway Session ID
         final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
         OkHttpClient client = new OkHttpClient();

@@ -1,5 +1,5 @@
 //
-// ConcurrencyTest.java
+// ConcurrencyUnitTest.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
+import com.couchbase.lite.utils.ConcurrencyUnitTest;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -45,9 +47,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentCreate() throws CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 50;
         final int kNThreads = 4;
         final int kWaitInSec = 180;
@@ -67,9 +68,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentCreateInBatch() throws CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 50;
         final int kNThreads = 4;
         final int kWaitInSec = 180;
@@ -96,9 +96,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentUpdate() throws CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         // NOTE: By increasing number of threads, update causes crash!
         final int kNDocs = 5;
         final int kNRounds = 50;
@@ -125,9 +124,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentRead() throws CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
@@ -142,9 +140,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentReadInBatch() throws CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
@@ -165,9 +162,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentReadNUpdate() throws InterruptedException, CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 5;
         final int kNRounds = 50;
 
@@ -192,9 +188,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentDelete() throws InterruptedException, CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 100;
 
         // createDocs2 returns synchronized List.
@@ -235,9 +230,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentPurge() throws InterruptedException, CouchbaseLiteException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int nDocs = 100;
 
         // createDocs returns synchronized List.
@@ -278,9 +272,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentCreateNCloseDB() throws InterruptedException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -312,9 +305,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentCreateNDeleteDB() throws InterruptedException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -346,9 +338,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentCreateNCompactDB() throws InterruptedException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -377,9 +368,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testConcurrentCreateNCreateIndexDB() throws Exception {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         loadJSONResource("sentences.json");
 
         final int kNDocs = 100;
@@ -413,9 +403,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testBlockDatabaseChange() throws InterruptedException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
@@ -434,9 +423,8 @@ public class ConcurrencyTest extends BaseTest {
     }
 
     @Test
+    @ConcurrencyUnitTest
     public void testBlockDocumentChange() throws InterruptedException {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
@@ -456,9 +444,8 @@ public class ConcurrencyTest extends BaseTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1407
     @Test
+    @ConcurrencyUnitTest
     public void testQueryExecute() throws Exception {
-        if (!config.concurrentTestsEnabled()) { return; }
-
         loadJSONResource("names_100.json");
 
         final Query query = QueryBuilder

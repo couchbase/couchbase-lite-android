@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import android.support.test.filters.FlakyTest;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
@@ -90,6 +92,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     @Test
+    @FlakyTest
     public void testNetworkRetry() throws URISyntaxException, InterruptedException {
         Endpoint target = getRemoteTargetEndpoint();
         ReplicatorConfiguration config = makeConfig(false, true, true, db, target);

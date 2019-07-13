@@ -34,6 +34,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -156,7 +157,7 @@ public class DatabaseTest extends BaseTest {
         Database db = new Database("db", config);
         try {
             assertNotNull(db.getConfig());
-            assertFalse(db.getConfig() == config);
+            assertNotSame(db.getConfig(), config);
             assertEquals(db.getConfig().getDirectory(), config.getDirectory());
         }
         finally {

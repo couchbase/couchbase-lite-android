@@ -371,13 +371,7 @@ public class BaseTest {
     }
 
     private InputStream openTestPropertiesFile() throws IOException {
-        final AssetManager assets = CouchbaseLite.getContext().getAssets();
-        try {
-            return assets.open(Config.EE_TEST_PROPERTIES_FILE);
-        }
-        catch (IOException e) {
-            return assets.open(Config.TEST_PROPERTIES_FILE);
-        }
+        return CouchbaseLite.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE);
     }
 
     // https://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the

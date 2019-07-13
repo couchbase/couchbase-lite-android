@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.IOUtils;
+import com.couchbase.lite.utils.ReplicatorIntegrationTest;
 
 
 /**
@@ -38,30 +39,26 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
     @Before
     public void setUp() throws Exception {
         config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
-        if (config.replicatorTestsEnabled()) { super.setUp(); }
+        super.setUp();
     }
 
     @After
-    public void tearDown() {
-        if (config.replicatorTestsEnabled()) { super.tearDown(); }
-    }
+    public void tearDown() { super.tearDown(); }
 
     /**
      * This test assumes an SG is serving SSL at port 4994 with a self-signed cert.
      */
     @Test
+    @ReplicatorIntegrationTest
     public void testSelfSignedSSLFailure() throws InterruptedException, URISyntaxException {
-        if (!config.replicatorTestsEnabled()) { return; }
-
         Endpoint target = getRemoteEndpoint("beer", true);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         run(config, CBLError.Code.TLS_CERT_UNTRUSTED, "NetworkDomain");
     }
 
     @Test
+    @ReplicatorIntegrationTest
     public void testSelfSignedSSLPinned() throws InterruptedException, IOException, URISyntaxException {
-        if (!config.replicatorTestsEnabled()) { return; }
-
         timeout = 180; // seconds
         InputStream is = getAsset("cert.cer"); // this is self-signed certificate. Can not pass with Android platform.
         byte[] cert = IOUtils.toByteArray(is);

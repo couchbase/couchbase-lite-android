@@ -21,44 +21,33 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
+
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public class Config extends java.util.Properties {
+public class Config {
     public static final String TEST_PROPERTIES_FILE = "test.properties";
-    public static final String EE_TEST_PROPERTIES_FILE = "ee_test.properties";
+
+    private final Properties props = new Properties();
+
+    public Config() { }
 
     public Config(InputStream in) throws IOException {
-        try { load(new InputStreamReader(in, StandardCharsets.UTF_8)); }
+        Preconditions.checkArgNotNull(in, "inputStream");
+        try { props.load(new InputStreamReader(in, StandardCharsets.UTF_8)); }
         finally { in.close(); }
     }
 
     public boolean deleteDatabaseInTearDown() {
-        return Boolean.parseBoolean(getProperty("deleteDatabaseInTearDown"));
+        return Boolean.parseBoolean(props.getProperty("deleteDatabaseInTearDown"));
     }
 
-    public boolean eeFeaturesTestsEnabled() {
-        return Boolean.parseBoolean(getProperty("eeFeaturesTestsEnabled"));
-    }
+    public String remoteHost() { return props.getProperty("remoteHost"); }
 
-    public boolean replicatorTestsEnabled() { return Boolean.parseBoolean(getProperty("replicatorTestsEnabled")); }
+    public int remotePort() { return Integer.parseInt(props.getProperty("remotePort")); }
 
-    public boolean concurrentTestsEnabled() {
-        return Boolean.parseBoolean(getProperty("concurrentTestsEnabled"));
-    }
+    public String remoteDB() { return props.getProperty("remoteDB"); }
 
-    public boolean loadTestsEnabled() {
-        return Boolean.parseBoolean(getProperty("loadTestsEnabled"));
-    }
-
-    public String remoteHost() {
-        return getProperty("remoteHost");
-    }
-
-    public int remotePort() {
-        return Integer.parseInt(getProperty("remotePort"));
-    }
-
-    public int secureRemotePort() {
-        return Integer.parseInt(getProperty("secureRemotePort"));
-    }
+    public int secureRemotePort() { return Integer.parseInt(props.getProperty("secureRemotePort")); }
 }

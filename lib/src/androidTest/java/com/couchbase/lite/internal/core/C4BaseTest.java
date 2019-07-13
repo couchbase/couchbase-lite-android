@@ -23,7 +23,6 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,20 +33,17 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 
 import com.couchbase.lite.CouchbaseLite;
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.utils.Config;
 import com.couchbase.lite.internal.utils.StopWatch;
+import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -55,34 +51,24 @@ import static org.junit.Assert.fail;
 public class C4BaseTest {
     protected static final String TAG = "C4Test";
 
-    protected int encryptionAlgorithm() {
-        return C4Constants.EncryptionAlgorithm.NONE;
-    }
-
-    protected byte[] encryptionKey() {
-        return null;
-    }
-
-    protected Config config;
-    protected Context context;
-    protected File dir;
-    protected C4Database db = null;
-    protected int flags = C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS;
-    protected int versioning = C4Constants.DocumentVersioning.REVISION_TREES;
-
     protected static final String kDocID = "mydoc";
     protected static final String kRevID = "1-abcd";
     protected static final String kRev2ID = "2-c001d00d";
     protected static final String kRev3ID = "3-deadbeef";
+
+    protected Context context;
+    protected File dir;
+    protected C4Database db;
+
     protected byte[] kFleeceBody;
+
+    private final int flags = C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS;
+    private final int versioning = C4Constants.DocumentVersioning.REVISION_TREES;
 
     @Before
     public void setUp() throws Exception {
         context = InstrumentationRegistry.getTargetContext();
         CouchbaseLite.init(context);
-
-        try { config = new Config(openTestPropertiesFile()); }
-        catch (FileNotFoundException e) { config = new Config(); }
 
         String tempdir = context.getCacheDir().getAbsolutePath();
         if (tempdir != null) { C4.setenv("TMPDIR", tempdir, 1); }
@@ -90,8 +76,7 @@ public class C4BaseTest {
         deleteDatabaseFile(dbFilename);
         dir = new File(context.getFilesDir(), dbFilename);
         FileUtils.cleanDirectory(dir);
-        db = new C4Database(dir.getPath(), getFlags(), null, getVersioning(),
-            encryptionAlgorithm(), encryptionKey());
+        db = new C4Database(dir.getPath(), getFlags(), null, getVersioning(), encryptionAlgorithm(), encryptionKey());
 
         Map<String, Object> body = new HashMap<>();
         body.put("ans*wer", 42);
@@ -108,53 +93,40 @@ public class C4BaseTest {
         if (dir != null) { FileUtils.cleanDirectory(dir); }
     }
 
-    public int getFlags() { return flags; }
-
-    public int getVersioning() { return versioning; }
-
-    protected boolean isRevTrees() {
-        return versioning == C4Constants.DocumentVersioning.REVISION_TREES;
+    protected void createRev(String docID, String revID, byte[] body) throws LiteCoreException {
+        createRev(docID, revID, body, 0);
     }
 
-    protected boolean isVersionVectors() {
-        return versioning == C4Constants.DocumentVersioning.VERSION_VECTORS;
+    protected int getFlags() { return flags; }
+
+    protected int getVersioning() { return versioning; }
+
+    protected int encryptionAlgorithm() { return C4Constants.EncryptionAlgorithm.NONE; }
+
+    protected byte[] encryptionKey() { return null; }
+
+    protected boolean isRevTrees() { return versioning == C4Constants.DocumentVersioning.REVISION_TREES; }
+
+    protected boolean isVersionVectors() { return versioning == C4Constants.DocumentVersioning.VERSION_VECTORS; }
+
+    private void deleteDatabaseFile(String dbFileName) { deleteFile(dbFileName); }
+
+    protected long importJSONLines(String name) throws LiteCoreException, IOException {
+        return importJSONLines(getAsset(name));
     }
 
-    protected void deleteDatabaseFile(String dbFileName) { deleteFile(dbFileName); }
-
-    protected byte[] json2fleece(String json) throws LiteCoreException {
-        boolean commit = false;
-        db.beginTransaction();
-        FLSliceResult body = null;
-        try {
-            body = db.encodeJSON(json5(json).getBytes());
-            byte[] bytes = body.getBuf();
-            commit = true;
-            return bytes;
-        }
-        finally {
-            if (body != null) { body.free(); }
-            db.endTransaction(commit);
-        }
+    protected long importJSONLines(String name, String idPrefix) throws LiteCoreException, IOException {
+        return importJSONLines(getAsset(name), idPrefix);
     }
 
-    public void testEncodeBytes() throws LiteCoreException {
-        byte[] input = "Hello World!".getBytes();
+    protected void createRev(C4Database db, String docID, String revID, byte[] body)
+        throws LiteCoreException {
+        createRev(db, docID, revID, body, 0);
+    }
 
-        FLEncoder enc = new FLEncoder();
-        try {
-            enc.writeData(input);
-            byte[] optionsFleece = enc.finish();
-            assertNotNull(optionsFleece);
-
-            FLValue value = FLValue.fromData(optionsFleece);
-            assertNotNull(value);
-            assertEquals(FLConstants.ValueType.DATA, value.getType());
-            byte[] output = value.asData();
-            assertNotNull(output);
-            Assert.assertArrayEquals(input, output);
-        }
-        finally { enc.free(); }
+    protected void createRev(String docID, String revID, byte[] body, int flags)
+        throws LiteCoreException {
+        createRev(this.db, docID, revID, body, flags);
     }
 
     protected void reopenDB() throws LiteCoreException {
@@ -180,34 +152,85 @@ public class C4BaseTest {
         assertNotNull(db);
     }
 
-    protected void createRev(String docID, String revID, byte[] body) throws LiteCoreException {
-        createRev(docID, revID, body, 0);
+    protected byte[] json2fleece(String json) throws LiteCoreException {
+        boolean commit = false;
+        db.beginTransaction();
+        FLSliceResult body = null;
+        try {
+            body = db.encodeJSON(json5(json).getBytes());
+            byte[] bytes = body.getBuf();
+            commit = true;
+            return bytes;
+        }
+        finally {
+            if (body != null) { body.free(); }
+            db.endTransaction(commit);
+        }
     }
 
-    protected void createRev(C4Database db, String docID, String revID, byte[] body)
-        throws LiteCoreException {
-        createRev(db, docID, revID, body, 0);
+    protected String json5(String input) {
+        String json = null;
+        try {
+            json = FLValue.json5ToJson(input);
+        }
+        catch (LiteCoreException e) {
+            Log.e(TAG, String.format("Error in json5() input -> %s", input), e);
+            fail(e.getMessage());
+        }
+        assertNotNull(json);
+        return json;
     }
 
-    protected void createRev(String docID, String revID, byte[] body, int flags)
+    protected List<C4BlobKey> addDocWithAttachments(String docID, List<String> attachments, String contentType)
         throws LiteCoreException {
-        createRev(this.db, docID, revID, body, flags);
+        List<C4BlobKey> keys = new ArrayList<>();
+        StringBuilder json = new StringBuilder();
+        json.append("{attached: [");
+        for (String attachment : attachments) {
+            C4BlobStore store = db.getBlobStore();
+            C4BlobKey key = store.create(attachment.getBytes());
+            keys.add(key);
+            String keyStr = key.toString();
+            json.append("{'");
+            json.append("@type");
+            json.append("': '");
+            json.append("blob");
+            json.append("', ");
+            json.append("digest: '");
+            json.append(keyStr);
+            json.append("', length: ");
+            json.append(attachment.length());
+            json.append(", content_type: '");
+            json.append(contentType);
+            json.append("'},");
+        }
+        json.append("]}");
+        String jsonStr = json5(json.toString());
+        FLSliceResult body = db.encodeJSON(jsonStr.getBytes());
+
+        // Save document:
+        C4Document doc
+            = db.put(body, docID, C4Constants.RevisionFlags.HAS_ATTACHMENTS, false, false, new String[0], true, 0, 0);
+        assertNotNull(doc);
+        body.free();
+        doc.free();
+        return keys;
     }
 
     /**
      * @param flags C4RevisionFlags
      */
-    protected void createRev(C4Database db, String docID, String revID, byte[] body, int flags)
+    private void createRev(C4Database db, String docID, String revID, byte[] body, int flags)
         throws LiteCoreException {
         boolean commit = false;
         db.beginTransaction();
         try {
             C4Document curDoc = db.get(docID, false);
             assertNotNull(curDoc);
-            List<String> revIDs = new ArrayList<String>();
+            List<String> revIDs = new ArrayList<>();
             revIDs.add(revID);
             if (curDoc.getRevID() != null) { revIDs.add(curDoc.getRevID()); }
-            String[] history = revIDs.toArray(new String[revIDs.size()]);
+            String[] history = revIDs.toArray(new String[0]);
             C4Document doc = db.put(body, docID, flags,
                 true, false, history, true,
                 0, 0);
@@ -221,36 +244,28 @@ public class C4BaseTest {
         }
     }
 
-    protected InputStream getAsset(String name) {
+    private InputStream getAsset(String name) {
         return this.getClass().getResourceAsStream("/assets/" + name);
     }
 
-    protected long importJSONLines(String name) throws LiteCoreException, IOException {
-        return importJSONLines(getAsset(name));
-    }
-
-    protected long importJSONLines(String name, String idPrefix) throws LiteCoreException, IOException {
-        return importJSONLines(getAsset(name), idPrefix);
-    }
-
-    protected long importJSONLines(InputStream is) throws LiteCoreException, IOException {
+    private long importJSONLines(InputStream is) throws LiteCoreException, IOException {
         // Android API 16 arm emulator is slow. This is reason timeout is set 60 sec
         return importJSONLines(is, 120, true);
     }
 
-    protected long importJSONLines(InputStream is, String idPrefix) throws LiteCoreException, IOException {
+    private long importJSONLines(InputStream is, String idPrefix) throws LiteCoreException, IOException {
         // Android API 16 arm emulator is slow. This is reason timeout is set 60 sec
         return importJSONLines(is, idPrefix, 120, true);
     }
 
     // Read a file that contains a JSON document per line. Every line becomes a document.
-    protected long importJSONLines(InputStream is, double timeout, boolean verbose)
+    private long importJSONLines(InputStream is, double timeout, boolean verbose)
         throws IOException, LiteCoreException {
         return importJSONLines(is, "", timeout, verbose);
     }
 
     // Read a file that contains a JSON document per line. Every line becomes a document.
-    protected long importJSONLines(InputStream is, String idPrefix, double timeout, boolean verbose)
+    private long importJSONLines(InputStream is, String idPrefix, double timeout, boolean verbose)
         throws LiteCoreException, IOException {
         Log.i(TAG, "Reading data from input stream ...");
         StopWatch st = new StopWatch();
@@ -303,65 +318,6 @@ public class C4BaseTest {
 
         if (verbose) { Log.i(TAG, st.toString("Importing", numDocs, "doc")); }
         return numDocs;
-    }
-
-    protected String json5(String input) {
-        String json = null;
-        try {
-            json = FLValue.json5ToJson(input);
-        }
-        catch (LiteCoreException e) {
-            Log.e(TAG, String.format("Error in json5() input -> %s", input), e);
-            fail(e.getMessage());
-        }
-        assertNotNull(json);
-        return json;
-    }
-
-    List<C4BlobKey> addDocWithAttachments(String docID, List<String> attachments, String contentType)
-        throws LiteCoreException {
-        List<C4BlobKey> keys = new ArrayList<>();
-        StringBuilder json = new StringBuilder();
-        int i = 0;
-        json.append("{attached: [");
-        for (String attachment : attachments) {
-            C4BlobStore store = db.getBlobStore();
-            C4BlobKey key = store.create(attachment.getBytes());
-            keys.add(key);
-            String keyStr = key.toString();
-            json.append("{'");
-            json.append("@type");
-            json.append("': '");
-            json.append("blob");
-            json.append("', ");
-            json.append("digest: '");
-            json.append(keyStr);
-            json.append("', length: ");
-            json.append(attachment.length());
-            json.append(", content_type: '");
-            json.append(contentType);
-            json.append("'},");
-        }
-        json.append("]}");
-        String jsonStr = json5(json.toString());
-        FLSliceResult body = db.encodeJSON(jsonStr.getBytes());
-
-        // Save document:
-        C4Document doc
-            = db.put(body, docID, C4Constants.RevisionFlags.HAS_ATTACHMENTS, false, false, new String[0], true, 0, 0);
-        assertNotNull(doc);
-        body.free();
-        doc.free();
-        return keys;
-    }
-
-    private InputStream openTestPropertiesFile() throws IOException {
-        try {
-            return context.getAssets().open(Config.EE_TEST_PROPERTIES_FILE);
-        }
-        catch (IOException e) {
-            return context.getAssets().open(com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE);
-        }
     }
 
     private void deleteFile(String filename) {
