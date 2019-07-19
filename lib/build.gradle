@@ -119,20 +119,20 @@ android {
     sourceSets {
         main {
             java.srcDirs = [
-                "src/ce/java",                                // CE android specific codes
                 "src/main/java",                              // android specific codes
-                "${cblJavaDir}/src/main/java",                 // shared java codes
+                "${cblJavaDir}/src/shared/main/java",         // shared java codes
+                "${cblJavaDir}/src/shared/ce/java",           // shared java ce specific codes
             ]
         }
         androidTest {
             java.srcDirs = [
                 "src/androidTest/java",                       // android specific codes
-                "${cblJavaDir}/src/androidTest/java"           // lite-core java codes
+                "${cblJavaDir}/src/androidTest/java"          // lite-core java codes
             ]
             assets.srcDirs = [
                 "src/main/assets",
                 "src/androidTest/assets",
-                "${cblCoreDir}/C/tests/data"                    // lite-core test assets
+                "${cblCoreDir}/C/tests/data"                  // lite-core test assets
             ]
         }
     }
