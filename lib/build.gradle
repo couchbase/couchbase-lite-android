@@ -127,11 +127,10 @@ android {
         androidTest {
             java.srcDirs = [
                 "src/androidTest/java",                       // android specific codes
-                "${cblJavaDir}/src/androidTest/java"          // lite-core java codes
+                "${cblJavaDir}/src/shared/test/java"          // shared java tests
             ]
             assets.srcDirs = [
-                "src/main/assets",
-                "src/androidTest/assets",
+                "${cblJavaDir}/src/shared/test/assets",       // shared assets
                 "${cblCoreDir}/C/tests/data"                  // lite-core test assets
             ]
         }
