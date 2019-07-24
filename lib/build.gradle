@@ -17,59 +17,70 @@
 //
 import java.time.Instant
 
-apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'maven-publish'
-apply plugin: 'com.github.kt3k.coveralls'
 
+// ----------------------------------------------------------------
+// Constants
+// ----------------------------------------------------------------
 ext {
-    buildHost = 'hostname'.execute().text.trim()
-    buildTime = Instant.now().toString()
+    CBL_ORG = 'couchbase'
+    CBL_GROUP = 'com.couchbase.lite'
+    CBL_ARTIFACT_ID = 'couchbase-lite-android'
+    CBL_DESCRIPTION = 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.'
+    CBL_LICENSE = 'Couchbase, Inc. Community Edition License Agreement'
+    CBL_LICENSE_URL = 'https://www.couchbase.com/binaries/content/assets/website/legal/ce-license-agreement.pdf'
+    CBL_PROJECT_URL = 'https://github.com:couchbase/couchbase-lite-android-ce.git'
+    CBL_ISSUES_URL = 'https://github.com/couchbase/couchbase-lite-android-ce/issues'
+    CBL_SITE_URL = 'https://developer.couchbase.com/mobile/'
+
+    BUILD_TIME = Instant.now().toString()
+    BUILD_HOST = 'hostname'.execute().text.trim()
+    BUILD_VERSION = file("$ROOT_DIR/version.txt").text.trim()
+    BUILD_NUMBER = (!project.hasProperty("buildNumber")) ? "0" : buildNumber
+    BUILD_COMMIT = 'git rev-parse --short HEAD'.execute([], file(PROJECT_DIR)).text.trim() +
+        (('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) ? "" : "+")
+
+    ETC_DIR = "${PROJECT_DIR}/etc"
+    CBL_CORE_DIR = "${ROOT_DIR}/couchbase-lite-core"
+    CBL_JAVA_DIR = "${ROOT_DIR}/couchbase-lite-java"
+    REPORTS_DIR = "${buildDir}/reports"
 }
 
-def homeDir = "${projectDir}/.."
-def baseDir = "${homeDir}/.."
-def etcDir = "${homeDir}/etc"
-def cblJavaDir = "${baseDir}/couchbase-lite-java"
-def cblCoreDir = "${baseDir}/couchbase-lite-core"
-def reportsDir = "${buildDir}/reports"
-
-def cblVersion = file("${baseDir}/version.txt").text.trim()
-
-// -PbuildNumber=123
-def buildNum = (!hasProperty("buildNumber")) ? "0" : buildNumber
-
-def buildCommit = 'git rev-parse --short HEAD'.execute([], file(homeDir)).text.trim() +
-    (('git status -uno --porcelain'.execute([], file(homeDir)).text.length() <= 0) ? "" : "+")
+// local.properties
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
 // defining this property in the file ~/.gradle/gradle.properties
 // can dramatically reduce your build time.
-def buildAbis = (!hasProperty("targetAbis")) ? null : targetAbis.split(',')
+def TARGET_ABIS = (!hasProperty("targetAbis")) ? null : targetAbis.split(',')
 
 // comma separated list of annotations for tests that should not be run.
-def testFilter = (!hasProperty("filteredTests")) ? null : filteredTests
+def TEST_FILTER = (!project.hasProperty("testFilter")) ? null : testFilter
 
-/**
- * group and version
- */
-group = 'com.couchbase.lite'
-version = cblVersion
+
+// ----------------------------------------------------------------
+// Build
+// ----------------------------------------------------------------
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = CBL_GROUP
+version = BUILD_VERSION
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion '29.0.0'
+    compileSdkVersion COMPILE_SDK_VERSION
+    buildToolsVersion BUILD_TOOLS_VERSION
     // ndkVersion '19.2.5345600'
 
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 27
         versionCode 1
-        versionName cblVersion
-        project.archivesBaseName = "couchbase-lite-android-${versionName}"
+        versionName BUILD_VERSION
+        project.archivesBaseName = "${CBL_ARTIFACT_ID}-${versionName}"
 
         // if no specific ABIs specified, build all supported.
-        if (buildAbis != null) {
-            ndk { abiFilters buildAbis }
+        if (TARGET_ABIS != null) {
+            ndk { abiFilters TARGET_ABIS }
         }
         externalNativeBuild {
             cmake {
@@ -81,7 +92,9 @@ android {
         }
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        if (testFilter != null) { testInstrumentationRunnerArguments notAnnotation: testFilter }
+        if (TEST_FILTER != null) {
+            testInstrumentationRunnerArguments notAnnotation: TEST_FILTER
+        }
     }
 
     compileOptions {
@@ -93,18 +106,18 @@ android {
         debug {
             minifyEnabled false
             testCoverageEnabled = true
-            buildConfigField "String", "BUILD_HOST", "\"${buildHost}\""
-            buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
-            buildConfigField "String", "BUILD_COMMIT", "\"${buildCommit}\""
-            buildConfigField "String", "BUILD_NUMBER", "\"${buildNum}\""
+            buildConfigField "String", "BUILD_HOST", "\"${BUILD_HOST}\""
+            buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
+            buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
+            buildConfigField "String", "BUILD_NUMBER", "\"${BUILD_NUMBER}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
         }
         release {
             minifyEnabled false
-            buildConfigField "String", "BUILD_HOST", "\"${buildHost}\""
-            buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
-            buildConfigField "String", "BUILD_COMMIT", "\"${buildCommit}\""
-            buildConfigField "String", "BUILD_NUMBER", "\"${buildNum}\""
+            buildConfigField "String", "BUILD_HOST", "\"${BUILD_HOST}\""
+            buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
+            buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
+            buildConfigField "String", "BUILD_NUMBER", "\"${BUILD_NUMBER}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
         }
     }
@@ -112,7 +125,7 @@ android {
     externalNativeBuild {
         cmake {
             version "3.10.2"
-            path "${cblJavaDir}/CMakeLists.txt"
+            path "${CBL_JAVA_DIR}/CMakeLists.txt"
         }
     }
 
@@ -120,18 +133,18 @@ android {
         main {
             java.srcDirs = [
                 "src/main/java",                              // android specific codes
-                "${cblJavaDir}/src/shared/main/java",         // shared java codes
-                "${cblJavaDir}/src/shared/ce/java",           // shared java ce specific codes
+                "${CBL_JAVA_DIR}/src/shared/main/java",       // shared java codes
+                "${CBL_JAVA_DIR}/src/shared/ce/java",         // shared java ce specific codes
             ]
         }
         androidTest {
             java.srcDirs = [
                 "src/androidTest/java",                       // android specific codes
-                "${cblJavaDir}/src/shared/test/java"          // shared java tests
+                "${CBL_JAVA_DIR}/src/shared/test/java"        // shared java tests
             ]
             assets.srcDirs = [
-                "${cblJavaDir}/src/shared/test/assets",       // shared assets
-                "${cblCoreDir}/C/tests/data"                  // lite-core test assets
+                "${CBL_JAVA_DIR}/src/shared/test/assets",     // shared assets
+                "${CBL_CORE_DIR}/C/tests/data"                // lite-core test assets
             ]
         }
     }
@@ -153,39 +166,15 @@ dependencies {
 
     implementation 'com.squareup.okhttp3:okhttp:3.9.1'
 
-    testImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VERSION"
     testImplementation 'junit:junit:4.12'
 
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VERSION"
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
-// ----------------------------------------------------------------
-// local.properties
-// ----------------------------------------------------------------
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-// -- bintray
-def bintrayUser = properties.getProperty('bintray.user')
-def bintrayKey = properties.getProperty('bintray.key')
-
-// -- maven repo
-def mavenRepoUrl = properties.getProperty('maven.repo.url')
-def mavenRepoUser = properties.getProperty('maven.repo.user')
-def mavenRepoPass = properties.getProperty('maven.repo.pass')
-
-// ----------------------------------------------------------------
-// delete .externalNativeBuild to force rerun of cmake
-//  This is necessary because 'clean' deletes the file 'zconf.h'
-//  which is in .../build/intermediates, causing subsequent
-//  builds to fail.
-// ----------------------------------------------------------------
-clean.doFirst { delete "${projectDir}/.externalNativeBuild" }
-
-// ----------------------------------------------------------------
-// javadoc.jar and source.jar
-// ----------------------------------------------------------------
+/////// JavaDoc
 
 // Say something once, why say it again?  Because gradle.
 // This is the only way I could figure out, to get some of these things onto the javadoc classpath
@@ -199,7 +188,6 @@ dependencies {
     javadocDeps 'com.squareup.okhttp3:okhttp:3.9.1'
 }
 
-// Generate javadoc
 task javadoc(type: Javadoc) {
     afterEvaluate { dependsOn tasks.getByName("compileDebugJavaWithJavac") }
 
@@ -212,7 +200,7 @@ task javadoc(type: Javadoc) {
     classpath += configurations.javadocDeps
 
     options {
-        title = "Couchbase Lite Community Edition ${project.version}"
+        title = "${CBL_LICENSE} ${project.version}"
         memberLevel = JavadocMemberLevel.PUBLIC
         docEncoding = 'UTF-8'
         encoding = 'UTF-8'
@@ -238,118 +226,6 @@ task sourcesJar(type: Jar) {
     classifier = 'sources'
 }
 
-// ----------------------------------------------------------------
-// Deployment
-// ----------------------------------------------------------------
-
-artifacts {
-    archives javadocJar
-    archives sourcesJar
-}
-
-def siteUrl = 'http://developer.couchbase.com/mobile/'
-def gitUrl = 'https://github.com:couchbase/couchbase-lite-android.git'
-
-// JFrog Bintray - JCenter deployment
-bintray {
-    user = bintrayUser
-    key = bintrayKey
-    publications = ['mavenJava']
-    pkg {
-        repo = 'couchbase'
-        name = 'couchbase-lite-android'
-        desc = 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.'
-        userOrg = 'couchbase'
-        licenses = ['Couchbase, Inc. Community Edition License Agreement']
-        labels = ['couchbase lite', 'android', 'sync', 'mobile']
-        vcsUrl = gitUrl
-        websiteUrl = siteUrl
-        issueTrackerUrl = 'https://github.com/couchbase/couchbase-lite-android/issues'
-        publicDownloadNumbers = false
-        version { name = this.version }
-    }
-}
-
-// -------------------------------------------------------------------------------------------------
-// Maven Publishing
-// https://docs.gradle.org/current/userguide/publishing_maven.html
-// -------------------------------------------------------------------------------------------------
-
-// Create the pom configuration:
-def pomConfig = {
-    name "com.couchbase.lite:couchbase-lite-android"
-    description "Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine."
-    url "http://developer.couchbase.com/mobile/"
-    licenses {
-        license {
-            name "Couchbase, Inc. Community Edition License Agreement"
-            url "https://www.couchbase.com/binaries/content/assets/website/legal/ce-license-agreement.pdf"
-            distribution "repo"
-        }
-    }
-    developers {
-        developer {
-            name "Couchbase Mobile"
-            email "mobile@couchbase.com"
-            organization 'Couchbase'
-            organizationUrl 'http://www.couchbase.com'
-        }
-    }
-    issueManagement {
-        system 'github'
-        url 'https://github.com/couchbase/couchbase-lite-android/issues'
-    }
-    scm {
-        connection gitUrl
-        developerConnection gitUrl
-        url siteUrl
-    }
-}
-
-project.afterEvaluate {
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                groupId group
-                artifactId 'couchbase-lite-android'
-                version this.version
-
-                artifact bundleReleaseAar
-                artifact sourcesJar
-                artifact javadocJar
-
-                pom.withXml {
-                    def root = asNode()
-                    // Workaround for description:
-                    root.appendNode('description', 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.')
-                    root.children().last() + pomConfig
-
-                    // maven-publish workaround to include dependencies
-                    def dependenciesNode = asNode().appendNode('dependencies')
-
-                    //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
-                    configurations.implementation.allDependencies.each {
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
-                    }
-                }
-            }
-        }
-    }
-}
-publishing {
-    repositories {
-        maven {
-            credentials {
-                username mavenRepoUser
-                password mavenRepoPass
-            }
-            url mavenRepoUrl
-        }
-    }
-}
 
 // ----------------------------------------------------------------
 // Static analysis
@@ -357,13 +233,14 @@ publishing {
 
 def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', '**/gen/**', "okhttp3/**"]
 
+/////// Checkstyle
 apply plugin: 'checkstyle'
 task checkstyle(type: Checkstyle) {
     description 'Checkstyle'
     group 'verification'
 
-    configFile file("${etcDir}/checkstyle/checkstyle.xml")
-    configProperties = ['configDir': file("${etcDir}/checkstyle")]
+    configFile file("${ETC_DIR}/checkstyle/checkstyle.xml")
+    configProperties = ['configDir': file("${ETC_DIR}/checkstyle")]
 
     source android.sourceSets.main.java.srcDirs
     include '**/*.java'
@@ -375,22 +252,23 @@ task checkstyle(type: Checkstyle) {
     reports {
         xml {
             enabled = true
-            setDestination(file("${reportsDir}/checkstyle.xml"))
+            setDestination(file("${REPORTS_DIR}/checkstyle.xml"))
         }
         html {
             enabled = true
-            setDestination(file("${reportsDir}/reports/checkstyle.html"))
+            setDestination(file("${REPORTS_DIR}/reports/checkstyle.html"))
         }
     }
 }
 
+/////// PMD
 apply plugin: 'pmd'
 pmd { toolVersion "5.8.1" }
 task pmd(type: Pmd) {
     description 'PMD'
     group 'verification'
 
-    ruleSetFiles = files("${etcDir}/pmd/pmd.xml")
+    ruleSetFiles = files("${ETC_DIR}/pmd/pmd.xml")
 
     source = android.sourceSets.main.java.srcDirs
     include '**/*.java'
@@ -399,15 +277,16 @@ task pmd(type: Pmd) {
     reports {
         xml {
             enabled = true
-            setDestination(file("${reportsDir}/reports/pmd.xml"))
+            setDestination(file("${REPORTS_DIR}/reports/pmd.xml"))
         }
         html {
             enabled = true
-            setDestination(file("${reportsDir}/pmd.html"))
+            setDestination(file("${REPORTS_DIR}/pmd.html"))
         }
     }
 }
 
+/////// Findbugs
 // !!! FIXME: Update to SpotBugs
 apply plugin: 'findbugs'
 def findbugsAll = task('findbugs') {
@@ -437,33 +316,165 @@ project.afterEvaluate {
             classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
             classpath = files()
 
-            excludeFilter = file("${etcDir}/findbugs/findbugs.xml")
+            excludeFilter = file("${ETC_DIR}/findbugs/findbugs.xml")
 
             reports {
                 xml {
                     enabled = (reportType == "Xml")
-                    setDestination(file("${reportsDir}/findbugs.xml"))
+                    setDestination(file("${REPORTS_DIR}/findbugs.xml"))
                 }
                 html {
                     enabled = (reportType == "Html")
-                    setDestination(file("${reportsDir}/findbugs.html"))
+                    setDestination(file("${REPORTS_DIR}/findbugs.html"))
                 }
             }
         }
     }
 }
 
+
 // ----------------------------------------------------------------
-// Coveralls
+// Testing
 // ----------------------------------------------------------------
 
-coveralls {
-    jacocoReportPath = "${buildDir}/reports/coverage/debug/report.xml"
+apply plugin: 'com.github.kt3k.coveralls'
+coveralls { jacocoReportPath = "${REPORTS_DIR}/coverage/debug/report.xml" }
+
+
+// ----------------------------------------------------------------
+// Deployment
+// ----------------------------------------------------------------
+
+/////// Maven Publishing
+// https://docs.gradle.org/current/userguide/publishing_maven.html
+apply plugin: 'maven-publish'
+
+def mavenRepoUrl = properties.getProperty('maven.repo.url')
+def mavenRepoUser = properties.getProperty('maven.repo.user')
+def mavenRepoPass = properties.getProperty('maven.repo.pass')
+
+def pomConfig = {
+    name "${CBL_GROUP}:${CBL_ARTIFACT_ID}"
+    description CBL_DESCRIPTION
+    url CBL_SITE_URL
+    licenses {
+        license {
+            name CBL_LICENSE
+            url CBL_LICENSE_URL
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            name "Couchbase Mobile"
+            email "mobile@couchbase.com"
+            organization 'Couchbase'
+            organizationUrl 'http://www.couchbase.com'
+        }
+    }
+    issueManagement {
+        system 'github'
+        url CBL_ISSUES_URL
+    }
+    scm {
+        url CBL_SITE_URL
+        connection CBL_PROJECT_URL
+        developerConnection CBL_PROJECT_URL
+    }
 }
 
-task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDebugUnitTest'])
-task checkLocal(dependsOn: ['smoketest', 'connectedDebugAndroidTest'])
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
 
-task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'assembleRelease'])
-task testCI(dependsOn: ['buildCI', 'connectedAndroidTest'])
+publishing {
+    repositories {
+        maven {
+            url mavenRepoUrl
+            credentials {
+                username mavenRepoUser
+                password mavenRepoPass
+            }
+        }
+    }
+}
 
+project.afterEvaluate {
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId group
+                artifactId CBL_ARTIFACT_ID
+                version this.version
+
+                artifact bundleReleaseAar
+                artifact sourcesJar
+                artifact javadocJar
+
+                pom.withXml {
+                    def root = asNode()
+                    // Workaround for description:
+                    root.appendNode('description', CBL_DESCRIPTION)
+                    root.children().last() + pomConfig
+
+                    // maven-publish workaround to include dependencies
+                    def dependenciesNode = asNode().appendNode('dependencies')
+
+                    //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
+                    configurations.implementation.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/////// JFrog Bintray - JCenter deployment
+apply plugin: 'com.jfrog.bintray'
+
+def bintrayUser = properties.getProperty('bintray.user')
+def bintrayKey = properties.getProperty('bintray.key')
+
+bintray {
+    user = bintrayUser
+    key = bintrayKey
+    publications = ['mavenJava']
+    pkg {
+        repo = CBL_ORG
+        name = CBL_ARTIFACT_ID
+        desc = CBL_DESCRIPTION
+        userOrg = CBL_ORG
+        licenses = [CBL_LICENSE]
+        labels = ['couchbase lite', 'android', 'sync', 'mobile']
+        vcsUrl = CBL_PROJECT_URL
+        websiteUrl = CBL_SITE_URL
+        issueTrackerUrl = CBL_ISSUES_URL
+        publicDownloadNumbers = false
+        version { name = this.version }
+    }
+}
+
+
+// ----------------------------------------------------------------
+// Tasks
+// ----------------------------------------------------------------
+
+// handy plugin for discovering task dependencies
+// plugins { "com.dorongold.task-tree" version "1.3.1" }
+
+///////// Dev tasks
+task quickTest(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsHtml', 'assembleDebug'])
+task unitTest(dependsOn: ['quickTest', 'testDebugUnitTest'])
+task fullTest(dependsOn: ['unitTest', 'connectedDebugAndroidTest'])
+
+///////// CI tasks
+task ciBuild(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsXml', 'test', 'publishRelease'])
+
+// delete .externalNativeBuild to force rerun of cmake.  This is necessary because 'clean'
+// deletes the file 'zconf.h' which is in .../build/intermediates, causing subsequent builds to fail.
+clean.doLast { delete "${projectDir}/.externalNativeBuild" }
