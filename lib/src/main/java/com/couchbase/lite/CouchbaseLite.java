@@ -30,7 +30,6 @@ import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
-
 public final class CouchbaseLite {
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
@@ -42,6 +41,10 @@ public final class CouchbaseLite {
     // Utility class
     private CouchbaseLite() {}
 
+    /**
+     * Initialize CouchbaseLite library. This method MUST be called before
+     * using CouchbaseLite.
+     */
     public static void init(@NonNull Context ctxt) {
         Preconditions.checkArgNotNull(ctxt, "context");
 
@@ -53,6 +56,9 @@ public final class CouchbaseLite {
         CONTEXT.compareAndSet(null, new SoftReference<>(ctxt.getApplicationContext()));
     }
 
+    /**
+     * This method is for internal used only and will be removed in the future release.
+     */
     public static ExecutionService getExecutionService() {
         ExecutionService executionService = EXECUTION_SERVICE.get();
         if (executionService == null) {

@@ -19,11 +19,36 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.couchbase.lite.LogLevel;
 
+/**
+ * Platform console logging utility for tests
+ */
 public final class Report {
     private Report() {}
 
-    public static void log(@NonNull String message, @Nullable Throwable err) {
-        Log.e("UNIT TEST", message, err);
+    public static void log(@NonNull LogLevel level, @NonNull String message) {
+        Report.log(level, message, null);
+    }
+
+    public static void log(@NonNull LogLevel level, @NonNull String message, @Nullable Throwable err) {
+        final String domain = "CouchbaseLite/Test";
+        switch (level) {
+            case DEBUG:
+                Log.d(domain, message);
+                break;
+            case VERBOSE:
+                Log.v(domain, message);
+                break;
+            case INFO:
+                Log.i(domain, message);
+                break;
+            case WARNING:
+                Log.w(domain, message);
+                break;
+            case ERROR:
+                Log.e(domain, message, err);
+                break;
+        }
     }
 }
