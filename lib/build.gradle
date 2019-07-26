@@ -143,8 +143,8 @@ android {
                 "${CBL_JAVA_DIR}/src/shared/test/java"        // shared java tests
             ]
             assets.srcDirs = [
-                "${CBL_JAVA_DIR}/src/shared/test/assets",     // shared assets
-                "${CBL_CORE_DIR}/C/tests/data"                // lite-core test assets
+                "${CBL_CORE_DIR}/C/tests/data",               // lite-core test assets
+                "${CBL_JAVA_DIR}/src/shared/test/assets"      // shared assets
             ]
         }
     }
