@@ -249,10 +249,10 @@ public final class CBLWebSocket extends C4Socket {
     private OkHttpClient setupOkHttpClient() throws GeneralSecurityException {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
 
-        // timeouts
-        builder.connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS);
+        // Timeouts are enforced by Core.  Set none here.
+        builder.connectTimeout(0, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.SECONDS)
+                .writeTimeout(0, TimeUnit.SECONDS);
 
         // redirection
         builder.followRedirects(true).followSslRedirects(true);
