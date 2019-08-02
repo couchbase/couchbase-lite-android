@@ -53,7 +53,7 @@ cp ${ZIP_BUILD}/target/dependency/*.jar . || exit 1
 curl https://raw.githubusercontent.com/couchbase/build/master/license/couchbase-lite/LICENSE_${EDITION}.txt -o LICENSE.TXT || exit 1
 cp ${ARTIFACTS}/*-release.aar ./${PRODUCT}-${VERSION}.aar || exit 1
 zip -r ${ARTIFACTS}/${PRODUCT}-${VERSION}-android_${EDITION}.zip  * || exit 1
-cp ${PRODUCT}-${VERSION}-android_${EDITION}.zip "$ARTIFACTS/"
+cp ${PRODUCT}-${VERSION}-android_${EDITION}.zip "${ARTIFACTS}/"
 popd
 
 echo "======== PUBLISH COMPLETE"

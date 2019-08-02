@@ -31,8 +31,6 @@ echo "======== Publish build candidates to CI maven"
 ./gradlew ciPublish -PmavenUrl=${MAVEN_URL} || exit 1
 
 echo "======== Copy artifacts to staging directory"
-rm -rf ${ARTIFACTS}
-mkdir -p ${ARTIFACTS}
 cp lib/build/outputs/aar/*.aar ${ARTIFACTS}/
 cp lib/build/libs/*.jar ${ARTIFACTS}/
 cp lib/build/publications/mavenJava/pom-default.xml  ${ARTIFACTS}/pom.xml
