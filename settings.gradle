@@ -1,4 +1,3 @@
-
 // This project contains two distinct applications:
 // 1) the CBL-Android-EE source and the code to build, unit-test and publish it to maven
 // 2) an independent application that runs automated tests on the application build in #1
@@ -6,15 +5,20 @@
 // The two apps are mutually exclusive: the test app is built and run only by CI machines
 // during the release process.  All other work in this repo will use only the "lib" module.
 // The crazy hack below could be avoided by separating the test app into a separate project.
-// The only arguments for *not* doing this is that separating the two would require:
-// 1) one additional git repo per project
-// 2) keeping the build scripts for the test projects in sync
+// The only arguments for *not* doing this is that separating the two would require
+// separate directories for test projects (separate git repos?) and keeping the build scripts
+// for the test projects in sync
 //
-if (hasProperty("buildNumber") && hasProperty("automatedTests") && automatedTests.toBoolean()) {
-    // used only during CI automated testing
-    include ':test'
-}
-else {
+
+if (!hasProperty("automatedTests") || !automatedTests.toBoolean()) {
     // normal source development
     include ':lib'
+} else {
+    // used only during CI automated testing
+    int n = -1;
+    try { n = buildNumber.toInteger() }
+    catch (Exception ignore) { }
+    if (n <= 0) { throw new IllegalStateException("!!! Automated testing requires a 'buildNumber': " + n) }
+    include ':test'
 }
+

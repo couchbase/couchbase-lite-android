@@ -35,7 +35,7 @@ ext {
     BUILD_TIME = Instant.now().toString()
     BUILD_HOST = 'hostname'.execute().text.trim()
     BUILD_VERSION = file("$ROOT_DIR/version.txt").text.trim()
-    BUILD_NUMBER = (!project.hasProperty("buildNumber")) ? "0" : buildNumber
+    BUILD_NUMBER = (!project.hasProperty("buildNumber")) ? "SNAPSHOT" : buildNumber
     BUILD_COMMIT = 'git rev-parse --short HEAD'.execute([], file(PROJECT_DIR)).text.trim() +
         (('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) ? "" : "+")
 
@@ -45,16 +45,19 @@ ext {
     REPORTS_DIR = "${buildDir}/reports"
 }
 
-// local.properties
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
 // defining this property in the file ~/.gradle/gradle.properties
 // can dramatically reduce your build time.
 def TARGET_ABIS = (!hasProperty("targetAbis")) ? null : targetAbis.split(',')
 
 // comma separated list of annotations for tests that should not be run.
 def TEST_FILTER = (!project.hasProperty("testFilter")) ? null : testFilter
+
+// Target repo for maven ppublish
+def MAVEN_URL = (!project.hasProperty("mavenUrl")) ? null : mavenUrl
+
+// local.properties
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
 
 // ----------------------------------------------------------------
@@ -212,20 +215,6 @@ task javadoc(type: Javadoc) {
     }
 }
 
-// Generate javadoc.jar
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    baseName = project.name
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-// Generate source.jar
-task sourcesJar(type: Jar) {
-    baseName = project.name
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
 
 // ----------------------------------------------------------------
 // Static analysis
@@ -256,7 +245,7 @@ task checkstyle(type: Checkstyle) {
         }
         html {
             enabled = true
-            setDestination(file("${REPORTS_DIR}/reports/checkstyle.html"))
+            setDestination(file("${REPORTS_DIR}/checkstyle.html"))
         }
     }
 }
@@ -342,14 +331,13 @@ coveralls { jacocoReportPath = "${REPORTS_DIR}/coverage/debug/report.xml" }
 
 
 // ----------------------------------------------------------------
-// Deployment
+// Publication
 // ----------------------------------------------------------------
 
 /////// Maven Publishing
 // https://docs.gradle.org/current/userguide/publishing_maven.html
 apply plugin: 'maven-publish'
 
-def mavenRepoUrl = properties.getProperty('maven.repo.url')
 def mavenRepoUser = properties.getProperty('maven.repo.user')
 def mavenRepoPass = properties.getProperty('maven.repo.pass')
 
@@ -383,6 +371,20 @@ def pomConfig = {
     }
 }
 
+// Generate javadoc.jar
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    baseName = project.name
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+// Generate source.jar
+task sourcesJar(type: Jar) {
+    baseName = project.name
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
 artifacts {
     archives javadocJar
     archives sourcesJar
@@ -391,7 +393,7 @@ artifacts {
 publishing {
     repositories {
         maven {
-            url mavenRepoUrl
+            url MAVEN_URL
             credentials {
                 username mavenRepoUser
                 password mavenRepoPass
@@ -434,30 +436,6 @@ project.afterEvaluate {
     }
 }
 
-/////// JFrog Bintray - JCenter deployment
-apply plugin: 'com.jfrog.bintray'
-
-def bintrayUser = properties.getProperty('bintray.user')
-def bintrayKey = properties.getProperty('bintray.key')
-
-bintray {
-    user = bintrayUser
-    key = bintrayKey
-    publications = ['mavenJava']
-    pkg {
-        repo = CBL_ORG
-        name = CBL_ARTIFACT_ID
-        desc = CBL_DESCRIPTION
-        userOrg = CBL_ORG
-        licenses = [CBL_LICENSE]
-        labels = ['couchbase lite', 'android', 'sync', 'mobile']
-        vcsUrl = CBL_PROJECT_URL
-        websiteUrl = CBL_SITE_URL
-        issueTrackerUrl = CBL_ISSUES_URL
-        publicDownloadNumbers = false
-        version { name = this.version }
-    }
-}
 
 
 // ----------------------------------------------------------------
@@ -473,8 +451,25 @@ task unitTest(dependsOn: ['quickTest', 'testDebugUnitTest'])
 task fullTest(dependsOn: ['unitTest', 'connectedDebugAndroidTest'])
 
 ///////// CI tasks
-task ciBuild(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsXml', 'test', 'publishRelease'])
+task ciBuild(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsXml', 'test'])
+task ciPublish(dependsOn: ['generatePomFileForMavenJavaPublication', 'publishMavenJavaPublicationToMavenRepository'])
 
+// ordering
+project.afterEvaluate {
+    connectedDebugAndroidTest.shouldRunAfter unitTest
+    testDebugUnitTest.shouldRunAfter quickTest
+    //tasks.withType(FindBugs).each { test.shouldRunAfter it }
+    tasks.withType(FindBugs) { shouldRunAfter tasks.withType(Pmd) }
+    tasks.withType(Pmd) { shouldRunAfter lint }
+    // we have to wait for checkstyle to get added by its plugin...
+    tasks.whenTaskAdded {
+        if (it.name.startsWith("checkstyle")) {
+            lint.shouldRunAfter(it)
+        }
+    }
+}
+
+// Clean
 // delete .externalNativeBuild to force rerun of cmake.  This is necessary because 'clean'
 // deletes the file 'zconf.h' which is in .../build/intermediates, causing subsequent builds to fail.
 clean.doLast { delete "${projectDir}/.externalNativeBuild" }
