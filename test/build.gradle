@@ -79,7 +79,7 @@ android {
 }
 
 repositories {
-    maven { url "http://mobile.maven.couchbase.com/maven2/dev/" }
+    maven { url "http://172.23.121.218/maven2/cimaven/" }
     google()
     jcenter()
 }

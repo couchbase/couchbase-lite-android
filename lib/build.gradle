@@ -438,7 +438,6 @@ project.afterEvaluate {
 }
 
 
-
 // ----------------------------------------------------------------
 // Tasks
 // ----------------------------------------------------------------
@@ -447,23 +446,26 @@ project.afterEvaluate {
 // plugins { "com.dorongold.task-tree" version "1.3.1" }
 
 ///////// Dev tasks
-task quickTest(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsHtml', 'assembleDebug'])
-task unitTest(dependsOn: ['quickTest', 'testDebugUnitTest'])
+task smokeTest(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsHtml', 'assembleDebug'])
+task unitTest(dependsOn: ['smokeTest', 'testDebugUnitTest'])
 task fullTest(dependsOn: ['unitTest', 'connectedDebugAndroidTest'])
 
 ///////// CI tasks
-task ciBuild(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsXml', 'test'])
-task ciPublish(dependsOn: ['generatePomFileForMavenJavaPublication', 'publishMavenJavaPublicationToMavenRepository'])
+task ciCheck(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsXml', 'test'])
+task ciPublish(dependsOn: ['publishMavenJavaPublicationToMavenRepository'])
 
-// ordering
+// ordering (roughly last to first)
 project.afterEvaluate {
     connectedDebugAndroidTest.shouldRunAfter unitTest
-    testDebugUnitTest.shouldRunAfter quickTest
-    //tasks.withType(FindBugs).each { test.shouldRunAfter it }
+    testDebugUnitTest.shouldRunAfter smokeTest
     tasks.withType(FindBugs) { shouldRunAfter tasks.withType(Pmd) }
     tasks.withType(Pmd) { shouldRunAfter lint }
     // we have to wait for checkstyle to get added by its plugin...
+    // findbugs gets a weird CME... whatever.
     tasks.whenTaskAdded {
+        if (it.name.startsWith("findbugs")) {
+            test.shouldRunAfter(it)
+        }
         if (it.name.startsWith("checkstyle")) {
             lint.shouldRunAfter(it)
         }
