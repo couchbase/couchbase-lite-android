@@ -34,10 +34,9 @@ def cblJavaDir = "${baseDir}/couchbase-lite-java"
 def cblCoreDir = "${baseDir}/couchbase-lite-core"
 def reportsDir = "${buildDir}/reports"
 
-def cblVersion = file("${baseDir}/version.txt").text.trim()
-
-// -PbuildNumber=123
-def buildNum = (!hasProperty("buildNumber")) ? "0" : buildNumber
+def cblRelease = file("${baseDir}/version.txt").text.trim()
+def buildNum = (!hasProperty("buildNumber")) ? "SNAPSHOT" : buildNumber
+def cblVersion = "${cblRelease}-${buildNum}"
 
 def buildCommit = 'git rev-parse --short HEAD'.execute([], file(homeDir)).text.trim() +
     (('git status -uno --porcelain'.execute([], file(homeDir)).text.length() <= 0) ? "" : "+")
@@ -45,6 +44,10 @@ def buildCommit = 'git rev-parse --short HEAD'.execute([], file(homeDir)).text.t
 // defining this property in the file ~/.gradle/gradle.properties
 // can dramatically reduce your build time.
 def buildAbis = (!hasProperty("targetAbis")) ? null : targetAbis.split(',')
+
+// the maven repo
+def mavenRepoUrl = (!project.hasProperty("mavenUrl")) ? null : mavenUrl
+
 
 /**
  * group and version
@@ -166,7 +169,6 @@ def bintrayUser = properties.getProperty('bintray.user')
 def bintrayKey = properties.getProperty('bintray.key')
 
 // -- maven repo
-def mavenRepoUrl = properties.getProperty('maven.repo.url')
 def mavenRepoUser = properties.getProperty('maven.repo.user')
 def mavenRepoPass = properties.getProperty('maven.repo.pass')
 
@@ -263,8 +265,8 @@ bintray {
 // Create the pom configuration:
 def pomConfig = {
     name "com.couchbase.lite:couchbase-lite-android"
-    description "Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine."
     url "http://developer.couchbase.com/mobile/"
+    description "Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine."
     licenses {
         license {
             name "Couchbase, Inc. Community Edition License Agreement"
@@ -297,7 +299,7 @@ project.afterEvaluate {
             mavenJava(MavenPublication) {
                 groupId group
                 artifactId 'couchbase-lite-android'
-                version this.version
+                version cblVersion
 
                 artifact bundleReleaseAar
                 artifact sourcesJar
@@ -450,5 +452,4 @@ task smoketest(dependsOn: ['checkstyle', 'lint', 'findbugsHtml', 'pmd', 'testDeb
 task checkLocal(dependsOn: ['smoketest', 'connectedDebugAndroidTest'])
 
 task buildCI(dependsOn: ['checkstyle', 'findbugsXml', 'pmd', 'check', 'assemble'])
-task testCI(dependsOn: ['buildCI', 'connectedAndroidTest'])
 
