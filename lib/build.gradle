@@ -34,8 +34,9 @@ ext {
 
     BUILD_TIME = Instant.now().toString()
     BUILD_HOST = 'hostname'.execute().text.trim()
-    BUILD_VERSION = file("$ROOT_DIR/version.txt").text.trim()
-    BUILD_NUMBER = (!project.hasProperty("buildNumber")) ? "SNAPSHOT" : buildNumber
+    BUILD_RELEASE = file("$ROOT_DIR/version.txt").text.trim()
+    BUILD_NUMBER = (project.hasProperty("buildNumber") && buildNumber) ? buildNumber : "SNAPSHOT"
+    BUILD_VERSION = "${BUILD_RELEASE}-${BUILD_NUMBER}"
     BUILD_COMMIT = 'git rev-parse --short HEAD'.execute([], file(PROJECT_DIR)).text.trim() +
         (('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) ? "" : "+")
 
@@ -408,7 +409,7 @@ project.afterEvaluate {
             mavenJava(MavenPublication) {
                 groupId group
                 artifactId CBL_ARTIFACT_ID
-                version this.version
+                version BUILD_VERSION
 
                 artifact bundleReleaseAar
                 artifact sourcesJar

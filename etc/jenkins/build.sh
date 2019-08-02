@@ -24,11 +24,11 @@ if [ -z "$ARTIFACTS" ]; then
     usage
 fi
 
-echo "======== Build Couchbase Lite Android, Community Edition v`cat ./version.txt`-${BUILD_NUMBER}"
+echo "======== Build Couchbase Lite Android, Community Edition v`cat ../version.txt`-${BUILD_NUMBER}"
 ./gradlew ciBuild -PbuildNumber=${BUILD_NUMBER} || exit 1
 
 echo "======== Publish build candidates to CI maven"
-./gradlew ciPublish -PmavenUrl=${MAVEN_URL} || exit 1
+./gradlew ciPublish -PbuildNumber=${BUILD_NUMBER} -PmavenUrl=${MAVEN_URL} || exit 1
 
 echo "======== Copy artifacts to staging directory"
 cp lib/build/outputs/aar/*.aar ${ARTIFACTS}/

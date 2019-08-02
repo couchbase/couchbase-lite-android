@@ -10,7 +10,7 @@ EDITION='community'
 MAVEN_URL="http://mobile.maven.couchbase.com/maven2/internalmaven"
 
 function usage() {
-    echo "Usage: $0 <release version> <artifacts path> <scratchspace path>"
+    echo "Usage: $0 <release version> <build number> <artifacts path> <scratchspace path>"
     exit 1
 }
 
@@ -19,18 +19,23 @@ if [ -z "$VERSION" ]; then
     usage
 fi
 
-ARTIFACTS="$2"
+BUILD_NUMBER="$2"
+if [ -z "$BUILD_NUMBER" ]; then
+    usage
+fi
+
+ARTIFACTS="$3"
 if [ -z "$ARTIFACTS" ]; then
     usage
 fi
 
-SCRATCH="$3"
+SCRATCH="$4"
 if [ -z "SCRATCH" ]; then
     usage
 fi
 
 echo "======== Publish candidate build to internal maven"
-./gradlew ciPublish -PmavenUrl=${MAVEN_URL} || exit 1
+./gradlew ciPublish -PbuildNumber=${BUILD_NUMBER} -PmavenUrl=${MAVEN_URL} || exit 1
 
 echo "======== Update package type in pom"
 POM_FILE='pom.xml'
