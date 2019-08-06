@@ -26,7 +26,7 @@ if [ -z "REPORTS" ]; then
 fi
 
 echo "======== Run automated tests"
-./gradlew ciTest --info --console=plain -PtargetAbis=x86 -PautomatedTests=true -PbuildNumber="${BUILD_NUMBER}" || exit 1
+./gradlew ciTest --info --console=plain -PautomatedTests=true -PbuildNumber="${BUILD_NUMBER}" || exit 1
 
 echo "======== Copy test reports ========"
 cp -rp lib/build/reports/* "${REPORTS}/"

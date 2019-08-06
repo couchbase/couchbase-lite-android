@@ -28,7 +28,7 @@ import com.couchbase.lite.BuildConfig;
 public class CBLVersion {
     private static final String USER_AGENT = "CouchbaseLite/%s (%s) %s";
     private static final String VERSION_INFO = "CouchbaseLite Android v%s (%s at %s on %s) on %s";
-    private static final String LIB_INFO = "%s/%s Build/%s Commit/%s Core/%s";
+    private static final String LIB_INFO = "%s/%s, Core/%s";
     private static final String SYS_INFO = "Java; Android %s; %s";
 
     private static final AtomicReference<String> userAgent = new AtomicReference<>();
@@ -81,8 +81,6 @@ public class CBLVersion {
                 LIB_INFO,
                 (BuildConfig.ENTERPRISE) ? "EE" : "CE",
                 BuildConfig.BUILD_TYPE,
-                BuildConfig.BUILD_NUMBER,
-                BuildConfig.BUILD_COMMIT,
                 C4.getVersion());
 
             libInfo.compareAndSet(null, info);
