@@ -241,9 +241,6 @@ public class LogTest extends BaseTest {
 
             int maxRotateCount = config.getMaxRotateCount();
             int totalFilesShouldBeInDirectory = (maxRotateCount + 1) * 5;
-            if (!BuildConfig.DEBUG) {
-                totalFilesShouldBeInDirectory -= 1;
-            }
             int totalLogFilesSaved = path.listFiles().length;
             assertEquals(totalFilesShouldBeInDirectory, totalLogFilesSaved);
         });
