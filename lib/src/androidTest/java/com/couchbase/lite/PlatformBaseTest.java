@@ -17,7 +17,6 @@
 //
 package com.couchbase.lite;
 
-import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
 import java.io.IOException;
@@ -33,56 +32,19 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
 
     @Override
-    public void initCouchbaseLite() {
-        final Context c = InstrumentationRegistry.getTargetContext();
-        CouchbaseLite.init(c);
-    }
+    public void initCouchbaseLite() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
     @Override
-    public String getDatabaseDirectory() {
-        return CouchbaseLite.getDbDirectoryPath();
-    }
+    public String getDatabaseDirectory() { return CouchbaseLite.getDbDirectoryPath(); }
 
     @Override
-    public String getTempDirectory(String name) {
-        return CouchbaseLite.getTmpDirectory(name);
-    }
+    public String getTempDirectory(String name) { return CouchbaseLite.getTmpDirectory(name); }
 
     @Override
     public InputStream getAsset(String asset) {
-        try {
-            return CouchbaseLite.getContext().getAssets().open(asset);
-        }
-        catch (IOException e) {
-            return null;
-        }
-    }
-
-    private static String getSystemProperty(String name) throws Exception {
-        Class<?> systemPropertyClazz = Class.forName("android.os.SystemProperties");
-        return (String) systemPropertyClazz
-            .getMethod("get", new Class[] {String.class})
-            .invoke(systemPropertyClazz, new Object[] {name});
-    }
-
-    public void log(LogLevel level, String domain, String message) {
-        switch (level) {
-            case DEBUG:
-                android.util.Log.d("CouchbaseLite/" + domain, message);
-                break;
-            case VERBOSE:
-                android.util.Log.v("CouchbaseLite/" + domain, message);
-                break;
-            case INFO:
-                android.util.Log.i("CouchbaseLite/" + domain, message);
-                break;
-            case WARNING:
-                android.util.Log.w("CouchbaseLite/" + domain, message);
-                break;
-            case ERROR:
-                android.util.Log.e("CouchbaseLite/" + domain, message);
-                break;
-        }
+        try { return CouchbaseLite.getContext().getAssets().open(asset); }
+        catch (IOException ignore) { }
+        return null;
     }
 
     @Override
@@ -91,4 +53,10 @@ public abstract class PlatformBaseTest implements PlatformTest {
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
     }
 
+    private static String getSystemProperty(String name) throws Exception {
+        Class<?> systemPropertyClazz = Class.forName("android.os.SystemProperties");
+        return (String) systemPropertyClazz
+            .getMethod("get", String.class)
+            .invoke(systemPropertyClazz, new Object[] {name});
+    }
 }

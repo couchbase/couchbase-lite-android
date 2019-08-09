@@ -19,6 +19,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.util.Locale;
+
 import com.couchbase.lite.LogLevel;
 
 /**
@@ -28,7 +30,11 @@ public final class Report {
     private Report() {}
 
     public static void log(@NonNull LogLevel level, @NonNull String message) {
-        Report.log(level, message, null);
+        Report.log(level, message, (Throwable) null);
+    }
+
+    public static void log(@NonNull LogLevel level, @NonNull String template, Object... args) {
+        Report.log(level, String.format(Locale.ENGLISH, template, args));
     }
 
     public static void log(@NonNull LogLevel level, @NonNull String message, @Nullable Throwable err) {
