@@ -37,6 +37,8 @@ ext {
     BUILD_RELEASE = file("$ROOT_DIR/version.txt").text.trim()
     BUILD_NUMBER = (project.hasProperty("buildNumber") && buildNumber) ? buildNumber : "SNAPSHOT"
     BUILD_VERSION = "${BUILD_RELEASE}-${BUILD_NUMBER}"
+    BUILD_COMMIT = 'git rev-parse --short HEAD'.execute([], file(PROJECT_DIR)).text.trim() +
+        (('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) ? "" : "+")
 
     ETC_DIR = "${PROJECT_DIR}/etc"
     CBL_CORE_DIR = "${ROOT_DIR}/couchbase-lite-core"
@@ -110,12 +112,14 @@ android {
             testCoverageEnabled = true
             buildConfigField "String", "BUILD_HOST", "\"${BUILD_HOST}\""
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
+            buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
         }
         release {
             minifyEnabled false
             buildConfigField "String", "BUILD_HOST", "\"${BUILD_HOST}\""
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
+            buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
         }
     }

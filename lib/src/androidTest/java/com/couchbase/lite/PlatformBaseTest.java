@@ -18,7 +18,6 @@
 package com.couchbase.lite;
 
 import android.content.Context;
-import android.os.Build;
 import android.support.test.InstrumentationRegistry;
 
 import java.io.IOException;
@@ -26,12 +25,12 @@ import java.io.InputStream;
 
 import com.couchbase.lite.internal.ExecutionService;
 
+
 /**
  * Platform test class for Android.
  */
 public abstract class PlatformBaseTest implements PlatformTest {
-
-    public static final String TAG = "Test";
+    public static final String PRODUCT = "Android";
 
     @Override
     public void initCouchbaseLite() {
@@ -50,34 +49,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public boolean isAndroid() {
-        return false;
-    }
-
-    @Override
-    public boolean isAndroidEmulator() {
-        try {
-            boolean goldfish = getSystemProperty("ro.hardware").contains("goldfish");
-            boolean emu = getSystemProperty("ro.kernel.qemu").length() > 0;
-            boolean sdk = getSystemProperty("ro.product.model").equals("sdk");
-            return goldfish || emu || sdk;
-        }
-        catch (Exception e) {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean isDebugBuild() {
-        return BuildConfig.DEBUG;
-    }
-
-    @Override
-    public int getSystemVersion() {
-        return Build.VERSION.SDK_INT;
-    }
-
-    @Override
     public InputStream getAsset(String asset) {
         try {
             return CouchbaseLite.getContext().getAssets().open(asset);
@@ -90,8 +61,8 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static String getSystemProperty(String name) throws Exception {
         Class<?> systemPropertyClazz = Class.forName("android.os.SystemProperties");
         return (String) systemPropertyClazz
-                .getMethod("get", new Class[] {String.class})
-                .invoke(systemPropertyClazz, new Object[] {name});
+            .getMethod("get", new Class[] {String.class})
+            .invoke(systemPropertyClazz, new Object[] {name});
     }
 
     public void log(LogLevel level, String domain, String message) {
