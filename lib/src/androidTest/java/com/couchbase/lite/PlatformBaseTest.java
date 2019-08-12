@@ -30,6 +30,7 @@ import com.couchbase.lite.internal.ExecutionService;
  */
 public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
+    public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
 
     @Override
     public void initCouchbaseLite() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
