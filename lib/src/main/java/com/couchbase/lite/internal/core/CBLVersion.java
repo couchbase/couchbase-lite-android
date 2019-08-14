@@ -27,7 +27,7 @@ import com.couchbase.lite.BuildConfig;
 
 public class CBLVersion {
     private static final String USER_AGENT = "CouchbaseLite/%s (%s) %s";
-    private static final String VERSION_INFO = "CouchbaseLite Android v%s (%s at %s on %s) on %s";
+    private static final String VERSION_INFO = "CouchbaseLite Android v%s (%s at %s) on %s";
     private static final String LIB_INFO = "%s/%s, Commit/%s Core/%s";
     private static final String SYS_INFO = "Java; Android %s; %s";
 
@@ -63,7 +63,6 @@ public class CBLVersion {
                 BuildConfig.VERSION_NAME,
                 getLibInfo(),
                 BuildConfig.BUILD_TIME,
-                BuildConfig.BUILD_HOST,
                 getSysInfo());
 
             versionInfo.compareAndSet(null, info);

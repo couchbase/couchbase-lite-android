@@ -33,7 +33,6 @@ ext {
     CBL_SITE_URL = 'https://developer.couchbase.com/mobile/'
 
     BUILD_TIME = Instant.now().toString()
-    BUILD_HOST = 'hostname'.execute().text.trim()
     BUILD_RELEASE = file("$ROOT_DIR/version.txt").text.trim()
     BUILD_NUMBER = (project.hasProperty("buildNumber") && buildNumber) ? buildNumber : "SNAPSHOT"
     BUILD_VERSION = "${BUILD_RELEASE}-${BUILD_NUMBER}"
@@ -110,14 +109,12 @@ android {
         debug {
             minifyEnabled false
             testCoverageEnabled = true
-            buildConfigField "String", "BUILD_HOST", "\"${BUILD_HOST}\""
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
         }
         release {
             minifyEnabled false
-            buildConfigField "String", "BUILD_HOST", "\"${BUILD_HOST}\""
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
