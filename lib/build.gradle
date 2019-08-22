@@ -52,7 +52,7 @@ def TARGET_ABIS = (!hasProperty("targetAbis")) ? null : targetAbis.split(',')
 // comma separated list of annotations for tests that should not be run.
 def TEST_FILTER = (!project.hasProperty("testFilter")) ? null : testFilter
 
-// Target repo for maven ppublish
+// Target repo for maven publish
 def MAVEN_URL = (!project.hasProperty("mavenUrl")) ? null : mavenUrl
 
 // local.properties
@@ -108,10 +108,10 @@ android {
     buildTypes {
         debug {
             minifyEnabled false
-            testCoverageEnabled = true
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
+            // testCoverageEnabled is enabled in the `coverage` task
         }
         release {
             minifyEnabled false
@@ -322,8 +322,10 @@ project.afterEvaluate {
 // Testing
 // ----------------------------------------------------------------
 
+apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
-coveralls { jacocoReportPath = "${REPORTS_DIR}/coverage/debug/report.xml" }
+
+jacoco { toolVersion = JACOCO_VERSION }
 
 
 // ----------------------------------------------------------------
@@ -445,9 +447,13 @@ task smokeTest(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsHtml', 'assembl
 task unitTest(dependsOn: ['smokeTest', 'testDebugUnitTest'])
 task fullTest(dependsOn: ['unitTest', 'connectedDebugAndroidTest'])
 
+task coverage(dependsOn: ['createDebugCoverageReport', 'coveralls']) {
+    android.buildTypes.findByName('debug').testCoverageEnabled = true
+}
+
 ///////// CI tasks
 task ciCheck(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsXml', 'test'])
-task ciPublish(dependsOn: ['publishMavenJavaPublicationToMavenRepository'])
+task ciPublish(dependsOn: ['generatePomFileForMavenJavaPublication', 'publishMavenJavaPublicationToMavenRepository'])
 
 // ordering (roughly last to first)
 project.afterEvaluate {
