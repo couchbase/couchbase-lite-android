@@ -27,13 +27,14 @@ import java.util.concurrent.RejectedExecutionException;
 
 import com.couchbase.lite.internal.utils.Preconditions;
 
+
 /**
  * ExecutionService for Android.
  */
 public final class AndroidExecutionService extends AbstractExecutionService {
     private static class CancellableTask implements Cancellable {
-        private Handler handler;
-        private Runnable task;
+        private final Handler handler;
+        private final Runnable task;
 
         private CancellableTask(@NonNull Handler handler, @NonNull Runnable task) {
             Preconditions.checkArgNotNull(handler, "handler");
@@ -43,10 +44,9 @@ public final class AndroidExecutionService extends AbstractExecutionService {
         }
 
         @Override
-        public void cancel() {
-            handler.removeCallbacks(task);
-        }
+        public void cancel() { handler.removeCallbacks(task); }
     }
+
 
     private final Handler mainHandler;
     private final Executor mainThreadExecutor;
