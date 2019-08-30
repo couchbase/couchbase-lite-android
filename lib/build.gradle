@@ -263,7 +263,7 @@ task pmd(type: Pmd) {
     reports {
         xml {
             enabled = true
-            setDestination(file("${REPORTS_DIR}/reports/pmd.xml"))
+            setDestination(file("${REPORTS_DIR}/pmd.xml"))
         }
         html {
             enabled = true
