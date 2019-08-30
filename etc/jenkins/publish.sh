@@ -44,7 +44,8 @@ echo "======== Copy artifacts to staging directory"
 POM_FILE='pom.xml'
 cp lib/build/outputs/aar/*.aar "${ARTIFACTS}/"
 cp lib/build/libs/*.jar "${ARTIFACTS}/"
-cp lib/build/publications/mavenJava/pom-default.xml  "${ARTIFACTS}/${POM_FILE}"
+cp lib/build/reports "${ARTIFACTS}"
+cp lib/build/publications/mavenJava/pom-default.xml "${ARTIFACTS}/${POM_FILE}"
 
 echo "======== Update package type in pom"
 ZIP_BUILD="${SCRATCH}/zip-build"
