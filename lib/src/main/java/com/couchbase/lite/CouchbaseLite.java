@@ -19,10 +19,20 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.ExecutionService;
@@ -30,13 +40,14 @@ import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
+
 public final class CouchbaseLite {
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
 
-    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
+    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
     // Utility class
     private CouchbaseLite() {}
@@ -48,12 +59,13 @@ public final class CouchbaseLite {
     public static void init(@NonNull Context ctxt) {
         Preconditions.checkArgNotNull(ctxt, "context");
 
+        if (INITIALIZED.getAndSet(true)) { return; }
+
+        CONTEXT.set(new SoftReference<>(ctxt.getApplicationContext()));
+
         loadSystemLibrary(LITECORE_JNI_LIBRARY);
 
-        final SoftReference<Context> currentContext = CONTEXT.get();
-        if (currentContext != null) { return; }
-
-        CONTEXT.compareAndSet(null, new SoftReference<>(ctxt.getApplicationContext()));
+        loadErrorMessages(ctxt);
     }
 
     /**
@@ -99,12 +111,28 @@ public final class CouchbaseLite {
     }
 
     private static void loadSystemLibrary(String libName) {
-        if (LOADED.getAndSet(true)) { return; }
-
         if (!load(libName)) { Log.e(LogDomain.DATABASE, "Cannot load native library"); }
         else { Log.v(LogDomain.DATABASE, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'"); }
 
         initMValue();
+    }
+
+    private static void loadErrorMessages(Context ctxt) {
+        final Map<String, String> errorMessages = new HashMap<>();
+
+        final JSONArray errors;
+        try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
+            errors = new JSONArray(new Scanner(is).useDelimiter("\\A").next());
+            for (int i = 0; i < errors.length(); i++) {
+                JSONObject error = errors.getJSONObject(i);
+                errorMessages.put(error.getString("name"), error.getString("message"));
+            }
+        }
+        catch (IOException | JSONException e) {
+            Log.e(LogDomain.ALL, "Failed to load error messages!", e);
+        }
+
+        CBLError.setErrorMessages(errorMessages);
     }
 
     // TODO: Need to update for CBL Java.
