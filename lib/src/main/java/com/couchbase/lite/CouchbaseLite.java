@@ -121,7 +121,7 @@ public final class CouchbaseLite {
 
         final JSONArray errors;
         try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
-            errors = new JSONArray(new Scanner(is).useDelimiter("\\A").next());
+            errors = new JSONArray(new Scanner(is, "UTF-8").useDelimiter("\\A").next());
             for (int i = 0; i < errors.length(); i++) {
                 final JSONObject error = errors.getJSONObject(i);
                 errorMessages.put(error.getString("name"), error.getString("message"));
