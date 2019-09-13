@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -124,7 +123,7 @@ public final class CouchbaseLite {
         try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
             errors = new JSONArray(new Scanner(is).useDelimiter("\\A").next());
             for (int i = 0; i < errors.length(); i++) {
-                JSONObject error = errors.getJSONObject(i);
+                final JSONObject error = errors.getJSONObject(i);
                 errorMessages.put(error.getString("name"), error.getString("message"));
             }
         }
