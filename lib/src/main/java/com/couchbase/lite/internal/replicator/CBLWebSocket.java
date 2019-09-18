@@ -51,7 +51,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
                 cause = cause.getCause();
                 if (cause instanceof ErrnoException) {
                     final ErrnoException e = (ErrnoException) cause;
-                    closed(handle, C4Constants.ErrorDomain.POSIX, e.errno, null);
+                    closed(C4Constants.ErrorDomain.POSIX, e.errno, null);
                     return true;
                 }
             }
@@ -59,19 +59,19 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
 
         // ConnectException
         if (error instanceof java.net.ConnectException) {
-            closed(handle, C4Constants.ErrorDomain.POSIX, ECONNREFUSED, null);
+            closed(C4Constants.ErrorDomain.POSIX, ECONNREFUSED, null);
             return true;
         }
 
         // SocketException
         else if (error instanceof java.net.SocketException) {
-            closed(handle, C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
+            closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
             return true;
         }
 
         // EOFException
         if (error instanceof java.io.EOFException) {
-            closed(handle, C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
+            closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
             return true;
         }
 
