@@ -39,7 +39,8 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         String hostname,
         int port,
         String path,
-        Map<String, Object> options) throws GeneralSecurityException, URISyntaxException {
+        Map<String, Object> options)
+        throws GeneralSecurityException, URISyntaxException {
         super(handle, scheme, hostname, port, path, options);
     }
 
