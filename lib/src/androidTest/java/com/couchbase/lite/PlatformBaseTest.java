@@ -41,6 +41,17 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public String getTempDirectory(String name) { return CouchbaseLite.getTmpDirectory(name); }
 
+    // make a half-hearted attempt to set up file logging
+    public void setupFileLogging() {
+        try {
+            FileLogger fileLogger = Database.log.getFile();
+            fileLogger.setConfig(new LogFileConfiguration(
+                InstrumentationRegistry.getTargetContext().getExternalFilesDir("logs").getAbsolutePath()));
+            fileLogger.setLevel(LogLevel.DEBUG);
+        }
+        catch (Exception ignore) { }
+    }
+
     @Override
     public InputStream getAsset(String asset) {
         try { return CouchbaseLite.getContext().getAssets().open(asset); }
