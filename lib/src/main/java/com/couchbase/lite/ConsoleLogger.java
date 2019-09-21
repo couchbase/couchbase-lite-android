@@ -20,6 +20,7 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+
 /**
  * A class for sending log messages to Android's system log (aka logcat).  This is useful
  * for debugging during development, but is recommended to be disabled in production (the
@@ -28,21 +29,22 @@ import android.util.Log;
 public final class ConsoleLogger extends AbstractConsoleLogger {
     @Override
     protected void doLog(LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        final String tag = "CouchbaseLite/" + domain.toString();
         switch (level) {
             case DEBUG:
-                Log.d("CouchbaseLite/" + domain.toString(), message);
+                Log.d(tag, message);
                 break;
             case VERBOSE:
-                Log.v("CouchbaseLite/" + domain.toString(), message);
+                Log.v(tag, message);
                 break;
             case INFO:
-                Log.i("CouchbaseLite/" + domain.toString(), message);
+                Log.i(tag, message);
                 break;
             case WARNING:
-                Log.w("CouchbaseLite/" + domain.toString(), message);
+                Log.w(tag, message);
                 break;
             case ERROR:
-                Log.e("CouchbaseLite/" + domain.toString(), message);
+                Log.e(tag, message);
                 break;
         }
     }

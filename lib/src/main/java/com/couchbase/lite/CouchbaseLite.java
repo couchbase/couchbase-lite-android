@@ -128,7 +128,7 @@ public final class CouchbaseLite {
             }
         }
         catch (IOException | JSONException e) {
-            Log.e(LogDomain.ALL, "Failed to load error messages!", e);
+            Log.e(LogDomain.DATABASE, "Failed to load error messages!", e);
         }
 
         CBLError.setErrorMessages(errorMessages);

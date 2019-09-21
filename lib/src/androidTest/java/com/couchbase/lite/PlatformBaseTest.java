@@ -47,7 +47,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
             FileLogger fileLogger = Database.log.getFile();
             fileLogger.setConfig(new LogFileConfiguration(
                 InstrumentationRegistry.getTargetContext().getExternalFilesDir("logs").getAbsolutePath()));
-            fileLogger.setLevel(LogLevel.DEBUG);
+            fileLogger.setLevel(LogLevel.INFO);
         }
         catch (Exception ignore) { }
     }
