@@ -88,12 +88,7 @@ android {
             ndk { abiFilters TARGET_ABIS }
         }
         externalNativeBuild {
-            cmake {
-                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19'
-                cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
-                // explicitly build libs
-                targets 'LiteCoreJNI'
-            }
+            cmake { targets 'LiteCoreJNI' }
         }
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -109,17 +104,35 @@ android {
 
     buildTypes {
         debug {
-            minifyEnabled false
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
+
+            minifyEnabled false
+
+            externalNativeBuild {
+                cmake {
+                    arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19'
+                    cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
+                }
+            }
+
             // testCoverageEnabled is enabled in the `coverage` task
         }
+
         release {
-            minifyEnabled false
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
+
+            minifyEnabled false
+
+            externalNativeBuild {
+                cmake {
+                    arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DCMAKE_BUILD_TYPE=MinSizeRel'
+                    cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
+                }
+            }
         }
     }
 
