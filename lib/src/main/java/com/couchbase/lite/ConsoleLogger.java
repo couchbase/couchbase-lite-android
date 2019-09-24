@@ -31,52 +31,39 @@ import com.couchbase.lite.internal.core.C4Log;
  * file logger is both more durable and more efficient)
  */
 public final class ConsoleLogger implements Logger {
+    private EnumSet<LogDomain> logDomains = LogDomain.ALL_DOMAINS;
     private LogLevel logLevel = LogLevel.WARNING;
-    private EnumSet<LogDomain> logDomains = EnumSet.of(LogDomain.ALL);
 
     // Singleton instance accessible from Log.getConsole()
     ConsoleLogger() { }
 
-    /**
-     * Gets the domains that will be considered for writing to
-     * the Android system log
-     *
-     * @return The currently active domains
-     */
-    @NonNull
-    public EnumSet<LogDomain> getDomains() {
-        return logDomains;
-    }
+    @Override
+    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        if ((level.compareTo(logLevel) < 0) || (!logDomains.contains(domain))) { return; }
 
-    /**
-     * Sets the domains that will be considered for writing to
-     * the Android system log
-     *
-     * @param domains The domains to make active
-     */
-    public void setDomains(@NonNull EnumSet<LogDomain> domains) {
-        if (domains == null) { throw new IllegalArgumentException("domains cannot be null."); }
-
-        logDomains = domains;
-    }
-
-    private void setCallbackLevel(@NonNull LogLevel level) {
-        if (level == null) { throw new IllegalArgumentException("level cannot be null."); }
-
-        LogLevel callbackLevel = level;
-        final Logger custom = Database.log.getCustom();
-        if ((custom != null) && (custom.getLevel().compareTo(callbackLevel) < 0)) {
-            callbackLevel = custom.getLevel();
+        final String tag = "CouchbaseLite/" + domain;
+        switch (level) {
+            case DEBUG:
+                Log.d(tag, message);
+                break;
+            case VERBOSE:
+                Log.v(tag, message);
+                break;
+            case INFO:
+                Log.i(tag, message);
+                break;
+            case WARNING:
+                Log.w(tag, message);
+                break;
+            case ERROR:
+                Log.e(tag, message);
+                break;
         }
-
-        C4Log.setCallbackLevel(callbackLevel.getValue());
     }
 
     @NonNull
     @Override
-    public LogLevel getLevel() {
-        return logLevel;
-    }
+    public LogLevel getLevel() { return logLevel; }
 
     /**
      * Sets the overall logging level that will be written to
@@ -90,33 +77,29 @@ public final class ConsoleLogger implements Logger {
         if (logLevel == level) { return; }
 
         logLevel = level;
-        setCallbackLevel(level);
+        C4Log.setCallbackLevel(logLevel);
     }
 
-    @Override
-    public void log(LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        if (level.compareTo(logLevel) < 0
-            || (!logDomains.contains(domain)
-            && !logDomains.contains(LogDomain.ALL))) {
-            return;
-        }
+    /**
+     * Gets the domains that will be considered for writing to
+     * the Android system log
+     *
+     * @return The currently active domains
+     */
+    @NonNull
+    public EnumSet<LogDomain> getDomains() { return logDomains; }
 
-        switch (level) {
-            case DEBUG:
-                Log.d("CouchbaseLite/" + domain.toString(), message);
-                break;
-            case VERBOSE:
-                Log.v("CouchbaseLite/" + domain.toString(), message);
-                break;
-            case INFO:
-                Log.i("CouchbaseLite/" + domain.toString(), message);
-                break;
-            case WARNING:
-                Log.w("CouchbaseLite/" + domain.toString(), message);
-                break;
-            case ERROR:
-                Log.e("CouchbaseLite/" + domain.toString(), message);
-                break;
-        }
+    /**
+     * Sets the domains that will be considered for writing to
+     * the Android system log
+     *
+     * @param domains The domains to make active
+     */
+    public void setDomains(@NonNull EnumSet<LogDomain> domains) {
+        if (domains == null) { throw new IllegalArgumentException("domains cannot be null."); }
+
+        logDomains = (!domains.contains(LogDomain.ALL))
+            ? domains
+            : LogDomain.ALL_DOMAINS;
     }
 }

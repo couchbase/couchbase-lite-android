@@ -18,14 +18,10 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
@@ -38,13 +34,40 @@ import com.couchbase.lite.internal.support.Log;
  * a separate file.
  */
 public final class FileLogger implements Logger {
-    private static final LogDomain DOMAIN = com.couchbase.lite.LogDomain.DATABASE;
-    private final HashMap<LogDomain, String> domainObjects = new HashMap<>();
-    private LogLevel logLevel = com.couchbase.lite.LogLevel.INFO;
     private LogFileConfiguration config;
+    private LogLevel logLevel = LogLevel.WARNING;
 
-    // Singleton instance accessible from Log.getConsole()
-    FileLogger() { setupDomainObjects(); }
+    // The singleton instance is available from Database.log.getFile()
+    FileLogger() { }
+
+    @Override
+    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        if (level.compareTo(logLevel) < 0) { return; }
+        C4Log.log(Log.getC4DomainForLoggingDomain(domain), level.getValue(), message);
+    }
+
+    @NonNull
+    @Override
+    public LogLevel getLevel() {
+        logLevel = Log.getLogLevelForC4Level(C4Log.getBinaryFileLevel());
+        return logLevel;
+    }
+
+    /**
+     * Sets the overall logging level that will be written to the logging files.
+     *
+     * @param level The maximum level to include in the logs
+     */
+    public void setLevel(@NonNull LogLevel level) {
+        if (config == null) {
+            throw new IllegalStateException("Cannot set logging level before setting the configuration");
+        }
+
+        if (logLevel == level) { return; }
+
+        logLevel = level;
+        C4Log.setBinaryFileLevel(level.getValue());
+    }
 
     /**
      * Gets the configuration currently in use on the file logger.
@@ -53,9 +76,7 @@ public final class FileLogger implements Logger {
      *
      * @return The configuration currently in use
      */
-    public LogFileConfiguration getConfig() {
-        return config;
-    }
+    public LogFileConfiguration getConfig() { return config; }
 
     /**
      * Sets the configuration currently to use on the file logger.
@@ -64,82 +85,41 @@ public final class FileLogger implements Logger {
      *
      * @param config The configuration to use
      */
-    public void setConfig(LogFileConfiguration config) {
-        this.config = config == null ? null : config.readOnlyCopy();
+    public void setConfig(@Nullable LogFileConfiguration config) {
         if (config == null) {
-            Log.w(
-                DOMAIN,
-                "Database.log.getFile().getConfig() is now null, meaning file logging is disabled.  "
-                    + "Log files required for product support are not being generated.");
-        }
-
-        updateConfig();
-    }
-
-    private void setupDomainObjects() {
-        domainObjects.put(com.couchbase.lite.LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
-        domainObjects.put(com.couchbase.lite.LogDomain.QUERY, C4Constants.LogDomain.QUERY);
-        domainObjects.put(com.couchbase.lite.LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
-        for (Map.Entry<LogDomain, String> entry : domainObjects.entrySet()) {
-            C4Log.setLevel(entry.getValue(), C4Constants.LogLevel.DEBUG);
-        }
-    }
-
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    private void updateConfig() {
-        if (config != null) {
-            new File(config.getDirectory()).mkdir();
-            C4Log.writeToBinaryFile(
-                config.getDirectory(),
-                logLevel.getValue(),
-                config.getMaxRotateCount(),
-                config.getMaxSize(),
-                config.usesPlaintext(),
-                CBLVersion.getVersionInfo());
-        }
-        else {
-            C4Log.writeToBinaryFile(
-                null,
-                logLevel.getValue(),
-                1,
-                1024 * 500,
-                false,
-                CBLVersion.getVersionInfo());
-        }
-    }
-
-    @NonNull
-    @Override
-    public LogLevel getLevel() {
-        return com.couchbase.lite.LogLevel.values()[C4Log.getBinaryFileLevel()];
-    }
-
-    /**
-     * Sets the overall logging level that will be written to
-     * the logging files.
-     *
-     * @param level The maximum level to include in the logs
-     */
-    public void setLevel(@NonNull LogLevel level) {
-        if (config == null) {
-            throw new IllegalStateException("Cannot set logging level without a configuration");
-        }
-
-        if (logLevel.equals(level)) {
+            setNullConfig();
             return;
         }
 
-        logLevel = level;
-        C4Log.setBinaryFileLevel(level.getValue());
-    }
+        this.config = config.readOnlyCopy();
 
-    @Override
-    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        if (level.compareTo(logLevel) < 0 || !domainObjects.containsKey(domain)) {
-            return;
+        if (!new File(config.getDirectory()).mkdir()) {
+            Log.w(LogDomain.DATABASE, "Cannot create log file!");
         }
 
-        C4Log.log(domainObjects.get(domain), level.getValue(), message);
+        C4Log.writeToBinaryFile(
+            config.getDirectory(),
+            LogLevel.INFO.getValue(),
+            config.getMaxRotateCount(),
+            config.getMaxSize(),
+            config.usesPlaintext(),
+            CBLVersion.getVersionInfo());
+    }
+
+    private void setNullConfig() {
+        Log.w(
+            LogDomain.DATABASE,
+            "Database.log.getFile().getConfig() is now null and file logging is disabled.  "
+                + "The log files *required* for product support are not being generated.");
+
+        this.config = null;
+
+        C4Log.writeToBinaryFile(
+            null,
+            LogLevel.INFO.getValue(),
+            1,
+            1024 * 500,
+            false,
+            CBLVersion.getVersionInfo());
     }
 }
