@@ -22,9 +22,7 @@ import android.util.Log;
 
 
 /**
- * A class for sending log messages to Android's system log (aka logcat).  This is useful
- * for debugging during development, but is recommended to be disabled in production (the
- * file logger is both more durable and more efficient)
+ * A class that sends log messages to Android's system log, available via 'logcat'.
  */
 public final class ConsoleLogger extends AbstractConsoleLogger {
     @Override

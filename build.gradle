@@ -19,7 +19,7 @@ buildscript {
         COMPILE_SDK_VERSION = 29
         BUILD_TOOLS_VERSION = "29.0.2"
         KOTLIN_VERSION = '1.3.50'
-        JACOCO_VERSION = '0.8.2'
+        JACOCO_VERSION = '0.8.4'
 
         PROJECT_DIR = "${projectDir}"
         ROOT_DIR = "${PROJECT_DIR}/.."
