@@ -119,7 +119,7 @@ public final class CouchbaseLite {
         if (dir == null) { return null; }
         final String path = dir.getAbsolutePath();
         if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return path; }
-        throw new IllegalStateException("Cannot create or access temp directory at " + path);
+        throw new IllegalStateException("Cannot create or access directory at " + path);
     }
 
     private static void initMValue() {
