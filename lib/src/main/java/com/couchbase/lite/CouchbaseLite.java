@@ -36,7 +36,6 @@ import org.json.JSONObject;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.ExecutionService;
-import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;

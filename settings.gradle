@@ -4,6 +4,8 @@
 //
 // The two apps are mutually exclusive: the test app is built and run only by CI machines
 // during the release process.  All other work in this repo will use only the "lib" module.
+// Separating the two prevents confusing build failures, in the test app, while working
+// with the library.
 // The crazy hack below could be avoided by separating the test app into a separate project.
 // The only arguments for *not* doing this is that separating the two would require
 // separate directories for test projects (separate git repos?) and keeping the build scripts
@@ -14,11 +16,7 @@ if (!hasProperty("automatedTests") || !automatedTests.toBoolean()) {
     // normal source development
     include ':lib'
 } else {
-    // used only during CI automated testing
-    int n = -1;
-    try { n = buildNumber.toInteger() }
-    catch (Exception ignore) { }
-    if (n <= 0) { throw new IllegalStateException("!!! Automated testing requires a 'buildNumber': " + n) }
+    // the test application
     include ':test'
 }
 

@@ -22,7 +22,7 @@ ext {
     CBL_GROUP = 'com.couchbase.lite'
 
     BUILD_VERSION = file("$ROOT_DIR/version.txt").text.trim()
-    BUILD_NUMBER = (!project.hasProperty("buildNumber")) ? "0" : buildNumber
+    BUILD_NUMBER = (!project.hasProperty("buildNumber")) ? "SNAPSHOT" : buildNumber
 
     REPORTS_DIR = "${buildDir}/reports"
     CBL_CORE_DIR = "${ROOT_DIR}/couchbase-lite-core"
@@ -79,6 +79,7 @@ android {
 }
 
 repositories {
+    mavenLocal()
     maven { url "http://172.23.121.218/maven2/cimaven/" }
     google()
     jcenter()
@@ -89,8 +90,10 @@ dependencies {
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VERSION"
 
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VERSION"
     testImplementation 'junit:junit:4.12'
 
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VERSION"
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }

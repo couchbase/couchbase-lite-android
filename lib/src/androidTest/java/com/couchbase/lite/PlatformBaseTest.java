@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -45,8 +46,9 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public void setupFileLogging() {
         try {
             FileLogger fileLogger = Database.log.getFile();
-            fileLogger.setConfig(new LogFileConfiguration(
-                InstrumentationRegistry.getTargetContext().getExternalFilesDir("logs").getAbsolutePath()));
+            final File logDir = InstrumentationRegistry.getTargetContext().getExternalFilesDir("logs");
+            if (logDir == null) { throw new IllegalStateException("Cannot find external files directory"); }
+            fileLogger.setConfig(new LogFileConfiguration(logDir.getAbsolutePath()));
             fileLogger.setLevel(LogLevel.INFO);
         }
         catch (Exception ignore) { }
