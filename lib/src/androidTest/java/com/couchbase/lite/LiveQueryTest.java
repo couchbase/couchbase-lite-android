@@ -84,17 +84,22 @@ public class LiveQueryTest extends BaseTest {
             .where(Expression.property("number1").greaterThanOrEqualTo(Expression.intValue(0)))
             .orderBy(Ordering.property("number1").ascending());
 
-        value = new AtomicInteger(0);
-        query.addChangeListener(executor, change -> value.incrementAndGet());
+        // There should be two callbacks:
+        //  - immediately on registration
+        //  - after LIVE_QUERY_UPDATE_INTERVAL_MS when the change gets noticed.
+        latch1 = new CountDownLatch(2);
+        ListenerToken token = query.addChangeListener(executor, change -> {
+            latch1.countDown();
+        });
 
         createDocNumbered(12);
         createDocNumbered(13);
         createDocNumbered(14);
+        createDocNumbered(15);
+        createDocNumbered(16);
 
-        // Ya, I know...
-        Thread.sleep(1000);
-
-        assertEquals(1, value.get());
+        latch1.await(5, TimeUnit.SECONDS);
+        query.removeChangeListener(token);
     }
 
     // Changing query parameters should cause an update.

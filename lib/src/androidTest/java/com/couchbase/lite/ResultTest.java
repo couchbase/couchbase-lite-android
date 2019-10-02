@@ -1082,4 +1082,23 @@ public class ResultTest extends BaseTest {
             assertEquals(1, rows);
         }
     }
+
+    // Contributed by Bryan Welter:
+    // https://github.com/couchbase/couchbase-lite-android-ce/issues/27
+    @Test
+    public void testEmptyDictionary() throws Exception {
+        String doc1 = "doc1";
+        String key1 = "emptyDict";
+
+        MutableDocument mDoc = new MutableDocument(doc1);
+        mDoc.setDictionary(key1, new MutableDictionary());
+        save(mDoc);
+
+        final Query query = QueryBuilder.select(SelectResult.property(key1))
+            .from(DataSource.database(db))
+            .where(Meta.id.equalTo(Expression.string(doc1)));
+
+        ResultSet results = query.execute();
+        for (Result result : results.allResults()) { result.toMap(); }
+    }
 }
