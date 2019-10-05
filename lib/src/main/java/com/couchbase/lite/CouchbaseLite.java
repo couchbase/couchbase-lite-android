@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,6 +112,9 @@ public final class CouchbaseLite {
     static String getTmpDirectory(@NonNull String name) { return verifyDir(getContext().getExternalFilesDir(name)); }
 
     static String getTmpDirectory(String root, String name) { return verifyDir(new File(root, name)); }
+
+    @VisibleForTesting
+    static void reset() { INITIALIZED.set(false); }
 
     @Nullable
     private static String verifyDir(@Nullable File dir) {
