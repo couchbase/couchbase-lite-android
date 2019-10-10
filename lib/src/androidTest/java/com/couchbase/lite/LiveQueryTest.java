@@ -98,7 +98,8 @@ public class LiveQueryTest extends BaseTest {
         createDocNumbered(15);
         createDocNumbered(16);
 
-        latch1.await(5, TimeUnit.SECONDS);
+        assertTrue(latch1.await(5, TimeUnit.SECONDS));
+
         query.removeChangeListener(token);
     }
 
