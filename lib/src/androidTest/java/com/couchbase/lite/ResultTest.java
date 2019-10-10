@@ -1099,8 +1099,9 @@ public class ResultTest extends BaseTest {
             .where(Meta.id.equalTo(Expression.string(doc1)));
 
         ResultSet results = query.execute();
+        assertNotNull(results);
         for (Result result : results.allResults()) {
-            assertNotNull(results);
+            assertNotNull(result);
             assertEquals(1, result.toMap().size());
             Dictionary emptyDict = result.getDictionary(key1);
             assertNotNull(emptyDict);
