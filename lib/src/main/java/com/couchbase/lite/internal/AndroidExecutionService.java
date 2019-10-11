@@ -25,6 +25,8 @@ import android.support.annotation.NonNull;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -82,7 +84,10 @@ public final class AndroidExecutionService extends AbstractExecutionService {
         Preconditions.checkArgNotNull(task, "task");
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
-            catch (RejectedExecutionException ignored) { }
+            catch (RejectedExecutionException e) {
+                // This may happen if the executor was shut down during the delay
+                Log.w(LogDomain.DATABASE, "Rejected execution after delay: " + executor, e);
+            }
         };
         mainHandler.postDelayed(delayedTask, delayMs);
         return new CancellableTask(mainHandler, delayedTask);
