@@ -84,9 +84,11 @@ public final class AndroidExecutionService extends AbstractExecutionService {
         Preconditions.checkArgNotNull(task, "task");
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
+            catch (CloseableExecutor.ExecutorClosedExeception e) {
+                Log.w(LogDomain.DATABASE, "Scheduled on closed executor: " + task + ", " + executor);
+            }
             catch (RejectedExecutionException e) {
-                // This may happen if the executor was shut down during the delay
-                Log.w(LogDomain.DATABASE, "Rejected execution after delay: " + executor, e);
+                throw new IllegalStateException("Execution rejected in status change: notification: " + executor, e);
             }
         };
         mainHandler.postDelayed(delayedTask, delayMs);
