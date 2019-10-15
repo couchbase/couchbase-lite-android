@@ -109,9 +109,15 @@ public final class CouchbaseLite {
         return getContext().getFilesDir().getAbsolutePath();
     }
 
-    static String getTmpDirectory(@NonNull String name) { return verifyDir(getContext().getExternalFilesDir(name)); }
+    static String getTmpDirectory(@NonNull String name) {
+        requireInit("Temp directory not initialized");
+        return verifyDir(getContext().getExternalFilesDir(name));
+    }
 
-    static String getTmpDirectory(String root, String name) { return verifyDir(new File(root, name)); }
+    static String getTmpDirectory(String root, String name) {
+        requireInit("Temp directory not initialized");
+        return verifyDir(new File(root, name));
+    }
 
     @VisibleForTesting
     static void reset() { INITIALIZED.set(false); }
@@ -119,8 +125,10 @@ public final class CouchbaseLite {
     @Nullable
     private static String verifyDir(@Nullable File dir) {
         if (dir == null) { return null; }
+
         final String path = dir.getAbsolutePath();
         if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return path; }
+
         throw new IllegalStateException("Cannot create or access directory at " + path);
     }
 
