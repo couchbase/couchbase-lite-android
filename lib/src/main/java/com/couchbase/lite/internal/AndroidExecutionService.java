@@ -25,6 +25,8 @@ import android.support.annotation.NonNull;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -82,7 +84,12 @@ public final class AndroidExecutionService extends AbstractExecutionService {
         Preconditions.checkArgNotNull(task, "task");
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
-            catch (RejectedExecutionException ignored) { }
+            catch (CloseableExecutor.ExecutorClosedExeception e) {
+                Log.w(LogDomain.DATABASE, "Scheduled on closed executor: " + task + ", " + executor);
+            }
+            catch (RejectedExecutionException e) {
+                throw new IllegalStateException("Execution rejected in status change: notification: " + executor, e);
+            }
         };
         mainHandler.postDelayed(delayedTask, delayMs);
         return new CancellableTask(mainHandler, delayedTask);

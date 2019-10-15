@@ -180,7 +180,7 @@ dependencies {
     compileOnly 'com.google.code.findbugs:annotations:3.0.1'
 
     //noinspection GradleDependency
-    implementation 'com.squareup.okhttp3:okhttp:3.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.4'
 
     testImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VERSION"
     testImplementation 'junit:junit:4.12'
