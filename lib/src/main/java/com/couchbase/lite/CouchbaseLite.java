@@ -68,9 +68,7 @@ public final class CouchbaseLite {
 
         CONTEXT.set(new SoftReference<>(ctxt.getApplicationContext()));
 
-        loadErrorMessages(ctxt);
-
-        Log.initLogging();
+        Log.initLogging(loadErrorMessages(ctxt));
         com.couchbase.lite.Database.log.getConsole().setLevel(LogLevel.VERBOSE);
     }
 
@@ -143,7 +141,8 @@ public final class CouchbaseLite {
         }
     }
 
-    private static void loadErrorMessages(Context ctxt) {
+    @NonNull
+    private static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
         final Map<String, String> errorMessages = new HashMap<>();
 
         final JSONArray errors;
@@ -158,6 +157,6 @@ public final class CouchbaseLite {
             Log.e(LogDomain.DATABASE, "Failed to load error messages!", e);
         }
 
-        CBLError.setErrorMessages(errorMessages);
+        return errorMessages;
     }
 }
