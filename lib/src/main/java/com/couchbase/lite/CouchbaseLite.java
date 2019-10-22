@@ -69,7 +69,7 @@ public final class CouchbaseLite {
         CONTEXT.set(new SoftReference<>(ctxt.getApplicationContext()));
 
         Log.initLogging(loadErrorMessages(ctxt));
-        com.couchbase.lite.Database.log.getConsole().setLevel(LogLevel.VERBOSE);
+        com.couchbase.lite.Database.log.getConsole().setLevel(LogLevel.WARNING);
     }
 
     /**
