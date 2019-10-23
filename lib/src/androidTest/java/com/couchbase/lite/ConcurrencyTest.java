@@ -23,10 +23,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
+
+import com.couchbase.lite.internal.AndroidExecutionService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -480,6 +485,27 @@ public class ConcurrencyTest extends BaseTest {
                 assertEquals(db.getCount(), results.size());
             },
             180);
+    }
+
+    @Test
+    public void testFailureLogging() {
+        Executor exec
+            = new AndroidExecutionService(new ThreadPoolExecutor(1, 1, 1, TimeUnit.HOURS, new SynchronousQueue<>()))
+            .getSerialExecutor();
+
+        // get a task running
+        final CountDownLatch latch = new CountDownLatch(1);
+        exec.execute(() -> {
+            try { latch.await(); }
+            catch (InterruptedException ignore) {}
+        });
+
+        // put some stuff in the executor queue
+        // these things won't start until the task above is unlatched.
+        for (int i = 0; i < 4; i++) { exec.execute(() -> {}); }
+
+        // this will fail because it is still occupying the thread
+        latch.countDown();
     }
 
     private MutableDocument createDocumentWithTag(String tag) {

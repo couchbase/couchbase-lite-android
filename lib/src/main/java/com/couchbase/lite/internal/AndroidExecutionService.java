@@ -21,15 +21,21 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
 public final class AndroidExecutionService implements ExecutionService {
+    private static final String TAG = "EXEC_SVC";
 
     // thin wrapper around the AsyncTask's THREAD_POOL_EXECUTOR
     private static class ConcurrentExecutor implements CloseableExecutor {
@@ -43,12 +49,17 @@ public final class AndroidExecutionService implements ExecutionService {
         public synchronized void execute(Runnable task) {
             if (stopLatch != null) { throw new RejectedExecutionException("Executor has been stopped"); }
 
-            running++;
-
-            executor.execute(() -> {
-                try { task.run(); }
-                finally { finishTask(); }
-            });
+            try {
+                executor.execute(() -> {
+                    try { task.run(); }
+                    finally { finishTask(); }
+                });
+                running++;
+            }
+            catch (RejectedExecutionException e) {
+                dumpThreadState(executor, e, "size: " + running);
+                throw e;
+            }
         }
 
         @Override
@@ -78,22 +89,47 @@ public final class AndroidExecutionService implements ExecutionService {
     }
 
     // Patterned after AsyncTask's executor
-    private static class SerialExecutor implements CloseableExecutor {
-        private final ArrayDeque<Runnable> tasks = new ArrayDeque<>();
+    private static class SerialExecutor implements ExecutionService.CloseableExecutor {
+        class TrackableTask implements Runnable {
+            private final Exception origin = new Exception();
+            private final Runnable task;
+
+            private final long createdAt = System.currentTimeMillis();
+            private long startedAt;
+            private long finishedAt;
+            private long completedAt;
+
+            TrackableTask(Runnable task) { this.task = task; }
+
+            public void run() {
+                try {
+                    startedAt = System.currentTimeMillis();
+                    task.run();
+                    finishedAt = System.currentTimeMillis();
+                }
+                finally {
+                    scheduleNext();
+                }
+                completedAt = System.currentTimeMillis();
+            }
+
+            public String toString() {
+                return "task[" + createdAt + "," + startedAt + "," + finishedAt + "," + completedAt + " @" + task + "]";
+            }
+        }
+
+        private final ArrayDeque<TrackableTask> tasks = new ArrayDeque<>();
         private final Executor executor;
         private CountDownLatch stopLatch;
 
-        private Runnable running;
+        private TrackableTask running;
 
         private SerialExecutor(Executor executor) { this.executor = executor; }
 
         public synchronized void execute(Runnable task) {
             if (stopLatch != null) { throw new RejectedExecutionException("Executor has been stopped"); }
 
-            tasks.offer(() -> {
-                try { task.run(); }
-                finally { scheduleNext(); }
-            });
+            tasks.offer(new TrackableTask(task));
 
             if (running == null) { scheduleNext(); }
         }
@@ -101,16 +137,15 @@ public final class AndroidExecutionService implements ExecutionService {
         @Override
         public boolean stop(long timeout, @NonNull TimeUnit unit) {
             final CountDownLatch latch;
-            final int n;
             synchronized (this) {
-                n = (running == null) ? 0 : tasks.size() + 1;
-
-                if (stopLatch == null) { stopLatch = new CountDownLatch(n); }
-
-                if (n <= 0) { return true; }
+                if (stopLatch == null) {
+                    stopLatch = new CountDownLatch((running == null) ? 0 : tasks.size() + 1);
+                }
 
                 latch = stopLatch;
             }
+
+            if (latch.getCount() <= 0) { return true; }
 
             try { return latch.await(timeout, unit); }
             catch (InterruptedException ignore) { }
@@ -121,30 +156,56 @@ public final class AndroidExecutionService implements ExecutionService {
         private synchronized void scheduleNext() {
             if (stopLatch != null) { stopLatch.countDown(); }
 
+            final TrackableTask prev = running;
             running = tasks.poll();
+            if (running == null) { return; }
 
-            if (running != null) { executor.execute(running); }
+            try { executor.execute(running); }
+            catch (RejectedExecutionException e) {
+                dumpThreadState(executor, e, "size: " + tasks.size());
+                dumpQueue(prev, running, tasks);
+                running = null;
+            }
+        }
+
+        private void dumpQueue(TrackableTask prev, TrackableTask current, Deque<TrackableTask> tasks) {
+            android.util.Log.d(TAG, "\n==== Serial Executor status: " + this);
+
+            if (prev != null) { android.util.Log.d(TAG, "\n== Previous task: " + prev, prev.origin); }
+
+            if (current != null) { android.util.Log.d(TAG, "\n== Current task: " + current, current.origin); }
+
+            final ArrayList<TrackableTask> waiting = new ArrayList<>(tasks);
+            android.util.Log.d(TAG, "\n== Waiting tasks: " + waiting.size());
+            int n = 0;
+            for (TrackableTask t : waiting) { android.util.Log.d(TAG, "@" + (++n) + ": " + t, t.origin); }
         }
     }
 
 
     private final Handler mainHandler;
+    private final Executor baseExecutor;
     private final Executor mainThreadExecutor;
     private final CloseableExecutor concurrentExecutor;
 
-    public AndroidExecutionService() {
+    public AndroidExecutionService() { this(AsyncTask.THREAD_POOL_EXECUTOR); }
+
+    @VisibleForTesting
+    public AndroidExecutionService(Executor executor) {
+        baseExecutor = executor;
+
+        this.concurrentExecutor = new ConcurrentExecutor(baseExecutor);
+
         mainHandler = new Handler(Looper.getMainLooper());
 
         mainThreadExecutor = mainHandler::post;
-
-        concurrentExecutor = new ConcurrentExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @NonNull
     @Override
     public Executor getMainExecutor() { return mainThreadExecutor; }
 
-    public CloseableExecutor getSerialExecutor() { return new SerialExecutor(AsyncTask.THREAD_POOL_EXECUTOR); }
+    public CloseableExecutor getSerialExecutor() { return new SerialExecutor(baseExecutor); }
 
     @NonNull
     @Override
@@ -166,9 +227,10 @@ public final class AndroidExecutionService implements ExecutionService {
         if (null == task) { throw new IllegalArgumentException("Task may not be null"); }
         if (null == executor) { throw new IllegalArgumentException("Executor may not be null"); }
 
+        final Exception origin = new Exception();
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
-            catch (RejectedExecutionException ignored) { }
+            catch (RejectedExecutionException e) { dumpThreadState(executor, e, origin, "after: " + delayMs); }
         };
 
         mainHandler.postDelayed(delayedTask, delayMs);
@@ -186,5 +248,25 @@ public final class AndroidExecutionService implements ExecutionService {
     public void cancelDelayedTask(@NonNull Runnable task) {
         if (null == task) { throw new IllegalArgumentException("Task may not be null"); }
         mainHandler.removeCallbacks(task);
+    }
+
+    private static void dumpThreadState(Executor ex, Exception e, String msg) { dumpThreadState(ex, e, null, msg); }
+
+    private static void dumpThreadState(Executor ex, Exception e, Exception origin, String msg) {
+        android.util.Log.d(TAG, "!!!! Catastrophic failure on executor " + ex + ": " + msg, e);
+        if (origin != null) { android.util.Log.d(TAG, "!! Origin: ", origin); }
+
+        final Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+        android.util.Log.d(TAG, "\n==== Threads: " + stackTraces.size());
+        for (Map.Entry<Thread, StackTraceElement[]> stack : stackTraces.entrySet()) {
+            android.util.Log.d(TAG, "\n== Thread: " + stack.getKey());
+            for (StackTraceElement frame : stack.getValue()) { android.util.Log.d(TAG, "      at " + frame); }
+        }
+
+        final ArrayList<Runnable> waiting
+            = new ArrayList<Runnable>(((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR).getQueue());
+        android.util.Log.d(TAG, "\n==== Android Execution queue: " + waiting.size());
+        int n = 0;
+        for (Runnable r : waiting) { android.util.Log.d(TAG, "@" + (n++) + ": " + r); }
     }
 }
