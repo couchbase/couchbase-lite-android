@@ -37,6 +37,38 @@ import java.util.concurrent.TimeUnit;
 public final class AndroidExecutionService implements ExecutionService {
     private static final String TAG = "EXEC_SVC";
 
+    public static class TrackableTask implements Runnable {
+        private final Exception origin = new Exception();
+        private final Runnable task;
+        private final Runnable onComplete;
+
+        private final long createdAt = System.currentTimeMillis();
+        private long startedAt;
+        private long finishedAt;
+        private long completedAt;
+
+        public TrackableTask(Runnable task, Runnable onComplete) {
+            this.task = task;
+            this.onComplete = onComplete;
+        }
+
+        public void run() {
+            try {
+                startedAt = System.currentTimeMillis();
+                task.run();
+                finishedAt = System.currentTimeMillis();
+            }
+            finally {
+                onComplete.run();
+            }
+            completedAt = System.currentTimeMillis();
+        }
+
+        public String toString() {
+            return "task[" + createdAt + "," + startedAt + "," + finishedAt + "," + completedAt + " @" + task + "]";
+        }
+    }
+
     // thin wrapper around the AsyncTask's THREAD_POOL_EXECUTOR
     private static class ConcurrentExecutor implements CloseableExecutor {
         private final Executor executor;
@@ -50,10 +82,7 @@ public final class AndroidExecutionService implements ExecutionService {
             if (stopLatch != null) { throw new RejectedExecutionException("Executor has been stopped"); }
 
             try {
-                executor.execute(() -> {
-                    try { task.run(); }
-                    finally { finishTask(); }
-                });
+                executor.execute(new TrackableTask(task, this::finishTask));
                 running++;
             }
             catch (RejectedExecutionException e) {
@@ -90,34 +119,6 @@ public final class AndroidExecutionService implements ExecutionService {
 
     // Patterned after AsyncTask's executor
     private static class SerialExecutor implements ExecutionService.CloseableExecutor {
-        class TrackableTask implements Runnable {
-            private final Exception origin = new Exception();
-            private final Runnable task;
-
-            private final long createdAt = System.currentTimeMillis();
-            private long startedAt;
-            private long finishedAt;
-            private long completedAt;
-
-            TrackableTask(Runnable task) { this.task = task; }
-
-            public void run() {
-                try {
-                    startedAt = System.currentTimeMillis();
-                    task.run();
-                    finishedAt = System.currentTimeMillis();
-                }
-                finally {
-                    scheduleNext();
-                }
-                completedAt = System.currentTimeMillis();
-            }
-
-            public String toString() {
-                return "task[" + createdAt + "," + startedAt + "," + finishedAt + "," + completedAt + " @" + task + "]";
-            }
-        }
-
         private final ArrayDeque<TrackableTask> tasks = new ArrayDeque<>();
         private final Executor executor;
         private CountDownLatch stopLatch;
@@ -129,7 +130,7 @@ public final class AndroidExecutionService implements ExecutionService {
         public synchronized void execute(Runnable task) {
             if (stopLatch != null) { throw new RejectedExecutionException("Executor has been stopped"); }
 
-            tasks.offer(new TrackableTask(task));
+            tasks.offer(new TrackableTask(task, this::scheduleNext));
 
             if (running == null) { scheduleNext(); }
         }
@@ -184,14 +185,14 @@ public final class AndroidExecutionService implements ExecutionService {
 
 
     private final Handler mainHandler;
-    private final Executor baseExecutor;
+    private final ThreadPoolExecutor baseExecutor;
     private final Executor mainThreadExecutor;
     private final CloseableExecutor concurrentExecutor;
 
-    public AndroidExecutionService() { this(AsyncTask.THREAD_POOL_EXECUTOR); }
+    public AndroidExecutionService() { this((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR); }
 
     @VisibleForTesting
-    public AndroidExecutionService(Executor executor) {
+    public AndroidExecutionService(ThreadPoolExecutor executor) {
         baseExecutor = executor;
 
         this.concurrentExecutor = new ConcurrentExecutor(baseExecutor);
@@ -250,6 +251,9 @@ public final class AndroidExecutionService implements ExecutionService {
         mainHandler.removeCallbacks(task);
     }
 
+    @VisibleForTesting
+    public ThreadPoolExecutor getBaseExecutor() { return baseExecutor; }
+
     private static void dumpThreadState(Executor ex, Exception e, String msg) { dumpThreadState(ex, e, null, msg); }
 
     private static void dumpThreadState(Executor ex, Exception e, Exception origin, String msg) {
@@ -263,10 +267,14 @@ public final class AndroidExecutionService implements ExecutionService {
             for (StackTraceElement frame : stack.getValue()) { android.util.Log.d(TAG, "      at " + frame); }
         }
 
-        final ArrayList<Runnable> waiting
-            = new ArrayList<Runnable>(((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR).getQueue());
-        android.util.Log.d(TAG, "\n==== Android Execution queue: " + waiting.size());
+        if (!(ex instanceof ThreadPoolExecutor)) { return; }
+
+        final ArrayList<Runnable> waiting = new ArrayList<>(((ThreadPoolExecutor) ex).getQueue());
+        android.util.Log.d(TAG, "\n==== Executor queue: " + waiting.size());
         int n = 0;
-        for (Runnable r : waiting) { android.util.Log.d(TAG, "@" + (n++) + ": " + r); }
+        for (Runnable r : waiting) {
+            final Exception orig = (!(r instanceof TrackableTask)) ? null : ((TrackableTask) r).origin;
+            android.util.Log.d(TAG, "@" + (n++) + ": " + r, orig);
+        }
     }
 }

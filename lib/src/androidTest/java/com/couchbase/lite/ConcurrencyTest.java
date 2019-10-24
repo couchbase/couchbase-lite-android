@@ -23,12 +23,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
@@ -487,25 +487,50 @@ public class ConcurrencyTest extends BaseTest {
             180);
     }
 
+    @Ignore("This is not actually a test.  Use it to verify the logcat output")
     @Test
-    public void testFailureLogging() {
-        Executor exec
-            = new AndroidExecutionService(new ThreadPoolExecutor(1, 1, 1, TimeUnit.HOURS, new SynchronousQueue<>()))
-            .getSerialExecutor();
+    public void testSerialExecutorFailure() {
+        AndroidExecutionService execSvc = new AndroidExecutionService();
+        ThreadPoolExecutor exec = execSvc.getBaseExecutor();
 
-        // get a task running
-        final CountDownLatch latch = new CountDownLatch(1);
-        exec.execute(() -> {
-            try { latch.await(); }
-            catch (InterruptedException ignore) {}
-        });
+        // fill the executor and its queue.
+        try {
+            while (true) {
+                exec.execute(
+                    new AndroidExecutionService.TrackableTask(
+                        () -> {
+                            try { Thread.sleep(10 * 1000); }
+                            catch (InterruptedException ignore) {}
+                        },
+                        () -> {}));
+            }
+        }
+        catch (RejectedExecutionException ignore) { }
 
-        // put some stuff in the executor queue
-        // these things won't start until the task above is unlatched.
-        for (int i = 0; i < 4; i++) { exec.execute(() -> {}); }
+        execSvc.getSerialExecutor().execute(() -> {});
+    }
 
-        // this will fail because it is still occupying the thread
-        latch.countDown();
+    @Ignore("This is not actually a test.  Use it to verify the logcat output")
+    @Test(expected = RejectedExecutionException.class)
+    public void testConcurrentExecutorFailure() {
+        AndroidExecutionService execSvc = new AndroidExecutionService();
+        ThreadPoolExecutor exec = execSvc.getBaseExecutor();
+
+        // fill the executor and its queue.
+        try {
+            while (true) {
+                exec.execute(
+                    new AndroidExecutionService.TrackableTask(
+                        () -> {
+                            try { Thread.sleep(10 * 1000); }
+                            catch (InterruptedException ignore) {}
+                        },
+                        () -> {}));
+            }
+        }
+        catch (RejectedExecutionException ignore) { }
+
+        execSvc.getConcurrentExecutor().execute(() -> {});
     }
 
     private MutableDocument createDocumentWithTag(String tag) {
