@@ -139,7 +139,7 @@ android {
     externalNativeBuild {
         cmake {
             version "3.10.2"
-            path "${CBL_JAVA_DIR}/CMakeLists.txt"
+            path "${CBL_JAVA_DIR}/lib/CMakeLists.txt"
         }
     }
 
@@ -147,18 +147,18 @@ android {
         main {
             java.srcDirs = [
                 "src/main/java",                              // android specific codes
-                "${CBL_JAVA_DIR}/src/shared/main/java",       // shared java codes
-                "${CBL_JAVA_DIR}/src/shared/ce/java",         // shared java ce specific codes
+                "${CBL_JAVA_DIR}/lib/src/shared/main/java",   // shared java codes
+                "${CBL_JAVA_DIR}/lib/src/shared/ce/java",     // shared java ce specific codes
             ]
         }
         androidTest {
             java.srcDirs = [
                 "src/androidTest/java",                       // android specific codes
-                "${CBL_JAVA_DIR}/src/shared/test/java"        // shared java tests
+                "${CBL_JAVA_DIR}/lib/src/shared/test/java"    // shared java tests
             ]
             assets.srcDirs = [
                 "${CBL_CORE_DIR}/C/tests/data",               // lite-core test assets
-                "${CBL_JAVA_DIR}/src/shared/test/assets"      // shared assets
+                "${CBL_JAVA_DIR}/lib/src/shared/test/assets"  // shared assets
             ]
         }
     }
