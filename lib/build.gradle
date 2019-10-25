@@ -42,6 +42,7 @@ ext {
     ETC_DIR = "${PROJECT_DIR}/etc"
     CBL_CORE_DIR = "${ROOT_DIR}/couchbase-lite-core"
     CBL_JAVA_DIR = "${ROOT_DIR}/couchbase-lite-java"
+    CBL_JAVA_MODULE_DIR = "${CBL_JAVA_DIR}/lib"
     MODULE_DIR = "${PROJECT_DIR}/lib"
     REPORTS_DIR = "${buildDir}/reports"
 }
@@ -139,26 +140,26 @@ android {
     externalNativeBuild {
         cmake {
             version "3.10.2"
-            path "${CBL_JAVA_DIR}/CMakeLists.txt"
+            path "${CBL_JAVA_MODULE_DIR}/CMakeLists.txt"
         }
     }
 
     sourceSets {
         main {
             java.srcDirs = [
-                "src/main/java",                              // android specific codes
-                "${CBL_JAVA_DIR}/src/shared/main/java",       // shared java codes
-                "${CBL_JAVA_DIR}/src/shared/ce/java",         // shared java ce specific codes
+                "src/main/java",                                        // android specific codes
+                "${CBL_JAVA_MODULE_DIR}/src/shared/main/java",          // shared java codes
+                "${CBL_JAVA_MODULE_DIR}/src/shared/ce/java",            // shared java ce specific codes
             ]
         }
         androidTest {
             java.srcDirs = [
-                "src/androidTest/java",                       // android specific codes
-                "${CBL_JAVA_DIR}/src/shared/test/java"        // shared java tests
+                "src/androidTest/java",                                 // android specific codes
+                "${CBL_JAVA_MODULE_DIR}/src/shared/test/java"           // shared java tests
             ]
             assets.srcDirs = [
-                "${CBL_CORE_DIR}/C/tests/data",               // lite-core test assets
-                "${CBL_JAVA_DIR}/src/shared/test/assets"      // shared assets
+                "${CBL_CORE_DIR}/C/tests/data",                         // lite-core test assets
+                "${CBL_JAVA_MODULE_DIR}/src/shared/test/assets"         // shared assets
             ]
         }
     }
