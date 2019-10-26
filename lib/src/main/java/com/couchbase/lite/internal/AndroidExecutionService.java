@@ -21,9 +21,11 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
@@ -53,14 +55,14 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     private final Handler mainHandler;
     private final Executor mainThreadExecutor;
 
-    public AndroidExecutionService() {
+    public AndroidExecutionService() { this((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR); }
+
+    @VisibleForTesting
+    AndroidExecutionService(@NonNull ThreadPoolExecutor baseExecutor) {
+        super(baseExecutor);
         mainHandler = new Handler(Looper.getMainLooper());
         mainThreadExecutor = mainHandler::post;
     }
-
-    @NonNull
-    @Override
-    public Executor getThreadPoolExecutor() { return AsyncTask.THREAD_POOL_EXECUTOR; }
 
     @NonNull
     @Override
@@ -82,16 +84,19 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     public Cancellable postDelayedOnExecutor(long delayMs, @NonNull Executor executor, @NonNull Runnable task) {
         Preconditions.checkArgNotNull(executor, "executor");
         Preconditions.checkArgNotNull(task, "task");
+
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
             catch (CloseableExecutor.ExecutorClosedExeception e) {
                 Log.w(LogDomain.DATABASE, "Scheduled on closed executor: " + task + ", " + executor);
             }
             catch (RejectedExecutionException e) {
-                throw new IllegalStateException("Execution rejected in status change: notification: " + executor, e);
+                dumpServiceState(executor, e, "after: " + delayMs);
             }
         };
+
         mainHandler.postDelayed(delayedTask, delayMs);
+
         return new CancellableTask(mainHandler, delayedTask);
     }
 
