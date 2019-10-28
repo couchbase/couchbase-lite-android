@@ -36,13 +36,8 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void initCouchbaseLite() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
-    @Override
-    public String getDatabaseDirectory() { return CouchbaseLite.getDbDirectoryPath(); }
-
-    @Override
-    public String getTempDirectory(String name) { return CouchbaseLite.getTmpDirectory(name); }
-
     // make a half-hearted attempt to set up file logging
+    @Override
     public void setupFileLogging() {
         try {
             FileLogger fileLogger = Database.log.getFile();
@@ -53,6 +48,12 @@ public abstract class PlatformBaseTest implements PlatformTest {
         }
         catch (Exception ignore) { }
     }
+
+    @Override
+    public String getDatabaseDirectory() { return CouchbaseLite.getDbDirectoryPath(); }
+
+    @Override
+    public String getTempDirectory(String name) { return CouchbaseLite.getTmpDirectory(name); }
 
     @Override
     public InputStream getAsset(String asset) {
