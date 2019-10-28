@@ -28,8 +28,7 @@ import com.couchbase.lite.internal.AbstractExecutionService;
 import com.couchbase.lite.internal.AndroidExecutionService;
 
 
-public class AndroidConcurrencyTest {
-
+public class AndroidExecutionServiceTest {
     @Ignore("This is not actually a test.  Use it to verify logcat output")
     @Test(expected = RejectedExecutionException.class)
     public void testSerialExecutorFailure() {
