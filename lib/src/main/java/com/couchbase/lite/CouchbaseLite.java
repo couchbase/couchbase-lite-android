@@ -26,12 +26,12 @@ import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -145,12 +145,12 @@ public final class CouchbaseLite {
     private static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
         final Map<String, String> errorMessages = new HashMap<>();
 
-        final JSONArray errors;
         try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
-            errors = new JSONArray(new Scanner(is, "UTF-8").useDelimiter("\\A").next());
-            for (int i = 0; i < errors.length(); i++) {
-                final JSONObject error = errors.getJSONObject(i);
-                errorMessages.put(error.getString("name"), error.getString("message"));
+            final JSONObject root = new JSONObject(new Scanner(is, "UTF-8").useDelimiter("\\A").next());
+
+            for (Iterator<String> errors = root.keys(); errors.hasNext();) {
+                final String error = errors.next();
+                errorMessages.put(error, root.getString(error));
             }
         }
         catch (IOException | JSONException e) {
