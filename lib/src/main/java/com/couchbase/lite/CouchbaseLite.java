@@ -142,9 +142,12 @@ public final class CouchbaseLite {
     private static String verifyDir(@Nullable File dir) {
         if (dir == null) { return null; }
 
-        final String path = dir.getAbsolutePath();
-        if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return path; }
+        IOException err = null;
+        try {
+            if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return dir.getCanonicalPath(); }
+        }
+        catch (IOException e) { err = e; }
 
-        throw new IllegalStateException("Cannot create or access directory at " + path);
+        throw new IllegalStateException("Cannot create or access directory at " + dir, err);
     }
 }
