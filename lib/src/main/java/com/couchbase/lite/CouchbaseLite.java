@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -47,7 +46,6 @@ public final class CouchbaseLite {
     private CouchbaseLite() {}
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
-    private static final String MVALUE_DELEGATE_CLASS = "com.couchbase.lite.MValueDelegate";
 
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
@@ -64,7 +62,7 @@ public final class CouchbaseLite {
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
-        initMValue();
+        MValue.registerDelegate(new MValueDelegate());
 
         CONTEXT.set(new SoftReference<>(ctxt.getApplicationContext()));
 
@@ -128,17 +126,6 @@ public final class CouchbaseLite {
         if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return path; }
 
         throw new IllegalStateException("Cannot create or access directory at " + path);
-    }
-
-    private static void initMValue() {
-        try {
-            final Constructor ctor = Class.forName(MVALUE_DELEGATE_CLASS).getDeclaredConstructor();
-            ctor.setAccessible(true);
-            MValue.registerDelegate((MValue.Delegate) ctor.newInstance());
-        }
-        catch (Exception e) {
-            throw new IllegalStateException("Cannot initialize MValue delegate", e);
-        }
     }
 
     @NonNull
