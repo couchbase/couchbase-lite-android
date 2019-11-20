@@ -118,18 +118,9 @@ public final class CouchbaseLite {
     @VisibleForTesting
     static void reset() { INITIALIZED.set(false); }
 
-    @Nullable
-    private static String verifyDir(@Nullable File dir) {
-        if (dir == null) { return null; }
-
-        final String path = dir.getAbsolutePath();
-        if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return path; }
-
-        throw new IllegalStateException("Cannot create or access directory at " + path);
-    }
-
+    @VisibleForTesting
     @NonNull
-    private static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
+    static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
         final Map<String, String> errorMessages = new HashMap<>();
 
         try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
@@ -145,5 +136,15 @@ public final class CouchbaseLite {
         }
 
         return errorMessages;
+    }
+
+    @Nullable
+    private static String verifyDir(@Nullable File dir) {
+        if (dir == null) { return null; }
+
+        final String path = dir.getAbsolutePath();
+        if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return path; }
+
+        throw new IllegalStateException("Cannot create or access directory at " + path);
     }
 }
