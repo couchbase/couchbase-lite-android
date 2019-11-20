@@ -27,7 +27,7 @@ ext {
     CBL_ARTIFACT_ID = 'couchbase-lite-android'
     CBL_DESCRIPTION = 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.'
     CBL_LICENSE = 'Couchbase, Inc. Community Edition License Agreement'
-    CBL_LICENSE_URL = 'https://www.couchbase.com/binaries/content/assets/website/legal/ce-license-agreement.pdf'
+    CBL_LICENSE_URL = "https://raw.githubusercontent.com/couchbase/product-texts/${getLicenseVersion()}/mobile/couchbase-lite/license/LICENSE_community.txt"
     CBL_PROJECT_URL = 'https://github.com:couchbase/couchbase-lite-android-ce.git'
     CBL_ISSUES_URL = 'https://github.com/couchbase/couchbase-lite-android-ce/issues'
     CBL_SITE_URL = 'https://developer.couchbase.com/mobile/'
@@ -36,8 +36,7 @@ ext {
     BUILD_RELEASE = file("$ROOT_DIR/version.txt").text.trim()
     BUILD_NUMBER = (project.hasProperty("buildNumber") && buildNumber) ? buildNumber : "SNAPSHOT"
     BUILD_VERSION = "${BUILD_RELEASE}-${BUILD_NUMBER}"
-    BUILD_COMMIT = 'git rev-parse --short HEAD'.execute([], file(PROJECT_DIR)).text.trim() +
-        (('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) ? "" : "+")
+    BUILD_COMMIT = getBuildCommit()
 
     ETC_DIR = "${PROJECT_DIR}/etc"
     CBL_CORE_DIR = "${ROOT_DIR}/couchbase-lite-core"
@@ -60,7 +59,6 @@ def MAVEN_URL = (!project.hasProperty("mavenUrl")) ? null : mavenUrl
 // local.properties
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
 
 // ----------------------------------------------------------------
 // Build
@@ -500,3 +498,21 @@ clean.doLast {
     delete "${MODULE_DIR}/.externalNativeBuild"
     delete "${MODULE_DIR}/.cxx"
 }
+
+def getLicenseVersion() {
+    def version = "master"
+    try { version = 'git rev-parse --short HEAD'.execute([], file("${ROOT_DIR}/product-texts")).text.trim() }
+    catch (Exception ignore) {}
+    return version
+}
+
+def getBuildCommit() {
+    def commit = "unknown"
+    try {
+        commit = 'git rev-parse --short HEAD'.execute([], file(PROJECT_DIR)).text.trim()
+        if ('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) { commit += "+" }
+    }
+    catch (Exception ignore) {}
+    return commit
+}
+
