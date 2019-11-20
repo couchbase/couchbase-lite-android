@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import com.couchbase.lite.internal.ExecutionService;
+import com.couchbase.lite.internal.support.Log;
 
 
 /**
@@ -66,6 +67,12 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public void executeAsync(long delayMs, Runnable task) {
         ExecutionService executionService = CouchbaseLite.getExecutionService();
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
+    }
+
+    @Override
+    public void reloadStandardErrorMessages() {
+        Log.initLogging(CouchbaseLite.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
+
     }
 
     private static String getSystemProperty(String name) throws Exception {
