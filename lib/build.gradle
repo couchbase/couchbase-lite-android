@@ -389,14 +389,14 @@ def pomConfig = {
 
 // Generate javadoc.jar
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    baseName = project.name
+    baseName = "${CBL_ARTIFACT_ID}"
     classifier = 'javadoc'
     from javadoc.destinationDir
 }
 
 // Generate source.jar
 task sourcesJar(type: Jar) {
-    baseName = project.name
+    baseName = "${CBL_ARTIFACT_ID}"
     from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
 }
