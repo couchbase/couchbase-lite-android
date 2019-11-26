@@ -21,7 +21,6 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -36,6 +35,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * ExecutionService for Android.
  */
 public final class AndroidExecutionService extends AbstractExecutionService {
+
+    //---------------------------------------------
+    // Types
+    //---------------------------------------------
     private static class CancellableTask implements Cancellable {
         private final Handler handler;
         private final Runnable task;
@@ -52,18 +55,24 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     }
 
 
+    //---------------------------------------------
+    // Instance variables
+    //---------------------------------------------
     private final Handler mainHandler;
     private final Executor mainThreadExecutor;
 
-    public AndroidExecutionService() { this((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR); }
-
-    @VisibleForTesting
-    AndroidExecutionService(@NonNull ThreadPoolExecutor baseExecutor) {
-        super(baseExecutor);
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+    public AndroidExecutionService() {
+        super((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR);
         mainHandler = new Handler(Looper.getMainLooper());
         mainThreadExecutor = mainHandler::post;
     }
 
+    //---------------------------------------------
+    // Public methods
+    //---------------------------------------------
     @NonNull
     @Override
     public Executor getMainExecutor() { return mainThreadExecutor; }
@@ -87,11 +96,11 @@ public final class AndroidExecutionService extends AbstractExecutionService {
 
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
-            catch (CloseableExecutor.ExecutorClosedExeception e) {
+            catch (CloseableExecutor.ExecutorClosedException e) {
                 Log.w(LogDomain.DATABASE, "Scheduled on closed executor: " + task + ", " + executor);
             }
             catch (RejectedExecutionException e) {
-                dumpServiceState(executor, e, "after: " + delayMs);
+                dumpServiceState(executor, "after: " + delayMs, e);
             }
         };
 
