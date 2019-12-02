@@ -72,7 +72,7 @@ version = BUILD_VERSION
 android {
     compileSdkVersion COMPILE_SDK_VERSION
     buildToolsVersion BUILD_TOOLS_VERSION
-    // ndkVersion '19.2.5345600'
+    ndkVersion '21.0.6011959-rc2'
 
     defaultConfig {
         minSdkVersion 19

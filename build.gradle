@@ -32,7 +32,7 @@ buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN_VERSION"
-        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'com.android.tools.build:gradle:3.5.2'
         classpath "org.jacoco:org.jacoco.core:$JACOCO_VERSION"
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.3'
     }
