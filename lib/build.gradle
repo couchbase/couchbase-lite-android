@@ -72,7 +72,7 @@ version = BUILD_VERSION
 android {
     compileSdkVersion COMPILE_SDK_VERSION
     buildToolsVersion BUILD_TOOLS_VERSION
-    ndkVersion '21.0.6011959-rc2'
+    ndkVersion '20.1.5948944'
 
     defaultConfig {
         minSdkVersion 19
@@ -316,7 +316,7 @@ project.afterEvaluate {
             }.flatten()
 
 
-            classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
+            classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
             classpath = files()
 
             excludeFilter = file("${ETC_DIR}/findbugs/findbugs.xml")
