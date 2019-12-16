@@ -17,8 +17,12 @@ package com.couchbase.lite.internal.replicator;
 
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.system.ErrnoException;
 
+import java.io.EOFException;
+import java.net.ConnectException;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.util.Map;
@@ -44,37 +48,43 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         super(handle, scheme, hostname, port, path, options);
     }
 
+    @SuppressWarnings("PMD.CollapsibleIfStatements")
     protected boolean handleClose(@NonNull Throwable error) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Throwable cause = error.getCause();
-            if (cause != null) {
-                cause = cause.getCause();
-                if (cause instanceof ErrnoException) {
-                    final ErrnoException e = (ErrnoException) cause;
-                    closed(C4Constants.ErrorDomain.POSIX, e.errno, null);
-                    return true;
-                }
-            }
+            if (checkErrnoException(error)) { return true; }
         }
 
         // ConnectException
-        if (error instanceof java.net.ConnectException) {
+        if (error instanceof ConnectException) {
             closed(C4Constants.ErrorDomain.POSIX, ECONNREFUSED, null);
             return true;
         }
 
         // SocketException
-        else if (error instanceof java.net.SocketException) {
+        else if (error instanceof SocketException) {
             closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
             return true;
         }
 
         // EOFException
-        if (error instanceof java.io.EOFException) {
+        if (error instanceof EOFException) {
             closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
             return true;
         }
 
         return false;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private boolean checkErrnoException(@NonNull Throwable error) {
+        Throwable cause = error.getCause();
+        if (cause == null) { return false; }
+
+        cause = cause.getCause();
+        if (!(cause instanceof ErrnoException)) { return false; }
+
+        closed(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, null);
+
+        return true;
     }
 }
