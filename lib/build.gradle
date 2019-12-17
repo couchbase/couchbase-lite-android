@@ -58,7 +58,7 @@ version = cblVersion
 android {
     compileSdkVersion 29
     buildToolsVersion '29.0.0'
-    // ndkVersion '19.2.5345600'
+    ndkVersion '19.2.5345600'
 
     defaultConfig {
         minSdkVersion 19
