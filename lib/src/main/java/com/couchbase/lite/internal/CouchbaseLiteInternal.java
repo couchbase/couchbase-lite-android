@@ -27,6 +27,7 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,6 +39,7 @@ import com.couchbase.lite.BuildConfig;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.R;
+import com.couchbase.lite.internal.core.C4Base;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -49,18 +51,24 @@ public final class CouchbaseLiteInternal {
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
+    private static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
+
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
+
+    private static volatile boolean debugging = BuildConfig.CBL_DEBUG;
+
+    private static volatile String dbDirPath;
+    private static volatile String tmpDirPath;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
     public static void init(
         @NonNull MValue.Delegate mValueDelegate,
-        boolean debugging,
-        @Nullable File rootDirectory,
+        @Nullable String rootDirectoryPath,
         @NonNull Context ctxt) {
         Preconditions.checkArgNotNull(ctxt, "context");
 
@@ -74,9 +82,11 @@ public final class CouchbaseLiteInternal {
 
         Log.initLogging(loadErrorMessages(ctxt));
         com.couchbase.lite.Database.log.getConsole().setLevel(LogLevel.WARNING);
+
+        setupDirectories(rootDirectoryPath);
     }
 
-    public static boolean isDebugging() { return BuildConfig.CBL_DEBUG; }
+    public static boolean isDebugging() { return debugging; }
 
     /**
      * This method is not part of the public API.
@@ -108,19 +118,47 @@ public final class CouchbaseLiteInternal {
         return ctxt;
     }
 
+    @NonNull
+    public static String makeDbPath(@Nullable String rootDir) {
+        requireInit("Can't create DB path");
+        return verifyDir((rootDir != null) ? new File(rootDir) : getContext().getFilesDir());
+    }
+
+    @NonNull
+    public static String makeTmpPath(@Nullable String rootDir) {
+        requireInit("Can't create tmp dir path");
+        final File dir = (rootDir != null)
+            ? new File(rootDir, TEMP_DIR_NAME)
+            : getContext().getExternalFilesDir(TEMP_DIR_NAME);
+        if (dir == null) { throw new IllegalStateException("Tmp dir root is null"); }
+        return verifyDir(dir);
+    }
+
+    public static void setupDirectories(@Nullable String rootDirPath) {
+        requireInit("Can't set root directory");
+
+        final String dbPath = makeDbPath(rootDirPath);
+        final String tmpPath = makeTmpPath(rootDirPath);
+
+        synchronized (TEMP_DIR_NAME) {
+            if (Objects.equals(tmpPath, tmpDirPath)) { return; }
+
+            C4Base.setTempDir(tmpPath);
+            tmpDirPath = tmpPath;
+            dbDirPath = dbPath;
+        }
+    }
+
+    @NonNull
     public static String getDbDirectoryPath() {
         requireInit("Database directory not initialized");
-        return getContext().getFilesDir().getAbsolutePath();
+        synchronized (TEMP_DIR_NAME) { return dbDirPath; }
     }
 
-    public static String getTmpDirectory(@NonNull String name) {
-        requireInit("Temp directory not initialized");
-        return verifyDir(getContext().getExternalFilesDir(name));
-    }
-
-    public static String getTmpDirectory(String root, String name) {
-        requireInit("Temp directory not initialized");
-        return verifyDir(new File(root, name));
+    @NonNull
+    public static String getTmpDirectoryPath() {
+        requireInit("Database directory not initialized");
+        synchronized (TEMP_DIR_NAME) { return tmpDirPath; }
     }
 
     @VisibleForTesting
@@ -146,10 +184,8 @@ public final class CouchbaseLiteInternal {
         return errorMessages;
     }
 
-    @Nullable
-    private static String verifyDir(@Nullable File dir) {
-        if (dir == null) { return null; }
-
+    @NonNull
+    private static String verifyDir(@NonNull File dir) {
         IOException err = null;
         try {
             if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return dir.getCanonicalPath(); }

@@ -55,7 +55,10 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public String getDatabaseDirectory() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
 
     @Override
-    public String getTempDirectory(String name) { return CouchbaseLiteInternal.getTmpDirectory(name); }
+    public String getTempDirectory(String name) {
+        try { return new File(CouchbaseLiteInternal.getTmpDirectoryPath(), name).getCanonicalPath(); }
+        catch (IOException e) { throw new RuntimeException("Could not open tmp directory: " + name, e); }
+    }
 
     @Override
     public InputStream getAsset(String asset) {

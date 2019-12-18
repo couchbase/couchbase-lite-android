@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.fleece.MValue;
@@ -32,13 +33,22 @@ public final class CouchbaseLite {
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
-    public static void init(@NonNull Context ctxt) { init(new MValueDelegate(), false, null, ctxt); }
+    public static void init(@NonNull Context ctxt) { init(new MValueDelegate(), null, ctxt); }
+
+    public static void init(@NonNull Context ctxt, @Nullable File rootDirectory) {
+        init(new MValueDelegate(), rootDirectory, ctxt);
+    }
 
     private static void init(
         @NonNull MValue.Delegate mValueDelegate,
-        boolean debugging,
         @Nullable File rootDirectory,
         @NonNull Context ctxt) {
-        CouchbaseLiteInternal.init(mValueDelegate, debugging, rootDirectory, ctxt);
+        final String rootDirPath;
+        try { rootDirPath = rootDirectory.getCanonicalPath(); }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Could not get path for directory: " + rootDirectory, e);
+        }
+
+        CouchbaseLiteInternal.init(mValueDelegate, rootDirPath, ctxt);
     }
 }
