@@ -21,6 +21,7 @@ import java.time.Instant
 // ----------------------------------------------------------------
 // Constants
 // ----------------------------------------------------------------
+
 ext {
     CBL_ORG = 'couchbase'
     CBL_GROUP = 'com.couchbase.lite'
@@ -60,9 +61,11 @@ def MAVEN_URL = (!project.hasProperty("mavenUrl")) ? null : mavenUrl
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
+
 // ----------------------------------------------------------------
 // Build
 // ----------------------------------------------------------------
+
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
@@ -86,6 +89,7 @@ android {
         if (TARGET_ABIS != null) {
             ndk { abiFilters TARGET_ABIS }
         }
+
         externalNativeBuild {
             cmake { targets 'LiteCoreJNI' }
         }
@@ -106,12 +110,15 @@ android {
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
+            buildConfigField "boolean", "CBL_DEBUG", "true"
 
+            debuggable true
             minifyEnabled false
+            testCoverageEnabled false
 
             externalNativeBuild {
                 cmake {
-                    arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19'
+                    arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DCMAKE_BUILD_TYPE=Debug'
                     cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 }
             }
@@ -123,12 +130,15 @@ android {
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
             buildConfigField "boolean", "ENTERPRISE", "false"
+            buildConfigField "boolean", "CBL_DEBUG", "false"
 
+            debuggable false
             minifyEnabled false
+            testCoverageEnabled false
 
             externalNativeBuild {
                 cmake {
-                    arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DCMAKE_BUILD_TYPE=MinSizeRel'
+                    arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DCMAKE_BUILD_TYPE=RelWithDebInfo'
                     cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 }
             }
@@ -238,19 +248,27 @@ def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest
 
 /////// Checkstyle
 apply plugin: 'checkstyle'
-task checkstyle(type: Checkstyle) {
+checkstyle {
     description 'Checkstyle'
     group 'verification'
 
+    toolVersion = "8.18"
+
     configFile file("${ETC_DIR}/checkstyle/checkstyle.xml")
     configProperties = ['configDir': file("${ETC_DIR}/checkstyle")]
+
+    showViolations true
+}
+
+task checkstyle(type: Checkstyle) {
+    description 'Checkstyle'
+    group 'verification'
 
     source android.sourceSets.main.java.srcDirs
     include '**/*.java'
     exclude fileFilter
 
     classpath = files()
-    showViolations true
 
     reports {
         xml {
@@ -492,8 +510,9 @@ project.afterEvaluate {
 }
 
 // Clean
-// delete .externalNativeBuild to force rerun of cmake.  This is necessary because 'clean'
-// deletes the file 'zconf.h' which is in .../build/intermediates, causing subsequent builds to fail.
+// delete .externalNativeBuild and .cxx directories to force rerun of cmake.
+// This is necessary because 'clean' deletes the file 'zconf.h' which is in
+// .../build/intermediates, causing subsequent builds to fail.
 clean.doLast {
     delete "${MODULE_DIR}/.externalNativeBuild"
     delete "${MODULE_DIR}/.cxx"
@@ -501,8 +520,11 @@ clean.doLast {
 
 def getLicenseVersion() {
     def version = "master"
-    try { version = 'git rev-parse --short HEAD'.execute([], file("${ROOT_DIR}/product-texts")).text.trim() }
-    catch (Exception ignore) {}
+    try {
+        version = 'git rev-parse --short HEAD'.execute([], file("${ROOT_DIR}/product-texts")).text.trim()
+    }
+    catch (Exception ignore) {
+    }
     return version
 }
 
@@ -510,9 +532,12 @@ def getBuildCommit() {
     def commit = "unknown"
     try {
         commit = 'git rev-parse --short HEAD'.execute([], file(PROJECT_DIR)).text.trim()
-        if ('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) { commit += "+" }
+        if ('git status -uno --porcelain'.execute([], file(PROJECT_DIR)).text.length() <= 0) {
+            commit += "+"
+        }
     }
-    catch (Exception ignore) {}
+    catch (Exception ignore) {
+    }
     return commit
 }
 

@@ -24,6 +24,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -51,7 +52,7 @@ final class NetworkReachabilityManager extends AbstractNetworkReachabilityManage
 
     NetworkReachabilityManager() {
         this.receiver = new NetworkReceiver();
-        this.context = CouchbaseLite.getContext();
+        this.context = CouchbaseLiteInternal.getContext();
 
         this.listening = false;
     }

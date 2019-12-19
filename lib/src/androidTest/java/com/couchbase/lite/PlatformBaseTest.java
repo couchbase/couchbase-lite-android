@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 
@@ -51,27 +52,27 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public String getDatabaseDirectory() { return CouchbaseLite.getDbDirectoryPath(); }
+    public String getDatabaseDirectory() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
 
     @Override
-    public String getTempDirectory(String name) { return CouchbaseLite.getTmpDirectory(name); }
+    public String getTempDirectory(String name) { return CouchbaseLiteInternal.getTmpDirectory(name); }
 
     @Override
     public InputStream getAsset(String asset) {
-        try { return CouchbaseLite.getContext().getAssets().open(asset); }
+        try { return CouchbaseLiteInternal.getContext().getAssets().open(asset); }
         catch (IOException ignore) { }
         return null;
     }
 
     @Override
     public void executeAsync(long delayMs, Runnable task) {
-        ExecutionService executionService = CouchbaseLite.getExecutionService();
+        ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
     }
 
     @Override
     public void reloadStandardErrorMessages() {
-        Log.initLogging(CouchbaseLite.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
+        Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
 
     }
 
