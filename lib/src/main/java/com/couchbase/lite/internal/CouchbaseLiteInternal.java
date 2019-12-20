@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal;
 
 import android.content.Context;
+import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -45,6 +46,13 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
+/**
+ * Among the other things that this class attempts to abstract away, is access to the file system.
+ * On both Android, and in a Web Container, file system access is pretty problematic.
+ * Among other things, some code make the tacit assumption that there is a single root directory
+ * that contains both a scratch (temp) directory and the database directory.  The scratch directory
+ * is also used, occasionally, as the home for log files.
+ */
 public final class CouchbaseLiteInternal {
     // Utility class
     private CouchbaseLiteInternal() {}
@@ -58,9 +66,13 @@ public final class CouchbaseLiteInternal {
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
+    private static final Object lock = new Object();
+
     private static volatile boolean debugging = BuildConfig.CBL_DEBUG;
 
-    private static volatile String dbDirPath;
+    @GuardedBy("lock")
+    private static String dbDirPath;
+    @GuardedBy("lock")
     private static volatile String tmpDirPath;
 
     /**
@@ -70,20 +82,25 @@ public final class CouchbaseLiteInternal {
         @NonNull MValue.Delegate mValueDelegate,
         @Nullable String rootDirectoryPath,
         @NonNull Context ctxt) {
+        Preconditions.checkArgNotNull(mValueDelegate, "mValueDelegate");
         Preconditions.checkArgNotNull(ctxt, "context");
 
         if (INITIALIZED.getAndSet(true)) { return; }
 
+        CONTEXT.set(new SoftReference<>(ctxt.getApplicationContext()));
+
+        // Splitting initialization and registration is not really necessary here.
+        // Do it to maintain code parity with the Java version, where it is necessary.
+        initDirectories(rootDirectoryPath);
+
         System.loadLibrary(LITECORE_JNI_LIBRARY);
+
+        setC4TmpDirPath();
 
         MValue.registerDelegate(mValueDelegate);
 
-        CONTEXT.set(new SoftReference<>(ctxt.getApplicationContext()));
-
         Log.initLogging(loadErrorMessages(ctxt));
         com.couchbase.lite.Database.log.getConsole().setLevel(LogLevel.WARNING);
-
-        setupDirectories(rootDirectoryPath);
     }
 
     public static boolean isDebugging() { return debugging; }
@@ -137,28 +154,27 @@ public final class CouchbaseLiteInternal {
     public static void setupDirectories(@Nullable String rootDirPath) {
         requireInit("Can't set root directory");
 
-        final String dbPath = makeDbPath(rootDirPath);
-        final String tmpPath = makeTmpPath(rootDirPath);
+        synchronized (lock) {
+            // remember the current tmp dir
+            final String tmpPath = tmpDirPath;
 
-        synchronized (TEMP_DIR_NAME) {
-            if (Objects.equals(tmpPath, tmpDirPath)) { return; }
+            initDirectories(rootDirPath);
 
-            C4Base.setTempDir(tmpPath);
-            tmpDirPath = tmpPath;
-            dbDirPath = dbPath;
+            // if the temp dir has changed, tell C4Base
+            if (!Objects.equals(tmpPath, tmpDirPath)) { setC4TmpDirPath(); }
         }
     }
 
     @NonNull
     public static String getDbDirectoryPath() {
         requireInit("Database directory not initialized");
-        synchronized (TEMP_DIR_NAME) { return dbDirPath; }
+        synchronized (lock) { return dbDirPath; }
     }
 
     @NonNull
     public static String getTmpDirectoryPath() {
         requireInit("Database directory not initialized");
-        synchronized (TEMP_DIR_NAME) { return tmpDirPath; }
+        synchronized (lock) { return tmpDirPath; }
     }
 
     @VisibleForTesting
@@ -193,5 +209,19 @@ public final class CouchbaseLiteInternal {
         catch (IOException e) { err = e; }
 
         throw new IllegalStateException("Cannot create or access directory at " + dir, err);
+    }
+
+    private static void initDirectories(@Nullable String rootDirPath) {
+        final String dbPath = makeDbPath(rootDirPath);
+        final String tmpPath = makeTmpPath(rootDirPath);
+
+        synchronized (lock) {
+            tmpDirPath = tmpPath;
+            dbDirPath = dbPath;
+        }
+    }
+
+    private static void setC4TmpDirPath() {
+        synchronized (lock) { C4Base.setTempDir(tmpDirPath); }
     }
 }

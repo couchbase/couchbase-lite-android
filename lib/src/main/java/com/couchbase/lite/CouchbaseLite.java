@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.fleece.MValue;
 
 
 public final class CouchbaseLite {
@@ -33,22 +32,24 @@ public final class CouchbaseLite {
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
-    public static void init(@NonNull Context ctxt) { init(new MValueDelegate(), null, ctxt); }
+    public static void init(@NonNull Context ctxt) { init(ctxt, null); }
 
+    /**
+     * Initialize CouchbaseLite library.
+     * This method allows specifying a root directory for CBL files.
+     * Use this version with great caution.
+     *
+     * @param rootDirectory the root directory for CBL files
+     */
     public static void init(@NonNull Context ctxt, @Nullable File rootDirectory) {
-        init(new MValueDelegate(), rootDirectory, ctxt);
-    }
-
-    private static void init(
-        @NonNull MValue.Delegate mValueDelegate,
-        @Nullable File rootDirectory,
-        @NonNull Context ctxt) {
-        final String rootDirPath;
-        try { rootDirPath = rootDirectory.getCanonicalPath(); }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not get path for directory: " + rootDirectory, e);
+        String rootDirPath = null;
+        if (rootDirectory != null) {
+            try { rootDirPath = rootDirectory.getCanonicalPath(); }
+            catch (IOException e) {
+                throw new IllegalArgumentException("Could not get path for directory: " + rootDirectory, e);
+            }
         }
 
-        CouchbaseLiteInternal.init(mValueDelegate, rootDirPath, ctxt);
+        CouchbaseLiteInternal.init(new MValueDelegate(), rootDirPath, ctxt);
     }
 }

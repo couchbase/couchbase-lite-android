@@ -35,6 +35,9 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
 
+
+    private String tmpDirPath;
+
     @Override
     public void initCouchbaseLite() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
@@ -45,18 +48,20 @@ public abstract class PlatformBaseTest implements PlatformTest {
             FileLogger fileLogger = Database.log.getFile();
             final File logDir = InstrumentationRegistry.getTargetContext().getExternalFilesDir("logs");
             if (logDir == null) { throw new IllegalStateException("Cannot find external files directory"); }
-            fileLogger.setConfig(new LogFileConfiguration(logDir.getAbsolutePath()));
+            fileLogger.setConfig(new LogFileConfiguration(logDir.getCanonicalPath()));
             fileLogger.setLevel(LogLevel.INFO);
         }
         catch (Exception ignore) { }
     }
 
     @Override
-    public String getDatabaseDirectory() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
+    public String getDatabaseDirectoryPath() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
 
     @Override
-    public String getTempDirectory(String name) {
-        try { return new File(CouchbaseLiteInternal.getTmpDirectoryPath(), name).getCanonicalPath(); }
+    public String getScratchDirectoryPath(String name) {
+        if (tmpDirPath == null) { tmpDirPath = CouchbaseLiteInternal.getTmpDirectoryPath(); }
+
+        try { return new File(tmpDirPath, name).getCanonicalPath(); }
         catch (IOException e) { throw new RuntimeException("Could not open tmp directory: " + name, e); }
     }
 
