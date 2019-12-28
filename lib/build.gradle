@@ -249,9 +249,6 @@ def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest
 /////// Checkstyle
 apply plugin: 'checkstyle'
 checkstyle {
-    description 'Checkstyle'
-    group 'verification'
-
     toolVersion = "8.18"
 
     configFile file("${ETC_DIR}/checkstyle/checkstyle.xml")
