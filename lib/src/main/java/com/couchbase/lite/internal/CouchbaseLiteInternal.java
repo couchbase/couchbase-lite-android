@@ -38,7 +38,6 @@ import org.json.JSONObject;
 
 import com.couchbase.lite.BuildConfig;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.R;
 import com.couchbase.lite.internal.core.C4Base;
 import com.couchbase.lite.internal.fleece.MValue;
@@ -60,6 +59,7 @@ public final class CouchbaseLiteInternal {
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
     private static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
+    private static final String DB_DIR_NAME = ".couchbase";
 
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
@@ -100,7 +100,6 @@ public final class CouchbaseLiteInternal {
         MValue.registerDelegate(mValueDelegate);
 
         Log.initLogging(loadErrorMessages(ctxt));
-        com.couchbase.lite.Database.log.getConsole().setLevel(LogLevel.WARNING);
     }
 
     public static boolean isDebugging() { return debugging; }
@@ -138,7 +137,7 @@ public final class CouchbaseLiteInternal {
     @NonNull
     public static String makeDbPath(@Nullable String rootDir) {
         requireInit("Can't create DB path");
-        return verifyDir((rootDir != null) ? new File(rootDir) : getContext().getFilesDir());
+        return verifyDir((rootDir != null) ? new File(rootDir) : new File(getContext().getFilesDir(), DB_DIR_NAME));
     }
 
     @NonNull
