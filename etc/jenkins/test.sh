@@ -2,7 +2,7 @@
 # Run automated tests
 #
 GROUP='com.couchbase.lite'
-PRODUCT='coucbase-lite-android'
+PRODUCT='couchbase-lite-android'
 EDITION='community'
 
 
@@ -26,7 +26,7 @@ if [ -z "REPORTS" ]; then
 fi
 
 echo "======== Run automated tests"
-./gradlew connectedAndroidTest -PtargetAbis=x86 --console=plain --info || exit 1
+./gradlew connectedAndroidTest -PtargetAbis=armeabi-v7a --console=plain --info || exit 1
 
 echo "======== Copy test reports ========"
 cp -rp lib/build/reports/* "${REPORTS}/"
