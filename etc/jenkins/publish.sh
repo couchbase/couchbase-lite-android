@@ -9,7 +9,7 @@ MAVEN_URL="http://172.23.121.218/maven2/internalmaven"
 
 
 function usage() {
-    echo "Usage: $0 <release version> <build number> <artifacts path> <scratchspace path>"
+    echo "Usage: $0 <release version> <build number> <artifacts path> <workspace path>"
     exit 1
 }
 
@@ -32,8 +32,8 @@ if [ -z "$ARTIFACTS" ]; then
     usage
 fi
 
-SCRATCH="$4"
-if [ -z "$SCRATCH" ]; then
+WORKSPACE="$4"
+if [ -z "$WORKSPACE" ]; then
     usage
 fi
 
@@ -48,7 +48,7 @@ cp -a lib/build/reports "${ARTIFACTS}"
 cp lib/build/publications/mavenJava/pom-default.xml "${ARTIFACTS}/${POM_FILE}"
 
 echo "======== Update package type in pom"
-ZIP_BUILD="${SCRATCH}/zip-build"
+ZIP_BUILD="${WORKSPACE}/zip-build"
 rm -rf "${ZIP_BUILD}"
 mkdir -p "${ZIP_BUILD}"
 pushd "${ZIP_BUILD}"
@@ -61,12 +61,12 @@ echo "======== Fetch library dependencies"
 popd
 
 echo "======== Create zip"
-ZIP_STAGING="${SCRATCH}/staging"
+ZIP_STAGING="${WORKSPACE}/staging"
 rm -rf "${ZIP_STAGING}"
 mkdir -p "${ZIP_STAGING}"
 pushd "${ZIP_STAGING}"
 cp "${ZIP_BUILD}/target/dependency/"*.jar . || exit 1
-curl "https://raw.githubusercontent.com/couchbase/build/master/license/couchbase-lite/LICENSE_${EDITION}.txt" -o LICENSE.TXT || exit 1
+cp "${WORKSPACE}/product-texts/mobile/couchbase-lite/license/LICENSE_${EDITION}.txt" .
 cp "${ARTIFACTS}/${PRODUCT}-${VERSION}-${BUILD_NUMBER}-release.aar" "./${PRODUCT}-${VERSION}.aar" || exit 1
 zip -r "${ARTIFACTS}/${PRODUCT}-${VERSION}-android_${EDITION}.zip" * || exit 1
 popd
