@@ -66,7 +66,7 @@ rm -rf "${ZIP_STAGING}"
 mkdir -p "${ZIP_STAGING}"
 pushd "${ZIP_STAGING}"
 cp "${ZIP_BUILD}/target/dependency/"*.jar . || exit 1
-cp "${WORKSPACE}/product-texts/mobile/couchbase-lite/license/LICENSE_${EDITION}.txt" .
+cp "${WORKSPACE}/product-texts/mobile/couchbase-lite/license/LICENSE_${EDITION}.txt" ./LICENSE.TXT || exit 1
 cp "${ARTIFACTS}/${PRODUCT}-${VERSION}-${BUILD_NUMBER}-release.aar" "./${PRODUCT}-${VERSION}.aar" || exit 1
 zip -r "${ARTIFACTS}/${PRODUCT}-${VERSION}-android_${EDITION}.zip" * || exit 1
 popd
