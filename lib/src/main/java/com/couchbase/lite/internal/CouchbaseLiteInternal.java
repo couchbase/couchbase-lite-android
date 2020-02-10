@@ -94,6 +94,8 @@ public final class CouchbaseLiteInternal {
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
+        if (debugging) { C4Base.debug(); }
+
         setC4TmpDirPath();
 
         MValue.registerDelegate(mValueDelegate);
