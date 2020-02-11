@@ -270,7 +270,6 @@ checkstyle {
 
     showViolations true
 }
-
 task checkstyle(type: Checkstyle) {
     description 'Checkstyle'
     group 'verification'
