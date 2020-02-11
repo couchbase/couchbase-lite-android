@@ -1,13 +1,12 @@
 //
 // build.gradle
 //
-// Copyright (c) 2017, 2018, 2019 Couchbase, Inc All rights reserved.
+// Copyright (c) 2017, 2018, 2019 Couchbase, Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
+// You may obtain a copy of the License at:
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +14,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// Please try to keep this build file as similar to the other family build files
+// as is possible.
+//
+import com.android.build.gradle.tasks.LintGlobalTask
+import com.github.spotbugs.SpotBugsTask
+
 import java.time.Instant
+
+
+// ----------------------------------------------------------------
+// Plugins
+// ----------------------------------------------------------------
+
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'checkstyle'
+    id 'pmd'
+    id 'com.github.spotbugs'
+    id 'maven-publish'
+    id 'jacoco'
+    id 'com.github.kt3k.coveralls'
+}
 
 
 // ----------------------------------------------------------------
@@ -49,7 +70,7 @@ ext {
 
 // defining this property in the file ~/.gradle/gradle.properties
 // can dramatically reduce your build time.
-def TARGET_ABIS = (!hasProperty("targetAbis")) ? null : targetAbis.split(',')
+def TARGET_ABIS = (!hasProperty("targetAbis")) ? null : targetAbis.split(', *')
 
 // comma separated list of annotations for tests that should not be run.
 def TEST_FILTER = (!project.hasProperty("testFilter")) ? null : testFilter
@@ -65,9 +86,6 @@ properties.load(project.rootProject.file('local.properties').newDataInputStream(
 // ----------------------------------------------------------------
 // Build
 // ----------------------------------------------------------------
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 group = CBL_GROUP
 version = BUILD_VERSION
@@ -155,19 +173,19 @@ android {
     sourceSets {
         main {
             java.srcDirs = [
-                "src/main/java",                                        // android specific codes
-                "${CBL_JAVA_MODULE_DIR}/src/shared/main/java",          // shared java codes
-                "${CBL_JAVA_MODULE_DIR}/src/shared/ce/java",            // shared java ce specific codes
+                "src/main/java",                                    // android specific codes
+                "${CBL_JAVA_MODULE_DIR}/src/shared/main/java",      // shared java codes
+                "${CBL_JAVA_MODULE_DIR}/src/shared/ce/java",        // shared java ce specific codes
             ]
         }
         androidTest {
             java.srcDirs = [
-                "src/androidTest/java",                                 // android specific codes
-                "${CBL_JAVA_MODULE_DIR}/src/shared/test/java"           // shared java tests
+                "src/androidTest/java",                             // android specific codes
+                "${CBL_JAVA_MODULE_DIR}/src/shared/test/java"       // shared java tests
             ]
             assets.srcDirs = [
-                "${CBL_CORE_DIR}/C/tests/data",                         // lite-core test assets
-                "${CBL_JAVA_MODULE_DIR}/src/shared/test/assets"         // shared assets
+                "${CBL_CORE_DIR}/C/tests/data",                     // lite-core test assets
+                "${CBL_JAVA_MODULE_DIR}/src/shared/test/assets"     // shared assets
             ]
         }
     }
@@ -184,8 +202,7 @@ repositories {
 }
 
 dependencies {
-    //noinspection GradleDependency
-    compileOnly 'com.android.support:support-annotations:27.1.1'
+    compileOnly 'com.android.support:support-annotations:28.0.0'
     compileOnly 'com.google.code.findbugs:annotations:3.0.1'
 
     //noinspection GradleDependency
@@ -216,8 +233,6 @@ dependencies {
 }
 
 task javadoc(type: Javadoc) {
-    afterEvaluate { dependsOn tasks.getByName("compileDebugJavaWithJavac") }
-
     failOnError false
 
     source android.sourceSets.main.java.srcDirs
@@ -227,7 +242,7 @@ task javadoc(type: Javadoc) {
     classpath += configurations.javadocDeps
 
     options {
-        title = "${CBL_LICENSE} ${project.version}"
+        title = "${CBL_LICENSE} ${BUILD_VERSION}"
         memberLevel = JavadocMemberLevel.PUBLIC
         docEncoding = 'UTF-8'
         encoding = 'UTF-8'
@@ -247,9 +262,8 @@ task javadoc(type: Javadoc) {
 def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', '**/gen/**', "okhttp3/**"]
 
 /////// Checkstyle
-apply plugin: 'checkstyle'
 checkstyle {
-    toolVersion = "8.18"
+    toolVersion = "8.29"
 
     configFile file("${ETC_DIR}/checkstyle/checkstyle.xml")
     configProperties = ['configDir': file("${ETC_DIR}/checkstyle")]
@@ -280,8 +294,10 @@ task checkstyle(type: Checkstyle) {
 }
 
 /////// PMD
-apply plugin: 'pmd'
-pmd { toolVersion "5.8.1" }
+pmd {
+    toolVersion '6.21.0'
+    ruleSets = []
+}
 task pmd(type: Pmd) {
     description 'PMD'
     group 'verification'
@@ -304,47 +320,36 @@ task pmd(type: Pmd) {
     }
 }
 
-/////// Findbugs
-// !!! FIXME: Update to SpotBugs
-apply plugin: 'findbugs'
-def findbugsAll = task('findbugs') {
-    description 'Findbugs with all reports'
-    group 'verification'
-}
+/////// SpotBugs
+spotbugs { toolVersion = '3.1.12' }
+['Html', 'Xml'].each { reportType ->
+    task("spotbugs${reportType}", type: SpotBugsTask) {
+        description "Spotbugs with $reportType report"
+        group 'verification'
 
-project.afterEvaluate {
-    ['Html', 'Xml'].each { reportType ->
-        findbugsAll.dependsOn task("findbugs${reportType}", type: FindBugs) {
-            description "Findbugs with $reportType report"
-            group 'verification'
+        afterEvaluate { dependsOn tasks.find { t -> t.name.endsWith 'compileDebugSources' } }
 
-            afterEvaluate { dependsOn tasks.find { t -> t.name.endsWith 'compileDebugSources' } }
+        effort = "max"
+        reportLevel = "medium"
+        ignoreFailures = false
 
-            findbugs.toolVersion = "3.0.1"
+        source = android.sourceSets.main.java.srcDirs.collect {
+            dir -> fileTree(dir: dir, include: '**/*.java').getFiles()
+        }.flatten()
 
-            effort = "max"
-            reportLevel = "medium"
-            ignoreFailures = false
+        classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
+        classpath = files()
 
-            source = android.sourceSets.main.java.srcDirs.collect {
-                dir -> fileTree(dir: dir, include: '**/*.java').getFiles()
-            }.flatten()
+        excludeFilter = file("${ETC_DIR}/spotbugs/spotbugs.xml")
 
-
-            classes = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
-            classpath = files()
-
-            excludeFilter = file("${ETC_DIR}/findbugs/findbugs.xml")
-
-            reports {
-                xml {
-                    enabled = (reportType == "Xml")
-                    setDestination(file("${REPORTS_DIR}/findbugs.xml"))
-                }
-                html {
-                    enabled = (reportType == "Html")
-                    setDestination(file("${REPORTS_DIR}/findbugs.html"))
-                }
+        reports {
+            xml {
+                enabled = (reportType == "Xml")
+                setDestination(file("${REPORTS_DIR}/spotbugs.xml"))
+            }
+            html {
+                enabled = (reportType == "Html")
+                setDestination(file("${REPORTS_DIR}/spotbugs.html"))
             }
         }
     }
@@ -355,9 +360,6 @@ project.afterEvaluate {
 // Testing
 // ----------------------------------------------------------------
 
-apply plugin: 'jacoco'
-apply plugin: 'com.github.kt3k.coveralls'
-
 jacoco { toolVersion = JACOCO_VERSION }
 
 
@@ -367,7 +369,6 @@ jacoco { toolVersion = JACOCO_VERSION }
 
 /////// Maven Publishing
 // https://docs.gradle.org/current/userguide/publishing_maven.html
-apply plugin: 'maven-publish'
 
 def mavenRepoUser = properties.getProperty('maven.repo.user')
 def mavenRepoPass = properties.getProperty('maven.repo.pass')
@@ -404,16 +405,16 @@ def pomConfig = {
 
 // Generate javadoc.jar
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    baseName = "${CBL_ARTIFACT_ID}"
-    classifier = 'javadoc'
+    archiveBaseName = "${CBL_ARTIFACT_ID}"
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
 // Generate source.jar
 task sourcesJar(type: Jar) {
-    baseName = "${CBL_ARTIFACT_ID}"
+    archiveBaseName = "${CBL_ARTIFACT_ID}"
     from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
+    archiveClassifier = 'sources'
 }
 
 artifacts {
@@ -476,7 +477,7 @@ project.afterEvaluate {
 // plugins { "com.dorongold.task-tree" version "1.3.1" }
 
 ///////// Dev tasks
-task smokeTest(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsHtml', 'compileDebugSources'])
+task smokeTest(dependsOn: ['compileDebugSources', 'checkstyle', 'lint', 'pmd', 'spotbugsHtml'])
 task unitTest(dependsOn: ['smokeTest', 'testDebugUnitTest'])
 task fullTest(dependsOn: ['unitTest', 'connectedDebugAndroidTest'])
 
@@ -485,25 +486,19 @@ task coverage(dependsOn: ['createDebugCoverageReport', 'coveralls']) {
 }
 
 ///////// CI tasks
-task ciCheck(dependsOn: ['checkstyle', 'lint', 'pmd', 'findbugsXml', 'test'])
+task ciCheck(dependsOn: ['compileDebugSources', 'checkstyle', 'lint', 'pmd', 'spotbugsXml', 'test'])
 task ciPublish(dependsOn: ['generatePomFileForMavenJavaPublication', 'publishMavenJavaPublicationToMavenRepository'])
 
 // ordering (roughly last to first)
 project.afterEvaluate {
+    tasks.withType(Javadoc) { shouldRunAfter connectedDebugAndroidTest }
     connectedDebugAndroidTest.shouldRunAfter unitTest
+    connectedDebugAndroidTest.shouldRunAfter smokeTest
     testDebugUnitTest.shouldRunAfter smokeTest
-    tasks.withType(FindBugs) { shouldRunAfter tasks.withType(Pmd) }
-    tasks.withType(Pmd) { shouldRunAfter lint }
-    // we have to wait for checkstyle to get added by its plugin...
-    // findbugs gets a weird CME... whatever.
-    tasks.whenTaskAdded {
-        if (it.name.startsWith("findbugs")) {
-            test.shouldRunAfter(it)
-        }
-        if (it.name.startsWith("checkstyle")) {
-            lint.shouldRunAfter(it)
-        }
-    }
+    tasks.withType(SpotBugsTask) { shouldRunAfter tasks.withType(Pmd) }
+    tasks.withType(Pmd) { shouldRunAfter tasks.withType(LintGlobalTask) }
+    tasks.withType(LintGlobalTask) { shouldRunAfter tasks.withType(Checkstyle) }
+    tasks.withType(Checkstyle) { shouldRunAfter compileDebugSources }
 }
 
 // Clean

@@ -24,8 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.BuildConfig;
 
+@SuppressWarnings({"PMD.ClassNamingConventions", "PMD.FieldNamingConventions"})
+public final class CBLVersion {
+    private CBLVersion() {}
 
-public class CBLVersion {
     private static final String USER_AGENT = "CouchbaseLite/%s (%s) %s";
     private static final String VERSION_INFO = "CouchbaseLite Android v%s (%s at %s) on %s";
     private static final String LIB_INFO = "%s/%s, Commit/%s Core/%s";

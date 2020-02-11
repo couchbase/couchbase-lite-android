@@ -44,8 +44,8 @@ public final class AndroidExecutionService extends AbstractExecutionService {
         private final Runnable task;
 
         private CancellableTask(@NonNull Handler handler, @NonNull Runnable task) {
-            Preconditions.checkArgNotNull(handler, "handler");
-            Preconditions.checkArgNotNull(task, "task");
+            Preconditions.assertNotNull(handler, "handler");
+            Preconditions.assertNotNull(task, "task");
             this.handler = handler;
             this.task = task;
         }
@@ -91,8 +91,8 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     @NonNull
     @Override
     public Cancellable postDelayedOnExecutor(long delayMs, @NonNull Executor executor, @NonNull Runnable task) {
-        Preconditions.checkArgNotNull(executor, "executor");
-        Preconditions.checkArgNotNull(task, "task");
+        Preconditions.assertNotNull(executor, "executor");
+        Preconditions.assertNotNull(task, "task");
 
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
@@ -117,7 +117,7 @@ public final class AndroidExecutionService extends AbstractExecutionService {
      */
     @Override
     public void cancelDelayedTask(@NonNull Cancellable cancellableTask) {
-        Preconditions.checkArgNotNull(cancellableTask, "cancellableTask");
+        Preconditions.assertNotNull(cancellableTask, "cancellableTask");
         cancellableTask.cancel();
     }
 }

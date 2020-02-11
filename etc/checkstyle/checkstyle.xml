@@ -21,6 +21,12 @@
     <!-- Checks whether files end with a new line. -->
     <module name="NewlineAtEndOfFile"/>
 
+    <!-- Ensures lines do not exceed 120 characters. -->
+    <module name="LineLength">
+        <property name="max"
+            value="120"/>
+    </module>
+
     <!-- Checks for trailing spaces -->
     <module name="RegexpSingleline">
         <property name="format"
@@ -165,12 +171,6 @@
         <!-- Checks that the order of modifiers conforms to the suggestions in JLS, as follows: -->
         <!-- public/protected/private, abstract/static, final/transient/volatile, synchronized, native, strictfp -->
         <module name="ModifierOrder"/>
-
-        <!-- Ensures lines do not exceed 120 characters. -->
-        <module name="LineLength">
-            <property name="max"
-                value="120"/>
-        </module>
 
         <!-- Checks that whitespaces around < and > are correct -->
         <module name="GenericWhitespace"/>
