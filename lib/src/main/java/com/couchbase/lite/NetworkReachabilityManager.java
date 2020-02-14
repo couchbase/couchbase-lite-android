@@ -99,8 +99,9 @@ final class NetworkReachabilityManager extends AbstractNetworkReachabilityManage
     }
 
     private boolean isOnline(Context ctx) {
-        final NetworkInfo networkInfo
-            = ((ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
-        return networkInfo != null && networkInfo.isConnected();
+        final ConnectivityManager service = ((ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE));
+        if (service == null) { return false; }
+        final NetworkInfo networkInfo = service.getActiveNetworkInfo();
+        return (networkInfo != null) && networkInfo.isConnected();
     }
 }
