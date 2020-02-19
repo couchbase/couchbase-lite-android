@@ -60,11 +60,12 @@ ext {
     BUILD_VERSION = "${BUILD_RELEASE}-${BUILD_NUMBER}"
     BUILD_COMMIT = getBuildCommit()
 
-    ETC_DIR = "${PROJECT_DIR}/etc"
     CBL_CORE_DIR = "${ROOT_DIR}/couchbase-lite-core"
     CBL_JAVA_DIR = "${ROOT_DIR}/couchbase-lite-java"
-    CBL_JAVA_MODULE_DIR = "${CBL_JAVA_DIR}/lib"
-    MODULE_DIR = "${PROJECT_DIR}/lib"
+    CBL_JNI_DIR = "${CBL_JAVA_DIR}/lib"
+
+    ETC_DIR = "${PROJECT_DIR}/etc"
+    LIB_MODULE_DIR = "${PROJECT_DIR}/lib"
     REPORTS_DIR = "${buildDir}/reports"
 }
 
@@ -166,26 +167,26 @@ android {
     externalNativeBuild {
         cmake {
             version "3.10.2"
-            path "${CBL_JAVA_MODULE_DIR}/CMakeLists.txt"
+            path "${CBL_JNI_DIR}/CMakeLists.txt"
         }
     }
 
     sourceSets {
         main {
             java.srcDirs = [
-                "${CBL_JAVA_MODULE_DIR}/src/shared/main/java",      // Common
-                "${CBL_JAVA_MODULE_DIR}/src/shared/ce/java",        // CE Common
-                "src/main/java",                                    // Common Android
+                "${CBL_JNI_DIR}/src/shared/main/java",          // Common
+                "${CBL_JNI_DIR}/src/shared/ce/java",            // CE Common
+                "src/main/java",                                // Common Android
             ]
         }
         androidTest {
             java.srcDirs = [
-                "${CBL_JAVA_MODULE_DIR}/src/shared/test/java",      // shared java tests
-                "src/androidTest/java",                             // android specific codes
+                "${CBL_JNI_DIR}/src/shared/test/java",          // shared java tests
+                "src/androidTest/java",                         // android specific codes
             ]
             assets.srcDirs = [
-                "${CBL_CORE_DIR}/C/tests/data",                     // lite-core test assets
-                "${CBL_JAVA_MODULE_DIR}/src/shared/test/assets"     // shared assets
+                "${CBL_CORE_DIR}/C/tests/data",                 // lite-core test assets
+                "${CBL_JNI_DIR}/src/shared/test/assets"         // shared assets
             ]
         }
     }
@@ -505,8 +506,8 @@ project.afterEvaluate {
 // This is necessary because 'clean' deletes the file 'zconf.h' which is in
 // .../build/intermediates, causing subsequent builds to fail.
 clean.doLast {
-    delete "${MODULE_DIR}/.externalNativeBuild"
-    delete "${MODULE_DIR}/.cxx"
+    delete "${LIB_MODULE_DIR}/.externalNativeBuild"
+    delete "${LIB_MODULE_DIR}/.cxx"
 }
 
 def getLicenseVersion() {
