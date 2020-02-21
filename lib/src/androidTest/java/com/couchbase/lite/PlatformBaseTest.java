@@ -26,6 +26,7 @@ import java.io.InputStream;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.utils.FileUtils;
 
 
 /**
@@ -35,11 +36,17 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
 
+    static void beforeAll() {
+        CouchbaseLite.init(InstrumentationRegistry.getTargetContext());
+
+        FileUtils.deleteContents(new File(CouchbaseLiteInternal.getDbDirectoryPath()));
+        FileUtils.deleteContents(new File(CouchbaseLiteInternal.getTmpDirectoryPath()));
+    }
+
+    static { beforeAll(); }
+
 
     private String tmpDirPath;
-
-    @Override
-    public void initCouchbaseLite() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
     // make a half-hearted attempt to set up file logging
     @Override
