@@ -506,8 +506,7 @@ project.afterEvaluate {
 // This is necessary because 'clean' deletes the file 'zconf.h' which is in
 // .../build/intermediates, causing subsequent builds to fail.
 clean.doLast {
-    delete "${LIB_MODULE_DIR}/.externalNativeBuild"
-    delete "${LIB_MODULE_DIR}/.cxx"
+    project.delete "${LIB_MODULE_DIR}/.cxx"
 }
 
 def getLicenseVersion() {
