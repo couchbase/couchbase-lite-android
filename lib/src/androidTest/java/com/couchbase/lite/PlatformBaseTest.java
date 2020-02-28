@@ -23,10 +23,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.junit.After;
+import org.junit.Before;
+
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.FileUtils;
 
 
 /**
@@ -35,30 +37,40 @@ import com.couchbase.lite.utils.FileUtils;
 public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
+    public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
 
-    static void beforeAll() {
-        CouchbaseLite.init(InstrumentationRegistry.getTargetContext());
+    public static void initCouchbase() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
-        FileUtils.deleteContents(new File(CouchbaseLiteInternal.getDbDirectoryPath()));
-        FileUtils.deleteContents(new File(CouchbaseLiteInternal.getTmpDirectoryPath()));
-    }
+    public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
 
-    static { beforeAll(); }
+    // this should probably go in the BaseTest but
+    // there are several tests (C4 tests) that are not subclasses
+    static { initCouchbase(); }
 
 
     private String tmpDirPath;
+
+    // Before and After naming conventions
+    @Before
+    public void setUp() throws CouchbaseLiteException { }
+
+    @After
+    public void tearDown() { }
 
     // make a half-hearted attempt to set up file logging
     @Override
     public void setupFileLogging() {
         try {
-            FileLogger fileLogger = Database.log.getFile();
+            final FileLogger fileLogger = Database.log.getFile();
             final File logDir = InstrumentationRegistry.getTargetContext().getExternalFilesDir("logs");
+
             if (logDir == null) { throw new IllegalStateException("Cannot find external files directory"); }
+
             fileLogger.setConfig(new LogFileConfiguration(logDir.getCanonicalPath()));
+
             fileLogger.setLevel(LogLevel.INFO);
         }
-        catch (Exception ignore) { }
+        catch (IOException ignore) { }
     }
 
     @Override
