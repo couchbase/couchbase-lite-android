@@ -33,6 +33,7 @@ echo "======== BUILD Couchbase Lite Android, Community Edition v`cat ../version.
 
 echo "======== Install Toolchain"
 yes | ${SDK_MGR} --licenses > /dev/null 2>&1
+${SDK_MGR} --install 'build-tools;29.0.3'
 ${SDK_MGR} --install 'cmake;3.10.2.4988404'
 ${SDK_MGR} --install 'ndk;20.1.5948944'
 
