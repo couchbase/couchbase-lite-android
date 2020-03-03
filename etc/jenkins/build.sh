@@ -5,7 +5,7 @@ GROUP='com.couchbase.lite'
 PRODUCT='coucbase-lite-android'
 EDITION='community'
 
-MAVEN_URL="http://172.23.121.218/maven2/cimaven"
+MAVEN_URL="http://mobile.maven.couchbase.com/maven2/cimaven"
 
 
 function usage() {
