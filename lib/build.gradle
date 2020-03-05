@@ -94,6 +94,7 @@ version = BUILD_VERSION
 android {
     compileSdkVersion COMPILE_SDK_VERSION
     buildToolsVersion BUILD_TOOLS_VERSION
+    // if you change this, be sure to update /etc/jenkins/build.sh
     ndkVersion '20.1.5948944'
 
     defaultConfig {
@@ -125,6 +126,8 @@ android {
     }
 
     buildTypes {
+        // NOTE: testCoverageEnabled is managed in the `coverage` task
+
         debug {
             buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
             buildConfigField "String", "BUILD_COMMIT", "\"${BUILD_COMMIT}\""
@@ -133,7 +136,6 @@ android {
 
             debuggable true
             minifyEnabled false
-            testCoverageEnabled false
 
             externalNativeBuild {
                 cmake {
@@ -141,8 +143,6 @@ android {
                     cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 }
             }
-
-            // testCoverageEnabled is enabled in the `coverage` task
         }
 
         release {
@@ -166,6 +166,7 @@ android {
 
     externalNativeBuild {
         cmake {
+            // if you change this, be sure to update /etc/jenkins/build.sh
             version "3.10.2"
             path "${CBL_JNI_DIR}/CMakeLists.txt"
         }
@@ -413,8 +414,8 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 // Generate source.jar
 task sourcesJar(type: Jar) {
     archiveBaseName = "${CBL_ARTIFACT_ID}"
-    from android.sourceSets.main.java.srcDirs
     archiveClassifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
 }
 
 artifacts {

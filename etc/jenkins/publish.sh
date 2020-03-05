@@ -38,6 +38,13 @@ if [ -z "$WORKSPACE" ]; then
 fi
 
 echo "======== Publish candidate build to internal maven"
+## Really should promote the existing package, instead of re-publishing
+## Something like this:
+## curl -X POST  -H "Content-Type: application/json" \
+##     --data '{"API_Key": "<promote key>", "groupName": "com.couchbase.lite", "packageName": "couchbase-lite-android", "version": "2.7.0-43", "fromFeed": "cimaven", "toFeed": "internalmaven"}' \
+##      http://mobile.maven.couchbase.com/api/promotions/promote
+## At present that call fails to promote the entire package (bad PK copying the source tar)
+## so, for now, just republish the same bits.
 ./gradlew ciPublish -PbuildNumber=${BUILD_NUMBER} -PmavenUrl=${MAVEN_URL} || exit 1
 
 echo "======== Copy artifacts to staging directory"
@@ -72,3 +79,4 @@ zip -r "${ARTIFACTS}/${PRODUCT}-${VERSION}-android_${EDITION}.zip" * || exit 1
 popd
 
 echo "======== PUBLICATION COMPLETE"
+
