@@ -13,7 +13,8 @@ function usage() {
     exit 1
 }
 
-if [ "$#" -ne 2 ]; then
+# As of 2.8, the build script takes 3 args.
+if [ "$#" -lt 2 ]; then
     usage
 fi
 
