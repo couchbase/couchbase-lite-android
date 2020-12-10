@@ -5,7 +5,7 @@ GROUP='com.couchbase.lite'
 PRODUCT='couchbase-lite-android'
 EDITION='community'
 
-MAVEN_URL="http://mobile.maven.couchbase.com/maven2/internalmaven"
+MAVEN_URL="http://proget.build.couchbase.com/maven2/internalmaven"
 
 
 function usage() {
