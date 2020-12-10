@@ -19,9 +19,7 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven {
-            url "http://mobile.maven.couchbase.com/maven2/dev/"
-        }
+        maven { url "http://proget.build.couchbase.com/maven2/dev/" }
     }
 }
 
