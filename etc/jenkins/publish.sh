@@ -57,7 +57,7 @@ sed -i.bak "s#<packaging>aar</packaging>#<packaging>pom</packaging>#" "${POM_FIL
 diff "${POM_FILE}" "${POM_FILE}.bak"
 
 echo "======== Fetch library dependencies"
-/home/couchbase/jenkins/tools/hudson.tasks.Maven_MavenInstallation/M3/bin/mvn install dependency:copy-dependencies || exit 1
+mvn install dependency:copy-dependencies || exit 1
 popd
 
 echo "======== Create zip"
